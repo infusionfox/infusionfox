@@ -19,10 +19,7 @@
                 <div class="catalog__grid">
                     {% for entry in entries %}
                         <a href="{{ entry.href }}" class="catalog__card">
-                            <h3>
-                                <span class="title">{{ entry.title }}</span>
-                                {% if entry.short %}<span class="short">{{ entry.short }}</span>{% endif %}
-                            </h3>
+                            <h3>{{ entry.title }}</h3>
                             <p>{{ entry.catalog_blurb or entry.description }}</p>
                         </a>
                     {% endfor %}
