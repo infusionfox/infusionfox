@@ -3356,7 +3356,7 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
      * viewports. */
     aspect-ratio: 1010 / 852;
     width: 100%;
-    max-width: 520px;
+    max-width: 600px;
 }
 
 .hero__shot-video {
