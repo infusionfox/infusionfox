@@ -149,80 +149,6 @@ below.
 
 ---
 
-## Pre-launch peer review tracker
-
-Each clinical calculator must be reviewed by an independent veterinarian
-familiar with the source material before going to paying users. Review is
-documented per-calculator with date and reviewer (with permission to name).
-
-| Calculator | Reviewer | Date | Notes |
-|---|---|---|---|
-| Norepinephrine | (pending) |  |  |
-| Epinephrine | (pending) |  |  |
-| Dobutamine | (pending) |  |  |
-| Dopamine prep | (pending) |  |  |
-| Fentanyl | (pending) |  |  |
-| Hydromorphone CRI | (pending) |  |  |
-| Methadone | (pending) |  |  |
-| Lidocaine CRI | (pending) |  |  |
-| Ketamine CRI | (pending) |  |  |
-| Propofol | (pending) |  |  |
-| Alfaxalone | (pending) |  |  |
-| MLK | (pending) |  |  |
-| Cornell Oncology KL | (pending) |  |  |
-| Kitty Magic | (pending) |  |  |
-| Hypernatremia | (pending) |  |  |
-| Hypokalemia | (pending) |  |  |
-| Hypophosphatemia | (pending) |  |  |
-| Hypomagnesemia | (pending) |  |  |
-| Calcium gluconate | (pending) |  |  |
-| Insulin + dextrose | (pending) |  |  |
-| Insulin CRI · DKA | (pending) |  |  |
-| Insulin IM · DKA | (pending) |  |  |
-| Fluid therapy | (pending) |  |  |
-| Transfusion | (pending) |  |  |
-| Blood gas interpretation | (pending) |  |  |
-| Cushing's score | (pending) |  |  |
-| LDDST | (pending) |  |  |
-| Hypothyroid score | (pending) |  |  |
-| Addison's score | (pending) |  |  |
-| IRIS staging | (pending) |  |  |
-| Energy (RER/MER) | (pending) |  |  |
-| CPR | (pending) |  |  |
-| Anaphylaxis hub | (pending) |  |  |
-| Hypoglycemia hub | (pending) |  |  |
-| DKA hub | (pending) |  |  |
-| Hyperkalemia emergency hub | (pending) |  |  |
-| Status epilepticus dog hub | (pending) |  |  |
-| Status epilepticus cat hub | (pending) |  |  |
-| Heatstroke hub | (pending) |  |  |
-
----
-
-## Items requiring attorney review
-
-These items have specific copyright or attribution considerations beyond
-ordinary peer review:
-
-1. **DiBartola Table 5-2 reproduction** in the hypokalemia KCl sliding-scale
-   calculator. Tables of facts vs creative arrangement, flagged for legal
-   counsel. Originally Greene RW, Scott RC 1975, reproduced in DiBartola.
-2. **Cornell Oncology KL**: the calculator builds on Cornell's 2012 worksheet.
-   The article includes a non-affiliation disclaimer. Nominative fair use of
-   the "Cornell" name appears defensible as the protocol is published under
-   that name in the 2025 JAVMA paper, but worth confirming with counsel.
-3. **RECOVER guidelines reproduction** in the CPR calculator. Weight-based
-   dose chart is published in the 2024 papers; we reproduce stock
-   concentrations and dose-per-kg values as facts. Defensible nominative
-   fair use of "RECOVER" branding.
-4. **Diagnostic scoring adaptations**: hypothyroid score and Addison's
-   score thresholds are simplified additive adaptations of published
-   ML models (Corsini 2023, Reagan 2026). Each calculator and article
-   calls this out explicitly. Practice is common for infusionfox reference
-   tools but worth flagging.
-
----
-
 ## Maintenance
 
 When adding or modifying a calculator:
@@ -232,8 +158,6 @@ When adding or modifying a calculator:
 3. Encode the values in the calculator config
 4. Cite the source on the calculator page (footer "Source" section, automatic
    via the `_source_cite.html` partial when `result.sources` is populated)
-5. Update the calculator's status to "pending peer review"
-6. After review, update the reviewer table
 
 When a source publishes a new edition:
 
