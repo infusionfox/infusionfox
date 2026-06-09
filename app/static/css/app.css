@@ -3318,12 +3318,9 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
 
 /* Right column: marketing visuals. Animation on top, 2x2 screenshot
  * grid below. */
-/* Right column: a single screen recording of the app in use. The video
- * itself is portrait (phone aspect), so we show it at its natural shape
- * with a phone-like max width. The surrounding tile uses the same warm
- * paper background as the rest of the hero so the video reads as
- * "phone-shaped device, with the app on it" rather than "letterboxed
- * landscape panel." */
+/* Right column: a single screen recording of the app in use. The
+ * video is desktop-aspect (landscape), so we cap its width and let
+ * the surrounding tile sit on the warm-paper background. */
 .hero__right {
     display: flex;
     flex-direction: column;
@@ -3353,12 +3350,13 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
 }
 
 .hero__shot--animation {
-    /* Aspect matches the screen recording (734x858, ~6:7). max-width
-     * keeps the tile from growing absurdly wide on huge displays; the
-     * column itself sets the upper bound on most viewports. */
-    aspect-ratio: 734 / 858;
+    /* Aspect matches the screen recording (1010x852, ~1.185:1).
+     * max-width keeps the tile from growing absurdly wide on huge
+     * displays; the column itself sets the upper bound on most
+     * viewports. */
+    aspect-ratio: 1010 / 852;
     width: 100%;
-    max-width: 420px;
+    max-width: 520px;
 }
 
 .hero__shot-video {
@@ -3371,9 +3369,8 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
 
 @media (max-width: 880px) {
     /* Hero grid collapses on mobile: right column drops below left.
-     * The phone-frame animation tile keeps its max-width cap so it
-     * doesn't span the full mobile viewport; it centers inside the
-     * right column. */
+     * The animation tile keeps its max-width cap so it doesn't span
+     * the full mobile viewport; it centers inside the right column. */
     .hero__grid {
         grid-template-columns: 1fr;
         gap: 2.5rem;

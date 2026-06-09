@@ -19,93 +19,6 @@ set -e
 
 cd /app
 
-# Defensive sweep: keep only the current baseline migration.
-#
-# Background: this codebase had its alembic history rewritten when the
-# auth/billing schema was removed. The old baseline migrations are
-# expected to be gone. If, for any reason (Docker layer cache, build
-# context, etc.), stale migration files end up in /app/alembic/versions
-# alongside the current baseline, alembic refuses to run with a
-# "Multiple head revisions" error and the container restart-loops.
-#
-# This block sweeps anything that isn't the known-good baseline before
-# alembic runs. Idempotent — when the directory already contains only
-# the baseline, this is a no-op.
-#
-# To change the pinned baseline: update BASELINE_REV below, then also
-# update the auth-removal recovery block further down (look for the
-# `alembic stamp head` call) — that one stamps to head, which is fine.
-BASELINE_REV="4ae1376d9f7c"
-VERSIONS_DIR="/app/alembic/versions"
-if [ -d "$VERSIONS_DIR" ]; then
-    REMOVED=""
-    for f in "$VERSIONS_DIR"/*.py; do
-        # The glob keeps the literal pattern when no files match; skip that.
-        [ -f "$f" ] || continue
-        # Filename is something like "4ae1376d9f7c_baseline_schema_feedback_only.py".
-        # Keep the file whose basename starts with the baseline revision.
-        case "$(basename "$f")" in
-            "${BASELINE_REV}"_*) ;;  # keep
-            *)
-                REMOVED="$REMOVED $(basename "$f")"
-                rm -f "$f"
-                ;;
-        esac
-    done
-    # Also wipe the bytecode cache, which can keep stale compiled
-    # versions of deleted .py migration files alive across restarts.
-    rm -rf "$VERSIONS_DIR/__pycache__"
-    if [ -n "$REMOVED" ]; then
-        echo "[entrypoint] Swept stale migration files (kept only $BASELINE_REV):$REMOVED"
-    fi
-fi
-
-# Defensive sweep #2: remove orphaned Python modules and templates.
-#
-# Same problem as the migration sweep above — if the deploy layered our
-# new bundle over an older one rather than replacing the directory
-# cleanly, deleted files survive on disk. Those files reference symbols
-# that no longer exist (e.g. account_admin.py imports current_user from
-# app.auth, which is gone), so they crash on router-discovery import.
-#
-# We list the deleted paths explicitly rather than trying to be clever.
-# When this list is added to (future cleanup removes more files), the
-# new entries get appended here. The find for __pycache__ at the end
-# catches the matching .pyc files so reimports don't resurrect anything.
-ORPHANED_FILES="
-app/auth.py
-app/email.py
-app/routers/auth.py
-app/routers/account_admin.py
-app/services/disclaimer.py
-app/templates/account.html
-app/templates/pricing.html
-"
-ORPHANED_DIRS="
-app/templates/auth
-app/templates/admin
-"
-REMOVED_ORPHANS=""
-for relpath in $ORPHANED_FILES; do
-    if [ -f "/app/$relpath" ]; then
-        rm -f "/app/$relpath"
-        REMOVED_ORPHANS="$REMOVED_ORPHANS $relpath"
-    fi
-done
-for relpath in $ORPHANED_DIRS; do
-    if [ -d "/app/$relpath" ]; then
-        rm -rf "/app/$relpath"
-        REMOVED_ORPHANS="$REMOVED_ORPHANS $relpath/"
-    fi
-done
-# Sweep all __pycache__ directories under /app/app — cheap, catches any
-# stale .pyc whose source .py was just removed. This is safe because
-# Python will simply recompile any pyc it needs on the next import.
-find /app/app -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-if [ -n "$REMOVED_ORPHANS" ]; then
-    echo "[entrypoint] Swept orphaned files from a layered deploy:$REMOVED_ORPHANS"
-fi
-
 # Inspect the DB to figure out which of the four states we're in.
 # Exits with:
 #   0 — alembic upgrade will handle it
@@ -181,7 +94,6 @@ from app.db.session import engine
 LEGACY_TABLES = [
     "audit_log",
     "ce_records",
-    "disclaimer_acceptances",
     "entitlements",
     "purchases",
     "subscriptions",
