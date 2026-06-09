@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Drop factor | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container" style="max-width: 720px;">
+        <div class="eyebrow">Utility</div>
+        <h1>Drop factor calculator</h1>
+        <p style="color: var(--ink-soft); max-width: 60ch;">
+            Converts mL/hr to drops/minute for gravity-drip sets without a pump.
+            Check the drop factor printed on your IV tubing package.
+        </p>
+
+        <div class="tool-grid" style="margin-top: 2rem;">
+            <form
+                hx-post="/tools/drop-factor/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:200ms, change, load"
+            >
+                <div class="field">
+                    <label for="ml_per_hour">Rate (mL/hr)</label>
+                    <input type="number" step="any" min="0" id="ml_per_hour" name="ml_per_hour"
+                           value="{{ inputs.ml_per_hour }}" required autofocus>
+                </div>
+                <div class="field">
+                    <label for="drop_factor">Drop factor (drops/mL)</label>
+                    <select id="drop_factor" name="drop_factor">
+                        <option value="10" {% if inputs.drop_factor == 10 %}selected{% endif %}>10 drops/mL (macrodrip)</option>
+                        <option value="15" {% if inputs.drop_factor == 15 %}selected{% endif %}>15 drops/mL (macrodrip)</option>
+                        <option value="20" {% if inputs.drop_factor == 20 %}selected{% endif %}>20 drops/mL (macrodrip)</option>
+                        <option value="60" {% if inputs.drop_factor == 60 %}selected{% endif %}>60 drops/mL (microdrip)</option>
+                    </select>
+                </div>
+            </form>
+
+            {% include "tools/partials/drop_factor_result.html" %}
+        </div>
+    </div>
+</section>
+{% endblock %}

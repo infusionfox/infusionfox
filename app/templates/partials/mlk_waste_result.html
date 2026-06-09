@@ -1,0 +1,74 @@
+{# Controlled-drug waste sub-panel for the MLK calculator.
+   Swap target for the Step 5 waste form. Renders one of three states:
+     - waste is None            → prompt (no volume entered yet)
+     - waste.valid is False     → warning (bad volume input)
+     - waste.valid              → the per-drug waste table for the CD log
+   The outer <div id="mlk-waste-result"> is the stable swap anchor. #}
+<div id="mlk-waste-result">
+    {% if waste is not defined or waste is none %}
+    <p style="margin: 0.6rem 0 0; color: var(--ink-mute); font-size: 0.85rem; font-style: italic;">
+        Enter the volume given above to calculate per-drug waste.
+    </p>
+
+    {% elif not waste.valid %}
+    <div class="warnings danger" style="margin-top: 0.6rem;">
+        <ul>{% for w in waste.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+
+    {% else %}
+    <div style="margin-top: 0.75rem;">
+        <p style="margin: 0 0 0.5rem; color: var(--ink); font-size: 0.9rem;">
+            Given <strong>{{ "%g"|format(waste.volume_given_ml) }} mL</strong> of the
+            {{ "%g"|format(waste.bag_volume_ml) }} mL bag ·
+            wasted <strong>{{ "%g"|format(waste.volume_wasted_ml) }} mL</strong>
+        </p>
+        <table class="data-table" style="width: 100%; font-size: 0.9rem;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Drug</th>
+                    <th style="text-align: right;">Given</th>
+                    <th style="text-align: right;">Wasted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in waste.components %}
+                <tr>
+                    <td>
+                        <strong>{{ c.name }}</strong>
+                        {% if c.controlled %}
+                        <span style="display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.4rem; font-size: 0.72rem; font-weight: 600; color: var(--danger); background: var(--danger-soft); border: 1px solid var(--danger); border-radius: 3px;">{{ c.schedule }}</span>
+                        {% else %}
+                        <span style="display: inline-block; margin-left: 0.4rem; font-size: 0.78rem; color: var(--ink-mute);">not controlled</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right; color: var(--ink-soft);">
+                        {{ "%g"|format(c.mg_given) }} mg
+                        <div style="font-size: 0.8rem; color: var(--ink-mute); margin-top: 0.15rem;">
+                            ≈ {{ "%g"|format(c.stock_ml_given) }} mL of {{ "%g"|format(c.stock_mg_per_ml) }} mg/mL
+                        </div>
+                    </td>
+                    <td style="text-align: right; font-weight: 600;">
+                        {{ "%g"|format(c.mg_wasted) }} mg
+                        <div style="font-size: 0.8rem; color: var(--ink-mute); font-weight: 400; margin-top: 0.15rem;">
+                            ≈ {{ "%g"|format(c.stock_ml_wasted) }} mL of {{ "%g"|format(c.stock_mg_per_ml) }} mg/mL
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p style="margin: 0.6rem 0 0; color: var(--ink-mute); font-size: 0.8rem; line-height: 1.55;">
+            The mg figure is the amount removed from controlled inventory and is
+            what reconciles your controlled-drug count. The mL figure is the
+            stock-equivalent volume (mg divided by stock concentration) for logs
+            that record volume; note the physical waste is the diluted bag
+            remainder ({{ "%g"|format(waste.volume_wasted_ml) }} mL of mixed
+            fluid), not undiluted stock. Morphine and ketamine require
+            controlled-substance log entries for the wasted amount; lidocaine is
+            not federally controlled. State scheduling can differ, so follow your
+            practice's controlled-drug policy. Waste should be witnessed and
+            documented per DEA / state requirements.
+        </p>
+    </div>
+    {% endif %}
+</div>

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}{{ drug.display_name }} | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ drug.category }} · Sliding scale</div>
+                <h1>{{ drug.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ drug.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/{{ drug.slug }}">Clinical background</a>
+            <a href="#scale">Full scale</a>
+            {% if drug.sources %}<a href="#sources">Sources</a>{% endif %}
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/{{ drug.slug }}/lookup"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label for="input_value">{{ drug.scale_input_label }} ({{ drug.scale_input_unit }})</label>
+                    <input type="number" step="any" id="input_value" name="input_value"
+                           value="{{ input_value }}" required autofocus>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% include "partials/scale_result_panel.html" %}
+            </div>
+        </div>
+
+        <section id="scale" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Full scale</h2>
+            <table class="ref-table">
+                <thead>
+                    <tr>
+                        <th>{{ drug.scale_input_label }} ({{ drug.scale_input_unit }})</th>
+                        <th>Category</th>
+                        <th>Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in drug.scale_rows %}
+                    <tr>
+                        <td class="mono">
+                            {% if row.min_value is none %}&lt; {{ row.max_value }}
+                            {% elif row.max_value is none %}≥ {{ row.min_value }}
+                            {% else %}{{ row.min_value }} – {{ row.max_value }}{% endif %}
+                        </td>
+                        <td><strong>{{ row.label }}</strong></td>
+                        <td>{{ row.recommendation }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if drug.scale_notes %}
+            <div style="margin-top: 1.5rem;">
+                <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Notes</h3>
+                <ul style="color: var(--ink-soft); line-height: 1.7;">
+                    {% for note in drug.scale_notes %}<li>{{ note }}</li>{% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </section>
+
+        {% if drug.sources %}
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                {% for s in drug.sources %}
+                <li>
+                    {{ s.citation }}
+                    {% if s.url %}· <a href="{{ s.url }}" target="_blank" rel="noopener">link</a>{% endif %}
+                    {% if s.reviewer %}<br><em style="color: var(--ink-mute); font-size: 0.9em;">{{ s.reviewer }}</em>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

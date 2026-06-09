@@ -1,0 +1,27 @@
+<div class="result" id="result-panel">
+    <dl class="result__details" style="grid-template-columns: 1fr;">
+        <div class="result__detail">
+            <dt>Pounds (lb)</dt>
+            <dd>{{ "%.3f"|format(result.lb) }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Kilograms (kg)</dt>
+            <dd>{{ "%.3f"|format(result.kg) }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Grams (g)</dt>
+            <dd>{{ "%.1f"|format(result.g) }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Ounces (oz)</dt>
+            <dd>{{ "%.2f"|format(result.oz) }}</dd>
+        </div>
+    </dl>
+
+    <div class="formula-box">
+        <div class="eyebrow">Conversion factors</div>
+        $$1\,\text{kg} = 2.20462\,\text{lb}$$
+        $$1\,\text{lb} = 16\,\text{oz}$$
+        $$1\,\text{kg} = 1000\,\text{g}$$
+    </div>
+</div>

@@ -1,0 +1,293 @@
+<div class="result" id="result-panel">
+
+    {% if result.not_indicated %}
+    {# Safety gate triggered (NG + canned). Show the reason loudly and skip volumes. #}
+    <div class="result__headline">
+        <div class="eyebrow">Not indicated</div>
+        <div class="result__primary" style="color: var(--danger); font-size: 1.6rem;">
+            Diet not safe through this tube
+        </div>
+    </div>
+    <div class="warnings" style="margin-top: 1rem;">
+        <ul><li>{{ result.not_indicated_reason }}</li></ul>
+    </div>
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Patient weight</dt>
+            <dd>
+                {{ "%.2f"|format(result.current_weight_kg) }} kg
+                <br><span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.1f"|format(result.current_weight_kg * 2.2046) }} lb)</span>
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>RER (for reference)</dt>
+            <dd>{{ "%.0f"|format(result.rer_kcal_per_day) }} kcal/day</dd>
+        </div>
+    </dl>
+
+    {% else %}
+    {# Print affordance. no-print so it doesn't print itself. Lives at
+       the top of the result panel so the button is always near the
+       schedule it prints. #}
+    <div class="no-print tube-feeding-print-row">
+        <button type="button" class="tube-feeding-print-btn"
+                onclick="infusionfox_tube_feeding_print()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: text-bottom; margin-right: 0.35rem;">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Print this schedule
+        </button>
+    </div>
+
+    {# Printable header. Hidden on screen via .print-only; revealed by
+       the @media print rules at the bottom of the page CSS. Carries
+       everything a cage-side reader needs to identify the patient and
+       verify they're looking at the right schedule. #}
+    <div class="print-only tube-feeding-print-header">
+        <div class="tube-feeding-print-header__title">Tube feeding schedule</div>
+        <div class="tube-feeding-print-header__fields">
+            <div>
+                <span class="tube-feeding-print-header__label">Patient:</span>
+                {% if result.patient_id %}
+                    <span class="tube-feeding-print-header__value">{{ result.patient_id }}</span>
+                {% else %}
+                    <span class="tube-feeding-print-header__writein">&nbsp;</span>
+                {% endif %}
+            </div>
+            <div>
+                <span class="tube-feeding-print-header__label">Species:</span>
+                <span class="tube-feeding-print-header__value">{{ result.species.value|capitalize }}</span>
+            </div>
+            <div>
+                <span class="tube-feeding-print-header__label">Tube:</span>
+                <span class="tube-feeding-print-header__value">{{ "NG / NE" if result.tube_type.value == "ng" else "E-tube" }}</span>
+            </div>
+            <div>
+                <span class="tube-feeding-print-header__label">Weight:</span>
+                <span class="tube-feeding-print-header__value">
+                    {{ "%.2f"|format(result.current_weight_kg) }} kg
+                    ({{ "%.1f"|format(result.current_weight_kg * 2.2046) }} lb)
+                </span>
+            </div>
+            <div>
+                <span class="tube-feeding-print-header__label">RER:</span>
+                <span class="tube-feeding-print-header__value">
+                    {{ "%.0f"|format(result.rer_kcal_per_day) }} kcal/day
+                </span>
+            </div>
+            <div>
+                <span class="tube-feeding-print-header__label">Schedule:</span>
+                <span class="tube-feeding-print-header__value">
+                    {{ result.feedings_per_day }} feedings/day
+                    (q{{ "%.0f"|format(24 / result.feedings_per_day) }}h)
+                </span>
+            </div>
+            <div>
+                <span class="tube-feeding-print-header__label">Per-feeding cap:</span>
+                <span class="tube-feeding-print-header__value">
+                    10 mL/kg ({{ "%.0f"|format(result.per_feeding_cap_ml) }} mL for this patient)
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {# Normal computed result.
+
+       The day selector lives here, inside the swapped panel, rather
+       than in the form on the left. It's operationally inseparable
+       from the headline number — changing the day changes the volume
+       shown — so it belongs visually beside what it controls. Radios
+       use form="tube-feeding-form" so the HTMX submission still picks
+       them up even though they sit outside the <form> in the DOM.
+
+       Default is Day 1 (start of ramp), so the headline-on-initial-load
+       is always the safest volume. The "and beyond" suffix on the final
+       day makes clear the patient stays at 100% RER after the ramp
+       completes. #}
+    {% set cur = result.current_day_plan %}
+    {% set is_final = result.current_day == result.ramp_length_days %}
+    <div style="margin-bottom: 1rem;">
+        <div class="eyebrow" style="margin-bottom: 0.4rem;">Current ramp day</div>
+        <div class="segmented">
+            <input form="tube-feeding-form" type="radio" name="current_day" value="1" id="cd-1"
+                   {% if result.current_day == 1 %}checked{% endif %}>
+            <label for="cd-1">Day 1</label>
+            <input form="tube-feeding-form" type="radio" name="current_day" value="2" id="cd-2"
+                   {% if result.current_day == 2 %}checked{% endif %}>
+            <label for="cd-2">Day 2</label>
+            <input form="tube-feeding-form" type="radio" name="current_day" value="3" id="cd-3"
+                   {% if result.current_day == 3 %}checked{% endif %}>
+            <label for="cd-3">Day 3{% if result.ramp_length_days == 3 %}+{% endif %}</label>
+            {% if result.ramp_length_days == 4 %}
+            <input form="tube-feeding-form" type="radio" name="current_day" value="4" id="cd-4"
+                   {% if result.current_day == 4 %}checked{% endif %}>
+            <label for="cd-4">Day 4+</label>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="result__headline">
+        <div class="eyebrow">
+            Day {{ result.current_day }}{% if is_final %} and beyond{% endif %}
+            · {{ "%.0f"|format(cur.fraction_of_rer * 100) }}% RER
+            · {{ result.feedings_per_day }} feedings/day
+        </div>
+        <div class="result__primary">
+            {{ "%.0f"|format(cur.per_feeding_ml) }}<span class="unit">mL/feed</span>
+        </div>
+        <div class="result__secondary">
+            {{ "%.0f"|format(cur.target_kcal) }} kcal/day on day {{ result.current_day }}
+            · {{ "%.0f"|format(cur.percent_of_cap) }}% of {{ "%.0f"|format(result.per_feeding_cap_ml) }} mL/feed cap (10 mL/kg)
+            · RER {{ "%.0f"|format(result.rer_kcal_per_day) }} kcal/day
+        </div>
+    </div>
+
+    {# Math walkthrough — shows the derivation from weight → RER → today's
+       caloric target → per-feeding kcal → per-feeding mL. Each step is
+       verifiable by the clinician at the cage. #}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; line-height: 1.7;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">How this was calculated</div>
+        <div style="color: var(--ink-soft);">
+            RER: 70 × ({{ "%.2f"|format(result.rer_basis_weight_kg) }} kg)<sup>0.75</sup> = <strong style="color: var(--ink);">{{ "%.0f"|format(result.rer_kcal_per_day) }} kcal/day</strong><br>
+            Today: {{ "%.0f"|format(result.rer_kcal_per_day) }} kcal/day × {{ "%.0f"|format(cur.fraction_of_rer * 100) }}% = <strong style="color: var(--ink);">{{ "%.0f"|format(cur.target_kcal) }} kcal/day</strong><br>
+            Per feeding: {{ "%.0f"|format(cur.target_kcal) }} kcal/day ÷ {{ result.feedings_per_day }} feedings = <strong style="color: var(--ink);">{{ "%.0f"|format(cur.per_feeding_kcal) }} kcal/feed</strong><br>
+            Volume: {{ "%.0f"|format(cur.per_feeding_kcal) }} kcal/feed ÷ {{ "%.2f"|format(result.effective_kcal_per_ml) }} kcal/mL = <strong style="color: var(--ink);">{{ "%.0f"|format(cur.per_feeding_ml) }} mL/feed</strong>
+        </div>
+    </div>
+
+    {# Diet feedback line — lets the user sanity-check what density the
+       calculator is actually using, including water added for canned slurries. #}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Diet</div>
+        <p style="margin: 0; color: var(--ink); font-size: 1rem;">
+            <strong>{{ result.diet_label }}</strong>
+            {% if result.can_size_ml and result.can_kcal %}
+                ({{ "%.0f"|format(result.can_size_ml) }} mL can / {{ "%.0f"|format(result.can_kcal) }} kcal,
+                blended with {{ "%.0f"|format(result.water_added_ml) }} mL water)
+            {% endif %}
+        </p>
+        <p style="margin: 0.4rem 0 0; color: var(--ink-mute); font-size: 0.85rem;">
+            Effective density: <strong>{{ "%.2f"|format(result.effective_kcal_per_ml) }} kcal/mL</strong>{% if result.can_size_ml %}
+            (after dilution with water){% endif %}.
+        </p>
+    </div>
+
+    {# Ramp table. The row matching result.current_day is highlighted
+       with a left border so the headline and the table are visibly
+       linked, but all rows render at the same visual weight so the
+       schedule reads as a whole. Over-cap rows pick up a red percent
+       value and a ⚠ glyph, separate from the selected-row treatment. #}
+    <div style="margin-top: 1.25rem;">
+        <div class="eyebrow" style="margin: 0 0 0.5rem;">Full ramp schedule</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.92rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--line-strong); text-align: left;">
+                    <th style="padding: 0.5rem 0.5rem 0.5rem 0.75rem;">Day</th>
+                    <th style="padding: 0.5rem;">Target</th>
+                    <th style="padding: 0.5rem;">kcal/day</th>
+                    <th style="padding: 0.5rem;">mL/feed</th>
+                    <th style="padding: 0.5rem;">% of cap</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set last_idx = result.days|length - 1 %}
+                {% for d in result.days %}
+                {% set is_current = d.day == result.current_day %}
+                <tr style="border-bottom: 1px solid var(--line); {% if is_current %}background: var(--accent-soft);{% endif %}">
+                    <td style="padding: 0.5rem 0.5rem 0.5rem 0.75rem; {% if is_current %}border-left: 3px solid var(--accent); padding-left: 0.75rem; font-weight: 600;{% endif %}">
+                        Day {{ d.day }}{% if loop.index0 == last_idx %} and beyond{% endif %}
+                    </td>
+                    <td style="padding: 0.5rem;">{{ "%.0f"|format(d.fraction_of_rer * 100) }}% RER</td>
+                    <td style="padding: 0.5rem;">{{ "%.0f"|format(d.target_kcal) }}</td>
+                    <td style="padding: 0.5rem;">{{ "%.0f"|format(d.per_feeding_ml) }}</td>
+                    <td style="padding: 0.5rem; {% if d.percent_of_cap > 100 %}color: var(--danger); font-weight: 600;{% endif %}">
+                        {{ "%.0f"|format(d.percent_of_cap) }}%{% if d.percent_of_cap > 100 %} ⚠{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <dl class="result__details" style="margin-top: 1.25rem;">
+        <div class="result__detail">
+            <dt>Patient</dt>
+            <dd>
+                {{ "%.2f"|format(result.current_weight_kg) }} kg
+                <br><span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.1f"|format(result.current_weight_kg * 2.2046) }} lb)</span>
+                {% if result.ideal_weight_kg and result.ideal_weight_source != 'current weight' %}
+                <br><span style="color: var(--ink-mute); font-size: 0.85em;">RER on {{ "%.2f"|format(result.ideal_weight_kg) }} kg ideal ({{ result.ideal_weight_source }})</span>
+                {% endif %}
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>Species / tube</dt>
+            <dd>{{ result.species.value|capitalize }} · {{ "NG / NE" if result.tube_type.value == "ng" else "E-tube" }}</dd>
+        </div>
+    </dl>
+
+    {# Clinical background highlights. Three quick subsections distilled
+       from the full clinical-background article: tube selection, when
+       to start, when to discontinue. Sits inside the printable region
+       so the cage card has the guidance, not just the numbers. The
+       full article is one link away for anything beyond this.
+       Bullet-formatted (not prose) to fit a typical case on one
+       printed page; page-break-inside: avoid in print so the whole
+       block moves to page 2 cleanly if it can't fit on page 1. #}
+    <div class="tube-feeding-highlights" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow" style="margin-bottom: 0.6rem;">Clinical background — at a glance</div>
+        <div class="tube-feeding-highlights__grid">
+
+            <div>
+                <h4 class="tube-feeding-highlights__title">Tube selection</h4>
+                <ul class="tube-feeding-highlights__list">
+                    <li>NG / NE (3.5–8 Fr): liquid diets only, &lt;5 days.</li>
+                    <li>E-tube (12–14 Fr): blenderized canned OK, &gt;5 days or anesthetized for another reason.</li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="tube-feeding-highlights__title">When to start</h4>
+                <ul class="tube-feeding-highlights__list">
+                    <li>Within 24–48 hr if not eating voluntarily.</li>
+                    <li>Triggers: anorexia &gt;3 days, intake &lt;80% RER × 3 days, &gt;10% weight loss, BCS &le;3/9.</li>
+                    <li>Cats + obesity + any anorexia: start sooner (lipidosis).</li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="tube-feeding-highlights__title">When to discontinue</h4>
+                <ul class="tube-feeding-highlights__list">
+                    <li>Eating ~75% RER × 2–3 days, stable weight.</li>
+                    <li>Taper over 2–3 days, do not stop abruptly.</li>
+                    <li>No food by mouth × 3–5 days to reduce aversion (esp. cats).</li>
+                </ul>
+            </div>
+
+        </div>
+        <p class="no-print" style="margin: 0.85rem 0 0; font-size: 0.85rem; color: var(--ink-mute);">
+            Full article: <a href="/learn/tube-feeding" style="color: var(--accent);">Clinical background &rarr;</a>
+        </p>
+    </div>
+
+    {% if result.warnings %}
+    <div class="warnings"><ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {# Sources citation is useful on screen but adds clutter to the
+       printed schedule that goes on the cage card. Wrapped in
+       no-print so the print stylesheet hides it. #}
+    <div class="no-print">
+        {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    </div>
+    {% endif %}
+
+</div>

@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Energy requirements | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">RER and target intake</div>
+            <p style="margin: 0;">
+                Calculates resting energy requirement using the allometric formula
+                (<code>RER = 70 × BW<sup>0.75</sup></code>) and a target daily caloric
+                intake based on purpose. Maintenance for routine feeding plans;
+                weight loss for obesity management.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/energy-requirements">Clinical background</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/energy/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog" {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat" {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Purpose</label>
+                    <div class="segmented">
+                        <input type="radio" name="purpose" value="maintenance" id="pp-maint"
+                               {% if inputs.purpose.value == 'maintenance' %}checked{% endif %}>
+                        <label for="pp-maint">Maintenance</label>
+                        <input type="radio" name="purpose" value="weight_loss" id="pp-loss"
+                               {% if inputs.purpose.value == 'weight_loss' %}checked{% endif %}>
+                        <label for="pp-loss">Weight loss</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="current_weight_value">Current weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="current_weight_value"
+                               name="current_weight_value" value="{{ current_weight_value if current_weight_value is defined else inputs.current_weight_value }}" required>
+                        <div class="segmented">
+                            <input type="radio" name="current_weight_unit" value="lb" id="cu-lb" {% if inputs.current_weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="cu-lb">lb</label>
+                            <input type="radio" name="current_weight_unit" value="kg" id="cu-kg" {% if inputs.current_weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="cu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                {# BCS-based IBW estimator + optional explicit IBW override.
+                   When the user picks weight_loss without entering IBW, the
+                   server estimates IBW from BCS at ~10% per point above 5/9. #}
+                <div class="field" id="field-bcs">
+                    <label for="bcs">BCS (1–9 scale)</label>
+                    <input type="number" min="1" max="9" step="1" id="bcs" name="bcs"
+                           value="{{ inputs.bcs or '' }}" placeholder="e.g. 7">
+                    <div class="help">
+                        Body condition score on the Laflamme 9-point scale. 5/9 is
+                        ideal. For weight loss, the calculator estimates ideal weight
+                        from BCS automatically (each unit above 5 ≈ 10% over ideal).
+                    </div>
+                </div>
+
+                <div class="field" id="field-ibw">
+                    <label for="ideal_weight_value">Ideal body weight (override)</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="ideal_weight_value"
+                               name="ideal_weight_value" value="{{ inputs.ideal_weight_value or '' }}">
+                        <div class="segmented">
+                            <input type="radio" name="ideal_weight_unit" value="lb" id="iu-lb" {% if inputs.ideal_weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="iu-lb">lb</label>
+                            <input type="radio" name="ideal_weight_unit" value="kg" id="iu-kg" {% if inputs.ideal_weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="iu-kg">kg</label>
+                        </div>
+                    </div>
+                    <div class="help">
+                        Optional. If set, overrides the BCS-based estimate. Use this
+                        when you have the patient's documented previous lean weight.
+                    </div>
+                </div>
+
+                {# Maintenance factor, only for maintenance #}
+                <div class="field" id="field-maint">
+                    <label for="maintenance_factor_key">Activity / body condition</label>
+                    <select id="maintenance_factor_key" name="maintenance_factor_key">
+                        <optgroup label="Dog" id="opt-dog">
+                            {% for f in dog_factors %}
+                            <option value="{{ f.key }}" data-species="dog"
+                                    {% if inputs.species.value == 'dog' and inputs.maintenance_factor_key == f.key %}selected{% endif %}>
+                                {{ f.label }} (×{{ f.multiplier }})
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Cat" id="opt-cat">
+                            {% for f in cat_factors %}
+                            <option value="{{ f.key }}" data-species="cat"
+                                    {% if inputs.species.value == 'cat' and inputs.maintenance_factor_key == f.key %}selected{% endif %}>
+                                {{ f.label }}
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+
+                {# Food details (optional), when filled in, calculator returns
+                   daily/per-meal volume targets in cups or cans. #}
+                <div style="border-top: 1px dashed var(--line-strong); padding-top: 1.25rem; margin-top: 1.25rem;">
+                    <div class="eyebrow">Food (optional)</div>
+                    <p style="color: var(--ink-mute); font-size: 0.85rem; margin: 0.4rem 0 0.8rem;">
+                        Fill these in to convert kcal target into cups or cans per day.
+                    </p>
+                </div>
+
+                <div class="field">
+                    <label>Food form</label>
+                    <div class="segmented">
+                        <input type="radio" name="food_form" value="dry" id="ff-dry"
+                               {% if not inputs.food_form or inputs.food_form.value == 'dry' %}checked{% endif %}>
+                        <label for="ff-dry">Dry</label>
+                        <input type="radio" name="food_form" value="canned" id="ff-canned"
+                               {% if inputs.food_form and inputs.food_form.value == 'canned' %}checked{% endif %}>
+                        <label for="ff-canned">Canned</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="caloric_density">Caloric content</label>
+                    <div class="field-group">
+                        <input type="number" step="1" min="1" id="caloric_density"
+                               name="caloric_density" value="{{ inputs.caloric_density or '' }}"
+                               placeholder="e.g. 380">
+                        <div class="segmented">
+                            <input type="radio" name="caloric_density_unit" value="kcal_per_cup" id="cdu-cup"
+                                   {% if not inputs.caloric_density_unit or inputs.caloric_density_unit.value == 'kcal_per_cup' %}checked{% endif %}>
+                            <label for="cdu-cup">kcal/cup</label>
+                            <input type="radio" name="caloric_density_unit" value="kcal_per_can" id="cdu-can"
+                                   {% if inputs.caloric_density_unit and inputs.caloric_density_unit.value == 'kcal_per_can' %}checked{% endif %}>
+                            <label for="cdu-can">kcal/can</label>
+                        </div>
+                    </div>
+                    <div class="help">
+                        Read off the food bag or can label. Most pet food labels
+                        publish kcal/cup for dry and kcal/can for canned.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="meals_per_day">Meals per day</label>
+                    <input type="number" step="1" min="1" max="6" id="meals_per_day"
+                           name="meals_per_day" value="{{ inputs.meals_per_day }}">
+                    <div class="help">Splits the daily target into per-meal portions. Default 2.</div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/energy_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Formulas used</h2>
+
+            <h3>Resting Energy Requirement (RER)</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Allometric formula, valid for all body weights:
+            </p>
+            <div class="formula-display">
+                $$\text{RER} = 70 \times \text{BW}^{0.75}\,\text{(kcal/day)}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7; font-size: 0.9rem;">
+                A linear approximation (<code>70 × BW + 30</code>) exists for BW
+                2–25 kg but overestimates outside that range. InfusionFox uses the
+                allometric form throughout.
+            </p>
+
+            <h3>Maintenance, dogs</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                MER = RER × activity factor. Adult dog factors per Ettinger Ch. 147 / NRC 2006:
+            </p>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                {% for f in dog_factors %}
+                <li><strong>{{ f.label }}:</strong> ×{{ f.multiplier }}, {{ f.description }}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Maintenance, cats</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Cats use NRC 2006 equations directly, keyed to body condition score
+                rather than activity level. NRC notes (p. 93) that activity factors
+                have less obvious effects on cats than on dogs.
+            </p>
+            <div class="formula-display">
+                $$\text{Lean cat (BCS} \le 5\text{): MER} = 100 \times \text{BW}^{0.67}\,\text{kcal/day}$$
+                $$\text{Overweight cat (BCS} > 5\text{): MER} = 130 \times \text{BW}^{0.4}\,\text{kcal/day}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7; font-size: 0.9rem;">
+                The lower exponent for overweight cats reflects that adipose tissue is
+                less metabolically active than lean tissue, per-kg requirements drop
+                with increasing body fat.
+            </p>
+
+            <h3>Weight loss</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Calculated against <strong>ideal body weight</strong>, not current weight:
+            </p>
+            <div class="formula-display">
+                $$\text{Dog target} = 63 \times \text{IBW}^{0.75} \quad (\text{minimum } 42.6 \times \text{IBW}^{0.75})$$
+                $$\text{Cat target} = 52 \times \text{IBW}^{0.711} \quad (\text{minimum } 42.2 \times \text{IBW}^{0.711})$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Reassess every 2–4 weeks. Adjust by 10–20% based on actual loss vs
+                target rate (1–2%/week dogs, 0.5–1%/week cats).
+            </p>
+
+            <h3 style="margin-top: 1.5rem;">Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result and result.rer_kcal_per_day %}
+                $$\text{RER} = 70 \times {{ "%.2f"|format(result.current_weight_kg) }}^{0.75} = {{ "%.0f"|format(result.rer_kcal_per_day) }}\,\text{kcal/day}$$
+                {% if result.target_kcal_per_day and result.target_kcal_per_day != result.rer_kcal_per_day %}
+                $$\text{Target} = {{ "%.0f"|format(result.target_kcal_per_day) }}\,\text{kcal/day}$$
+                {% endif %}
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            {% if result and result.formula_human %}
+            <p style="color: var(--ink-soft); line-height: 1.6; font-size: 0.9rem; margin-top: 0.5rem;">
+                <em>{{ result.formula_human }}</em>
+            </p>
+            {% endif %}
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Ettinger SJ, Feldman EC, Côté E, eds. <em>Textbook of Veterinary
+                Internal Medicine</em>. 9th ed. St. Louis, MO: Elsevier; 2024.
+                Chapter 147 (Nutrition for Healthy Adult Dogs, Box 147.1) for dog
+                maintenance. Chapter 150 (Obesity) for the IBW-based weight-loss
+                formulas (dog and cat).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    National Research Council, Committee on Animal Nutrition.
+                <em>Nutrient Requirements of Dogs and Cats</em>. Washington, DC:
+                National Academies Press; 2006. Energy chapter (Ch. 3), p. 95,
+                adult cat MER equations (lean and overweight).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Laflamme DP. Development and validation of a body condition
+                score system for cats. <em>Feline Pract</em> 1997;25(5-6):13–18.
+                Source of the 9-point BCS scale used to estimate ideal body weight
+                from current weight and BCS.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+
+<script>
+(function() {
+    // Show/hide fields based on purpose; filter activity options based on species.
+    var purposeRadios = document.querySelectorAll('input[name="purpose"]');
+    var speciesRadios = document.querySelectorAll('input[name="species"]');
+    var fieldIBW   = document.getElementById('field-ibw');
+    var fieldMaint = document.getElementById('field-maint');
+    var optDog = document.getElementById('opt-dog');
+    var optCat = document.getElementById('opt-cat');
+    var maintSelect = document.getElementById('maintenance_factor_key');
+
+    function currentPurpose() {
+        for (var r of purposeRadios) if (r.checked) return r.value;
+        return 'maintenance';
+    }
+    function currentSpecies() {
+        for (var r of speciesRadios) if (r.checked) return r.value;
+        return 'dog';
+    }
+    function applyPurposeVisibility() {
+        var p = currentPurpose();
+        fieldIBW.style.display    = (p === 'weight_loss')  ? '' : 'none';
+        fieldMaint.style.display  = (p === 'maintenance')  ? '' : 'none';
+    }
+    function applySpeciesFiltering() {
+        var s = currentSpecies();
+        if (optDog) optDog.style.display = (s === 'dog') ? '' : 'none';
+        if (optCat) optCat.style.display = (s === 'cat') ? '' : 'none';
+        // If currently selected option doesn't match species, switch to first matching
+        var sel = maintSelect.options[maintSelect.selectedIndex];
+        if (sel && sel.dataset.species !== s) {
+            for (var opt of maintSelect.options) {
+                if (opt.dataset.species === s) {
+                    maintSelect.value = opt.value;
+                    maintSelect.dispatchEvent(new Event('change', {bubbles: true}));
+                    break;
+                }
+            }
+        }
+    }
+    purposeRadios.forEach(function(r) { r.addEventListener('change', applyPurposeVisibility); });
+    speciesRadios.forEach(function(r) { r.addEventListener('change', applySpeciesFiltering); });
+    applyPurposeVisibility();
+    applySpeciesFiltering();
+})();
+</script>
+{% endblock %}

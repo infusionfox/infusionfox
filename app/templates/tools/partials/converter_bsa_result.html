@@ -1,0 +1,15 @@
+<div class="result" id="bsa-result">
+    <div class="result__headline">
+        <div class="eyebrow">Body surface area</div>
+        <div class="result__primary">
+            {{ "%.3f"|format(result.bsa_m2) }}<span class="unit">m²</span>
+        </div>
+        <div class="result__secondary">
+            for a {{ "%g"|format(result.weight_kg) }} kg {{ result.species }}
+        </div>
+    </div>
+
+    <p style="margin-top: 1rem; color: var(--ink-mute); font-size: 0.85rem; line-height: 1.55;">
+        BSA-based dosing has fallen out of favor for some agents in cats and small dogs (under 10 kg) because drug clearance does not scale linearly with surface area in those weight ranges. Many current protocols use mg/kg or per-cat fixed dosing for small patients. Verify the dosing convention specified for the agent you are using before applying this BSA value.
+    </p>
+</div>

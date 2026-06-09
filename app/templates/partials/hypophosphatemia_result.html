@@ -1,0 +1,109 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    {% if result.not_indicated %}
+    <div class="result__headline">
+        <div class="eyebrow">No supplementation indicated</div>
+        <div class="result__primary" style="font-size: 1.6rem;">
+            P = {{ "%g"|format(result.serum_p_mg_per_dl) }} mg/dL
+        </div>
+        <div class="result__secondary" style="margin-top: 0.4rem;">
+            {{ result.matched_tier.label }} &mdash; {{ result.matched_tier.severity }}
+        </div>
+    </div>
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">KPhos pump rate</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.kphos_pump_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            = {{ "%g"|format(result.target_rate_mmol_per_kg_per_hr) }} mmol/kg/hr
+            × {{ "%.2f"|format(result.weight_kg) }} kg ÷ 3 mmol P/mL stock
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--ink-soft);">
+            <strong>{{ result.matched_tier.label }}</strong> &mdash; {{ result.matched_tier.severity }}
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Delivered</div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="color: var(--ink-soft);">Phosphorus (P):</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.p_delivered_mmol_per_hr) }} mmol/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Potassium (K) from KPhos:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.k_delivered_meq_per_hr) }} mEq/hr
+                    (= {{ "%g"|format(result.k_delivered_meq_per_kg_per_hr) }} mEq/kg/hr)
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm);
+        border-left: 3px solid {% if result.exceeds_k_ceiling %}var(--danger){% else %}var(--signal){% endif %};
+        border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">
+            Total K headroom (vs 0.5 mEq/kg/hr ceiling)
+        </div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="color: var(--ink-soft);">K from KPhos:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.k_delivered_meq_per_kg_per_hr) }} mEq/kg/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Concurrent KCl (entered):</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.concurrent_kcl_meq_per_kg_per_hr) }} mEq/kg/hr
+                </td>
+            </tr>
+            <tr style="border-top: 1px solid var(--rule);">
+                <td style="color: var(--ink-soft); padding-top: 0.3rem;">Total K delivered:</td>
+                <td style="text-align: right; font-weight: 700; padding-top: 0.3rem;
+                    {% if result.exceeds_k_ceiling %}color: var(--danger);{% endif %}">
+                    {{ "%g"|format(result.total_k_meq_per_kg_per_hr) }} mEq/kg/hr
+                    {% if result.exceeds_k_ceiling %}⚠{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Headroom for additional KCl:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.max_kcl_remaining_meq_per_kg_per_hr) }} mEq/kg/hr
+                </td>
+            </tr>
+        </table>
+        <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--ink-soft);">
+            If the patient is on a concurrent KCl CRI, ensure the KCl rate
+            doesn't exceed the headroom shown. The 0.5 mEq/kg/hr ceiling
+            applies to the SUM of K from all sources.
+        </p>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+    {% if result.valid %}
+    <template id="worked-example-source">{% if not result.not_indicated and result.kphos_pump_rate_ml_per_hr is not none %}$$\text{mL/hr} = \frac{ {{ result.target_rate_mmol_per_kg_per_hr }}_{\text{mmol/kg/hr}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{3} = {{ "%.3f"|format(result.kphos_pump_rate_ml_per_hr) }}\,\text{mL/hr} \quad K = {{ "%.3f"|format(result.k_delivered_meq_per_kg_per_hr) }}\,\text{mEq/kg/hr}$${% endif %}</template>
+    {% endif %}
+</div>

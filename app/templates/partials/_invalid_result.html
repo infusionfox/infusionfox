@@ -1,0 +1,33 @@
+{#
+    Invalid-input result panel.
+
+    Rendered when result.valid is False, i.e., when one or more required
+    inputs (weight, dose, concentration, etc.) are missing or non-positive.
+    Displays the validation errors prominently and DOES NOT show any
+    numeric output. Showing computed numbers alongside an "input must be
+    > 0" message is a clinical-safety bug; this partial is the gate that
+    prevents it.
+
+    Each result template wraps its numeric body in
+        {% if not result.valid %}
+            {% include "partials/_invalid_result.html" %}
+        {% else %}
+            ...numeric output...
+        {% endif %}
+    Validation errors live in result.warnings (so existing tests that
+    inspect that field still work); this partial pulls them from there.
+#}
+<div class="warnings danger" role="alert" style="margin-top: 0; padding: 1rem 1.25rem;">
+    <div class="eyebrow" style="margin: 0 0 0.5rem; color: var(--danger);">
+        Cannot compute &mdash; please correct the inputs
+    </div>
+    <ul style="margin: 0; padding-left: 1.25rem;">
+        {% for w in result.warnings %}
+            <li>{{ w }}</li>
+        {% endfor %}
+    </ul>
+    <p style="margin: 0.75rem 0 0; font-size: 0.9rem; color: var(--ink-soft);">
+        No dose or rate is shown because the inputs above are not usable.
+        Adjust the inputs and the calculator will produce a result.
+    </p>
+</div>

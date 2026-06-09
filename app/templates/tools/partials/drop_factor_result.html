@@ -1,0 +1,36 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">Drops per minute</div>
+        <div class="result__primary">
+            {{ result.drops_per_minute_whole }}<span class="unit">drops/min</span>
+        </div>
+        <div class="result__secondary">
+            {{ result.ml_per_hour }} mL/hr · {{ result.drop_factor }} drops/mL
+        </div>
+    </div>
+
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Precise</dt>
+            <dd>{{ "%.2f"|format(result.drops_per_minute) }} drops/min</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Seconds per drop</dt>
+            <dd>{{ "%.2f"|format(result.seconds_per_drop) }} s</dd>
+        </div>
+    </dl>
+
+    <div class="formula-box">
+        <div class="eyebrow">Formula</div>
+        $$\text{drops/min} = \frac{ {{ result.ml_per_hour }} \times {{ result.drop_factor }} }{60} = {{ "%.2f"|format(result.drops_per_minute) }}$$
+        <p class="formula-caption">mL/hr × drops/mL ÷ 60 min/hr</p>
+    </div>
+
+    {% if result.notes %}
+    <div class="warnings"><ul>{% for n in result.notes %}<li>{{ n }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    {% endif %}
+</div>

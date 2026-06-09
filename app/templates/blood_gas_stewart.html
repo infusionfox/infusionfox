@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Blood gas · Stewart approach | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Acid-base · Strong-ion view</div>
+                <h1>Blood gas · Stewart approach</h1>
+                <p style="color: var(--ink-soft); max-width: 64ch; margin: 0.25rem 0 0;">
+                    Decomposes standardized base excess into its six physiologic
+                    contributors per the simplified Fencl-Stewart method
+                    (Hopper &amp; Haskins 2008). Identifies the share of base
+                    deficit attributable to hypoalbuminemia and quantifies
+                    unmeasured anion burden: the headline correction the
+                    conventional anion gap misses in sick patients.
+                </p>
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 1.5rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/blood-gas">Henderson view</a>
+            <a href="/learn/blood-gas-stewart">Clinical background</a>
+        </nav>
+
+        <div class="calc-grid" style="margin-top: 1.5rem;">
+            <form
+                hx-post="/blood-gas-stewart/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-d" {% if species_choice == "dog" %}checked{% endif %}>
+                        <label for="sp-d">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-c" {% if species_choice == "cat" %}checked{% endif %}>
+                        <label for="sp-c">Cat</label>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Blood gas</h3>
+
+                <div class="field">
+                    <label for="base_excess">Base excess (mEq/L)</label>
+                    <input type="number" step="any" id="base_excess" name="base_excess" value="{% if inputs.base_excess %}{{ inputs.base_excess }}{% endif %}">
+                    <small style="color: var(--ink-mute);">From analyzer. If 0, estimated from HCO3.</small>
+                </div>
+
+                <div class="field">
+                    <label for="pH">pH</label>
+                    <input type="number" step="any" min="6.5" max="8.0" id="pH" name="pH" value="{% if inputs.pH %}{{ inputs.pH }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="pco2_mm_hg">PCO<sub>2</sub> (mm Hg)</label>
+                    <input type="number" step="any" min="0" id="pco2_mm_hg" name="pco2_mm_hg" value="{% if inputs.pco2_mm_hg %}{{ inputs.pco2_mm_hg }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="hco3_meq_per_l">HCO<sub>3</sub><sup>−</sup> (mEq/L)</label>
+                    <input type="number" step="any" min="0" id="hco3_meq_per_l" name="hco3_meq_per_l" value="{% if inputs.hco3_meq_per_l %}{{ inputs.hco3_meq_per_l }}{% endif %}">
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Electrolytes</h3>
+                <p style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0;">
+                    Leave at 0 to skip that component.
+                </p>
+
+                <div class="field">
+                    <label for="na_meq_per_l">Na<sup>+</sup> (mEq/L)</label>
+                    <input type="number" step="any" min="0" id="na_meq_per_l" name="na_meq_per_l" value="{% if inputs.na_meq_per_l %}{{ inputs.na_meq_per_l }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="k_meq_per_l">K<sup>+</sup> (mEq/L) <span style="color: var(--ink-mute); font-weight: normal;">— optional</span></label>
+                    <input type="number" step="any" min="0" id="k_meq_per_l" name="k_meq_per_l" value="{% if inputs.k_meq_per_l %}{{ inputs.k_meq_per_l }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="cl_meq_per_l">Cl<sup>−</sup> (mEq/L)</label>
+                    <input type="number" step="any" min="0" id="cl_meq_per_l" name="cl_meq_per_l" value="{% if inputs.cl_meq_per_l %}{{ inputs.cl_meq_per_l }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="lactate_mmol_per_l">Lactate (mmol/L)</label>
+                    <input type="number" step="any" min="0" id="lactate_mmol_per_l" name="lactate_mmol_per_l" value="{% if inputs.lactate_mmol_per_l %}{{ inputs.lactate_mmol_per_l }}{% endif %}">
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Weak acids (A<sub>tot</sub>)</h3>
+
+                <div class="field">
+                    <label for="albumin_g_per_dl">Albumin (g/dL)</label>
+                    <input type="number" step="0.1" min="0" id="albumin_g_per_dl" name="albumin_g_per_dl" value="{% if inputs.albumin_g_per_dl %}{{ inputs.albumin_g_per_dl }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="phosphate_mg_per_dl">Phosphate (mg/dL) <span style="color: var(--ink-mute); font-weight: normal;">— optional</span></label>
+                    <input type="number" step="0.1" min="0" id="phosphate_mg_per_dl" name="phosphate_mg_per_dl" value="{% if inputs.phosphate_mg_per_dl %}{{ inputs.phosphate_mg_per_dl }}{% endif %}">
+                    <small style="color: var(--ink-mute);">If unmeasured, assumed species normal (~4.5 mg/dL).</small>
+                </div>
+            </form>
+
+            {% if result %}
+                {% include "partials/blood_gas_stewart_result.html" %}
+            {% else %}
+                {% with placeholder_message="Enter pH, PCO₂, HCO₃⁻, Na, Cl, and albumin to compute the Stewart decomposition." %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,168 @@
+{# Combined-bag recipe panel — single card summarising the bag prep.
+   The clinician's bedside workflow: read the headline pump rate,
+   draw out the carrier adjustment volume, add each drug's stock
+   volume, run the bag at the headline rate. Per-drug loading doses
+   and warnings are tucked into expanders so the recipe stays the
+   primary surface. #}
+
+{% set cb = result.combined_bag %}
+
+<div id="result-panel">
+    {# Print-only header — see analgesia_result.html for rationale. #}
+    <div class="print-only print-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 0.3rem; margin-bottom: 0.5rem;">
+            <div>
+                <div style="font-weight: 700; font-size: 1rem; line-height: 1.1;">Analgesia CRI · combined bag</div>
+                <div style="font-size: 0.8rem; color: #444;">{{ "%.2f"|format(result.weight_kg) }} kg · {{ result.species.value }}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;">
+                <div style="display: flex; align-items: center; gap: 0.3rem;">
+                    <img src="/static/brand/logos/mark.png" alt="" aria-hidden="true" style="width: 16px; height: 16px;">
+                    <span style="font-size: 0.7rem; color: #444;">infusionfox.com</span>
+                </div>
+                <span id="print-timestamp" style="font-size: 0.7rem; color: #444;"></span>
+            </div>
+        </div>
+    </div>
+
+    {% if result.global_warnings %}
+    <div class="warnings" style="margin-bottom: 1rem;">
+        <ul style="margin: 0; padding-left: 1.25rem;">
+            {% for w in result.global_warnings %}
+            <li>{{ w }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if not cb or not cb.valid %}
+    <div class="placeholder-panel" style="padding: 2rem; text-align: center; color: var(--ink-mute);">
+        <p style="margin: 0;">Enter a patient weight, bag volume, and pump rate to compute the bag recipe.</p>
+    </div>
+    {% else %}
+    <div class="analgesia-combined-bag-card" style="padding: 1.25rem; border: 1px solid var(--rule); border-radius: var(--radius); margin-bottom: 1rem; background: var(--bg-soft);">
+
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;">
+            <div>
+                <div class="eyebrow" style="margin-bottom: 0.125rem;">Combined-bag recipe</div>
+                <h2 style="margin: 0; font-size: 1.25rem;">{{ "%.0f"|format(cb.bag_volume_ml) }} mL bag</h2>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.875rem; font-weight: 600; line-height: 1.1;">
+                    {{ "%.2f"|format(cb.pump_rate_ml_per_hr) }}<span style="font-size: 0.85rem; font-weight: 400; color: var(--ink-soft); margin-left: 0.25rem;">mL/hr</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--ink-mute); margin-top: 0.1rem;">
+                    {{ cb.pump_rate_ml_per_kg_per_hr }} mL/kg/hr · {{ "%.1f"|format(cb.hours_per_bag) }} hr per bag
+                </div>
+            </div>
+        </div>
+
+        {# Bag-prep table — the actual bedside recipe. Each row is one
+           drug; the last row(s) show the carrier adjustment so the
+           clinician knows to remove that volume of LRS from the bag
+           first. #}
+        <table style="width: 100%; margin-top: 0.75rem; border-collapse: collapse; font-size: 0.92rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--rule);">
+                    <th style="text-align: left; padding: 0.35rem 0.5rem;">Drug</th>
+                    <th style="text-align: right; padding: 0.35rem 0.5rem;">Dose</th>
+                    <th style="text-align: right; padding: 0.35rem 0.5rem;">Add to bag</th>
+                    <th style="text-align: right; padding: 0.35rem 0.5rem;">mL of stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in cb.drug_recipes %}
+                <tr style="border-bottom: 1px solid var(--rule);">
+                    <td style="padding: 0.4rem 0.5rem;">
+                        <strong>{{ rec.spec.display_name }}</strong>
+                        <span style="font-size: 0.78rem; color: var(--ink-mute); display: block;">{{ rec.spec.role }}</span>
+                    </td>
+                    <td style="text-align: right; padding: 0.4rem 0.5rem; font-variant-numeric: tabular-nums;">
+                        {{ rec.dose }} {{ rec.spec.dose_unit.value }}
+                    </td>
+                    <td style="text-align: right; padding: 0.4rem 0.5rem; font-variant-numeric: tabular-nums;">
+                        {# Display total drug mass in mg if the spec is
+                           mg-based or if the value > 1000 µg, else µg. #}
+                        {% set total_ug = rec.total_for_bag_ug %}
+                        {% if rec.spec.dose_unit.value in ('mg/kg/hr', 'mg/kg/min') or total_ug >= 1000 %}
+                            {{ "%.1f"|format(total_ug / 1000) }} mg
+                        {% else %}
+                            {{ "%.0f"|format(total_ug) }} µg
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right; padding: 0.4rem 0.5rem; font-variant-numeric: tabular-nums; font-weight: 600;">
+                        {{ "%.2f"|format(rec.ml_of_stock_to_add) }} mL
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr style="background: var(--paper-warm);">
+                    <td style="padding: 0.4rem 0.5rem; font-weight: 600;">Total drug stock</td>
+                    <td colspan="2" style="text-align: right; padding: 0.4rem 0.5rem; color: var(--ink-mute); font-size: 0.85rem;">
+                        Remove this volume of LRS from the bag first
+                    </td>
+                    <td style="text-align: right; padding: 0.4rem 0.5rem; font-variant-numeric: tabular-nums; font-weight: 700;">
+                        {{ "%.2f"|format(cb.total_stock_volume_ml) }} mL
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% if cb.adjusted_carrier_ml < cb.bag_volume_ml * 0.5 %}
+        <div class="warnings danger" style="margin-top: 0.75rem; padding: 0.625rem 0.75rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem;">
+            ⚠ Drug stocks fill more than half the bag ({{ "%.0f"|format(cb.total_stock_volume_ml) }} mL of {{ "%.0f"|format(cb.bag_volume_ml) }} mL). Consider a larger bag, higher pump rate, or lower doses to keep the carrier volume sensible.
+        </div>
+        {% endif %}
+
+        {# Per-drug detail expanders — loading doses and dose-range
+           warnings, kept out of the headline recipe but accessible
+           per drug. Each drug expander mirrors the per-drug-mode
+           card's loading-dose + warnings sections. #}
+        {% for rec in cb.drug_recipes %}
+            {% if rec.loading_dose_results or rec.warnings %}
+            <details style="margin-top: 0.5rem;">
+                <summary style="font-size: 0.85rem; color: var(--ink-mute); cursor: pointer;">{{ rec.spec.display_name }} details</summary>
+
+                {% if rec.loading_dose_results %}
+                <div style="margin-top: 0.5rem;">
+                    <div class="eyebrow" style="margin-bottom: 0.35rem;">Loading dose</div>
+                    {% for ld in rec.loading_dose_results %}
+                    <div style="padding: 0.5rem 0.625rem; background: var(--paper-warm); border-radius: var(--radius); margin-bottom: 0.4rem; font-size: 0.85rem;">
+                        <div style="font-weight: 600;">{{ ld.label }}</div>
+                        {% if ld.description %}
+                        <div style="color: var(--ink-soft); margin: 0.15rem 0 0.3rem;">{{ ld.description }}</div>
+                        {% endif %}
+                        {% if ld.is_single_value %}
+                        <strong>{{ ld.min_per_kg|int if ld.min_per_kg == ld.min_per_kg|int else ld.min_per_kg }} {{ ld.dose_unit_label }}/kg</strong>
+                        = {{ "%g"|format(ld.min_total) }} {{ ld.dose_unit_label }} = {{ "%.2f"|format(ld.min_ml_stock) }} mL of stock
+                        {% else %}
+                        <strong>{{ ld.min_per_kg|int if ld.min_per_kg == ld.min_per_kg|int else ld.min_per_kg }}–{{ ld.max_per_kg|int if ld.max_per_kg == ld.max_per_kg|int else ld.max_per_kg }} {{ ld.dose_unit_label }}/kg</strong>
+                        = {{ "%g"|format(ld.min_total) }}–{{ "%g"|format(ld.max_total) }} {{ ld.dose_unit_label }} = {{ "%.2f"|format(ld.min_ml_stock) }}–{{ "%.2f"|format(ld.max_ml_stock) }} mL of stock
+                        {% endif %}
+                        {% if ld.note %}
+                        <div style="font-size: 0.78rem; color: var(--ink-mute); margin-top: 0.25rem; font-style: italic;">{{ ld.note }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if rec.warnings %}
+                {% set danger_ns = namespace(danger=false) %}
+                {% for w in rec.warnings %}
+                    {% if 'CAUTION' in w or 'exceeds' in w or 'below' in w %}{% set danger_ns.danger = true %}{% endif %}
+                {% endfor %}
+                <div class="warnings {% if danger_ns.danger %}danger{% endif %}" style="margin-top: 0.5rem; padding: 0.5rem 0.625rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.82rem;">
+                    <ul style="margin: 0; padding-left: 1.25rem;">
+                        {% for w in rec.warnings %}
+                        <li>{{ w }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </details>
+            {% endif %}
+        {% endfor %}
+
+    </div>
+    {% endif %}
+</div>

@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}LDDST interpretation | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Pre-test condition.</strong>
+                    The LDDST is a <em>confirmatory</em> test, not a screening test.
+                    Use only when history, exam, CBC, chemistry, electrolytes, and UA
+                    are already consistent with HAC. A positive LDDST in a dog with
+                    low pre-test probability is more likely a false positive than true HAC.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">About this calculator</div>
+            <p style="margin: 0;">
+                Two-stage interpretation per the 2013 ACVIM consensus statement:
+                Stage 1 determines whether HAC is present (using your lab's 8-hour
+                cortisol cut-off); Stage 2 evaluates whether the pattern is
+                consistent with PDH within HAC cases. InfusionFox identifies patterns;
+                clinical decisions remain with the practitioner.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/lddst">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/lddst/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Cortisol units</label>
+                    <div class="segmented">
+                        <input type="radio" name="unit" value="ug_dl" id="unit-ugdl"
+                               {% if inputs.unit.value == 'ug_dl' %}checked{% endif %}>
+                        <label for="unit-ugdl">µg/dL</label>
+                        <input type="radio" name="unit" value="nmol_l" id="unit-nmoll"
+                               {% if inputs.unit.value == 'nmol_l' %}checked{% endif %}>
+                        <label for="unit-nmoll">nmol/L</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="baseline_cortisol">Baseline cortisol</label>
+                    <input type="number" step="0.01" min="0.01" id="baseline_cortisol"
+                           name="baseline_cortisol" value="{{ inputs.baseline_cortisol }}" required autofocus>
+                    <div class="help">Drawn before dexamethasone administration.</div>
+                </div>
+
+                <div class="field">
+                    <label for="cortisol_4h">4-hour cortisol</label>
+                    <input type="number" step="0.01" min="0" id="cortisol_4h"
+                           name="cortisol_4h" value="{{ inputs.cortisol_4h }}" required>
+                </div>
+
+                <div class="field">
+                    <label for="cortisol_8h">8-hour cortisol</label>
+                    <input type="number" step="0.01" min="0" id="cortisol_8h"
+                           name="cortisol_8h" value="{{ inputs.cortisol_8h }}" required>
+                </div>
+
+                <div class="field" style="border-top: 1px dashed var(--line-strong); padding-top: 1.25rem; margin-top: 1.25rem;">
+                    <label for="cutoff_8h">8-hour cut-off (lab-specific)</label>
+                    <input type="number" step="0.01" min="0.01" id="cutoff_8h"
+                           name="cutoff_8h" value="{{ inputs.cutoff_8h }}" required>
+                    <div class="help" style="color: var(--signal); font-weight: 500;">
+                        Default <span class="cutoff-default-ug">{{ "%.2f"|format(DEFAULT_CUTOFF) }} µg/dL</span><span class="cutoff-default-nmol" style="display:none;">{{ "%.1f"|format(DEFAULT_CUTOFF * 27.59) }} nmol/L</span>.
+                        The 2013 ACVIM consensus statement does not specify a single value;
+                        cortisol assays differ.
+                        <strong>Verify against your lab's reference range and override above.</strong>
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% include "partials/lddst_result.html" %}
+            </div>
+        </div>
+
+<script>
+(function() {
+    // When the user flips between µg/dL and nmol/L, convert all four cortisol
+    // fields (baseline, 4hr, 8hr, cut-off) so the user sees their numbers in
+    // the chosen unit instead of having to do mental math.
+    const UG_TO_NMOL = 27.59;
+    const NMOL_TO_UG = 1 / UG_TO_NMOL;
+    const FIELDS = ['baseline_cortisol', 'cortisol_4h', 'cortisol_8h', 'cutoff_8h'];
+    const ugRadio = document.getElementById('unit-ugdl');
+    const nmolRadio = document.getElementById('unit-nmoll');
+    const ugDefault = document.querySelector('.cutoff-default-ug');
+    const nmolDefault = document.querySelector('.cutoff-default-nmol');
+    let currentUnit = ugRadio && ugRadio.checked ? 'ug_dl' : 'nmol_l';
+
+    function convert(factor) {
+        FIELDS.forEach(name => {
+            const el = document.getElementById(name);
+            if (!el) return;
+            const v = parseFloat(el.value);
+            if (Number.isFinite(v) && v > 0) {
+                // Round to 2 decimals for µg/dL, 1 decimal for nmol/L
+                const next = v * factor;
+                el.value = factor < 1 ? next.toFixed(2) : next.toFixed(1);
+            }
+        });
+    }
+    function onUnitChange() {
+        const newUnit = ugRadio.checked ? 'ug_dl' : 'nmol_l';
+        if (newUnit === currentUnit) return;
+        if (currentUnit === 'ug_dl' && newUnit === 'nmol_l') {
+            convert(UG_TO_NMOL);
+            if (ugDefault) ugDefault.style.display = 'none';
+            if (nmolDefault) nmolDefault.style.display = '';
+        } else {
+            convert(NMOL_TO_UG);
+            if (ugDefault) ugDefault.style.display = '';
+            if (nmolDefault) nmolDefault.style.display = 'none';
+        }
+        currentUnit = newUnit;
+    }
+    if (ugRadio) ugRadio.addEventListener('change', onUnitChange);
+    if (nmolRadio) nmolRadio.addEventListener('change', onUnitChange);
+})();
+</script>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>The suppression thresholds</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Stage 1. HAC present if the 8-hour cortisol exceeds the lab cut-off:
+            </p>
+            <div class="formula-display">
+                $$\text{HAC present} \iff \text{cortisol}_{8\text{h}} > \text{cut-off}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Stage 2. PDH supported if <em>any</em> of three criteria are met (Feldman 1996, cited by the 2013 ACVIM consensus statement):
+            </p>
+            <div class="formula-display">
+                $$\text{PDH}_1: \quad \text{cortisol}_{4\text{h}} < \text{cut-off}$$
+            </div>
+            <div class="formula-display">
+                $$\text{PDH}_2: \quad \text{cortisol}_{4\text{h}} < 0.50 \times \text{baseline}$$
+            </div>
+            <div class="formula-display">
+                $$\text{PDH}_3: \quad \text{cortisol}_{8\text{h}} < 0.50 \times \text{baseline}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                $$50\%\;\text{of baseline} = 0.50 \times {{ "%.2f"|format(result.baseline) }} = {{ "%.2f"|format(result.baseline * 0.50) }}\;{% if result.unit.value == 'ug_dl' %}\mu g/dL{% else %}\text{nmol/L}{% endif %}$$
+            </div>
+            <div class="formula-display">
+                $$\text{cortisol}_{4\text{h}} = {{ "%.2f"|format(result.cortisol_4h) }} \quad \text{cortisol}_{8\text{h}} = {{ "%.2f"|format(result.cortisol_8h) }} \quad \text{cut-off} = {{ "%.2f"|format(result.cutoff_8h) }}$$
+            </div>
+        </section>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the interpretation works</h2>
+
+            <h3>Stage 1. Is HAC present?</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>If 8-hour cortisol is at or below the cut-off → adequate suppression; pattern does not support HAC.</li>
+                <li>If 8-hour cortisol exceeds the cut-off → consistent with HAC; proceed to Stage 2.</li>
+                <li>If 8-hour is suppressed but 4-hour exceeds baseline → "inverse pattern," highly suspicious for HAC per the consensus statement; further testing indicated.</li>
+            </ul>
+
+            <h3>Stage 2. Is the pattern consistent with PDH?</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Within a dog already shown to have HAC at the 8-hour timepoint, the
+                consensus statement (citing Feldman 1996) identifies PDH if <strong>any</strong>
+                of the following are met:
+            </p>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>4-hour cortisol &lt; cut-off</li>
+                <li>4-hour cortisol &lt; 50% of basal</li>
+                <li>8-hour cortisol &lt; 50% of basal (but greater than the cut-off, already established by Stage 1)</li>
+            </ul>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                If <strong>none</strong> are met, the dog is dexamethasone-resistant
+                and could be either AT or one of the ~25% of PDH cases that fail to suppress.
+                Per the consensus statement, lack of suppression does not confirm AT.
+                Further differentiating tests (cACTH, abdominal ultrasound, or HDDST)
+                are needed.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Behrend EN, Kooistra HS, Nelson R, Reusch CE, Scott-Moncrieff JC.
+                Diagnosis of spontaneous canine hyperadrenocorticism: 2012 ACVIM
+                Consensus Statement (Small Animal). <em>J Vet Intern Med</em>
+                2013;27:1292-1304. doi:10.1111/jvim.12192.
+                <a href="https://doi.org/10.1111/jvim.12192" target="_blank" rel="noopener">[link]</a>
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

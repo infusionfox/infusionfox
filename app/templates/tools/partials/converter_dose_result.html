@@ -1,0 +1,16 @@
+<div class="result" id="dose-result">
+    <dl class="result__details" style="grid-template-columns: 1fr;">
+        <div class="result__detail">
+            <dt>Milligrams (mg)</dt>
+            <dd>{{ "%g"|format(result.mg) }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Micrograms (µg)</dt>
+            <dd>{{ "%g"|format(result.ug) }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Grams (g)</dt>
+            <dd>{{ "%g"|format(result.g) }}</dd>
+        </div>
+    </dl>
+</div>

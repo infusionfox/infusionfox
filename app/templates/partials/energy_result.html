@@ -1,0 +1,96 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">Target intake</div>
+        <div class="result__primary">
+            {{ "%.0f"|format(result.target_kcal_per_day) }}<span class="unit">kcal/day</span>
+        </div>
+        <div class="result__secondary">
+            RER {{ "%.0f"|format(result.rer_kcal_per_day) }} kcal/day
+            {% if result.minimum_kcal_per_day %}
+                · floor {{ "%.0f"|format(result.minimum_kcal_per_day) }} kcal/day
+            {% endif %}
+        </div>
+    </div>
+
+    {# Food volume target, shown when food details supplied #}
+    {% if result.food_volume %}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Feeding plan</div>
+        {% set unit_word = 'cup' if result.food_volume.caloric_density_unit.value == 'kcal_per_cup' else 'can' %}
+        {% set unit_word_plural = unit_word + ('s' if result.food_volume.daily_servings != 1 else '') %}
+        <p style="margin: 0; color: var(--ink); font-size: 1.05rem;">
+            <strong>{{ "%g"|format(result.food_volume.daily_servings) }} {{ unit_word_plural }}</strong> per day
+            {% if result.food_volume.meals_per_day > 1 %}
+                ({{ "%g"|format(result.food_volume.per_meal_servings) }} {{ unit_word }} × {{ result.food_volume.meals_per_day }} meals)
+            {% endif %}
+        </p>
+        <p style="margin: 0.4rem 0 0; color: var(--ink-mute); font-size: 0.85rem;">
+            Based on {{ result.food_volume.caloric_density|int if result.food_volume.caloric_density == result.food_volume.caloric_density|int else result.food_volume.caloric_density }}
+            kcal/{{ unit_word }} of {{ result.food_volume.form.value }} food.
+        </p>
+    </div>
+    {% endif %}
+
+    {# Neonatal block removed in the simplified calculator. #}
+
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Current weight</dt>
+            <dd>
+                {{ "%.2f"|format(result.current_weight_kg) }} kg
+                <br><span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.1f"|format(result.current_weight_kg * 2.2046) }} lb)</span>
+            </dd>
+        </div>
+        {% if result.ideal_weight_kg %}
+        <div class="result__detail">
+            <dt>Ideal weight</dt>
+            <dd>
+                {{ "%.2f"|format(result.ideal_weight_kg) }} kg
+                <br><span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.1f"|format(result.ideal_weight_kg * 2.2046) }} lb)</span>
+                {% if result.ideal_weight_source != 'user-entered' %}
+                    <br><span style="color: var(--ink-mute); font-size: 0.85em;">{{ result.ideal_weight_source }}</span>
+                {% endif %}
+            </dd>
+        </div>
+        {% endif %}
+        <div class="result__detail">
+            <dt>Species / purpose</dt>
+            <dd>{{ result.species.value|capitalize }} · {{ result.purpose.value|replace('_',' ')|capitalize }}</dd>
+        </div>
+        {% if result.maintenance_factor %}
+        <div class="result__detail">
+            <dt>Body condition / activity</dt>
+            <dd>{{ result.maintenance_factor.label }}{% if result.maintenance_factor.multiplier > 0 %} (×{{ result.maintenance_factor.multiplier }}){% endif %}</dd>
+        </div>
+        {% endif %}
+    </dl>
+
+    {% if result.formula_human %}
+    <div class="formula-box">
+        <div class="eyebrow">Formula</div>
+        <p style="margin: 0.4rem 0 0; font-family: var(--font-mono); font-size: 0.88rem; color: var(--ink);">
+            {{ result.formula_used }}
+        </p>
+        <p class="formula-caption" style="margin-top: 0.4rem;">
+            {{ result.formula_human }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings"><ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>

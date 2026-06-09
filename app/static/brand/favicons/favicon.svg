@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="InfusionFox">
+  <title>InfusionFox</title>
+  <g fill="#1C3A57" fill-rule="evenodd">
+    <path d="M 12 10 L 26 20 L 38 20 L 52 10 L 50 26 L 56 32 L 44 38 L 38 50 L 32 56 L 26 50 L 20 38 L 8 32 L 14 26 Z M 24 30 L 29 33 L 25 35 Z M 40 30 L 35 33 L 39 35 Z M 30 40 L 34 40 L 32 43 Z"/>
+  </g>
+</svg>

@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Hypoglycemia hub | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Emergency · Workflow hub</div>
+                <h1>Hypoglycemia hub</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Workflow for acute hypoglycemic crisis in dogs and cats.
+                    Covers dextrose bolus, CRI preparation, and glucagon CRI
+                    for refractory insulinoma cases.
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li>
+                    <strong>Insulinoma caution, avoid large dextrose boluses.</strong>
+                    In suspected insulinoma, a bolus of IV dextrose can
+                    stimulate further insulin release from the tumor, triggering
+                    a cycle of dextrose → hyperinsulinism → rebound hypoglycemia.
+                    Give the minimum bolus needed to resolve clinical signs,
+                    then maintain with a CRI. Consider glucagon CRI instead.
+                </li>
+                <li>
+                    <strong>Goal is resolution of clinical signs, not normalisation
+                    of glucose.</strong> Target low-normal euglycemia (not high
+                    normal). Hyperglycemia in an insulinoma patient stimulates
+                    more insulin.
+                </li>
+                <li>
+                    <strong>Do not use 5% dextrose in water as the sole fluid.</strong>
+                    It can cause severe, potentially fatal hyponatremia. Add
+                    50% dextrose to a balanced isotonic crystalloid (LRS or
+                    0.9% NaCl) instead.
+                </li>
+            </ul>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Common causes at a glance</h2>
+        <div class="compare-cards">
+            <div class="compare-card">
+                <div class="eyebrow">Most common. GP practice</div>
+                <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem; line-height: 1.8; font-size: 0.9rem;">
+                    <li><strong>Exogenous insulin overdose</strong>, diabetic patient, anorexia, vomiting after insulin</li>
+                    <li><strong>Insulinoma</strong>, middle-aged to older dog, episodic collapse, BG &lt; 60 mg/dL</li>
+                    <li><strong>Neonatal / toy breed</strong>, inadequate substrate, cold, missed meals</li>
+                    <li><strong>Sepsis</strong>, non-insulin-mediated excess glucose utilisation</li>
+                    <li><strong>Hypoadrenocorticism</strong>, loss of cortisol counterregulatory mechanisms</li>
+                    <li><strong>Xylitol toxicity</strong>, stimulates insulin release; also causes hepatic necrosis</li>
+                </ul>
+            </div>
+            <div class="compare-card">
+                <div class="eyebrow">Clinical signs</div>
+                <p style="margin: 0.4rem 0 0; font-size: 0.9rem; line-height: 1.7;">
+                    <strong>Neuroglycopenic:</strong> altered mentation, dullness,
+                    weakness, ataxia, blindness, seizures, recumbency.
+                    Prolonged neuroglycopenia → permanent neuronal damage,
+                    especially irreversible blindness.<br><br>
+                    <strong>Adrenergic (counter-regulatory):</strong>
+                    pacing, vocalising, restlessness, trembling, vomiting,
+                    panting, tachypnea, diarrhea.<br><br>
+                    <strong>Diagnosis:</strong> BG ≤ 60 mg/dL.
+                    Clinical signs often don't appear until &lt; 50 mg/dL.
+                    Whipple's triad: low BG + compatible signs + resolution with treatment.
+                </p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Treatment checklist</h2>
+
+        <ol style="list-style: none; padding-left: 0; margin-top: 1.5rem;">
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 1rem; padding-top: 0.5rem; list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">1</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Confirm hypoglycemia</h3>
+                    <p>
+                        Point-of-care glucometer. Note: glucometers may
+                        under- or overestimate BG, especially at abnormal
+                        haematocrits. If haematocrit is out of range or
+                        result is unexpected, confirm with laboratory.
+                        Blood from medial aspect of ear is more accurate
+                        than paw pad or mucous membrane. Separate serum
+                        within 30 min or use a sodium fluoride tube to
+                        arrest ongoing glycolysis in the sample.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">2</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Dextrose bolus. IV (preferred)</h3>
+                    <p>
+                        Dilute 50% dextrose at least 1:2 with sterile water
+                        or saline before administering, undiluted 50%
+                        dextrose is hyperosmolar and causes severe phlebitis.
+                        Give over 5 minutes. Improvement in neuroglycopenic
+                        signs expected within 1–2 minutes of IV supplementation.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <th style="text-align: left; padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Parameter</th>
+                            <th style="text-align: left; padding: 0.3rem 0; color: var(--ink-soft);">Value</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.4rem 0.5rem 0.4rem 0; color: var(--ink-soft);">Dose (g/kg):</td>
+                            <td style="font-weight: 600; padding: 0.4rem 0;">0.25–0.5 g/kg</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.4rem 0.5rem 0.4rem 0; color: var(--ink-soft);">As 50% dextrose (mL/kg):</td>
+                            <td style="font-weight: 600; padding: 0.4rem 0;">0.5–1 mL/kg of 50% dextrose</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.4rem 0.5rem 0.4rem 0; color: var(--ink-soft);">Dilution:</td>
+                            <td style="font-weight: 600; padding: 0.4rem 0;">Minimum 1:2 (1 mL dextrose 50% : 2 mL saline/water)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.4rem 0.5rem 0.4rem 0; color: var(--ink-soft);">Rate:</td>
+                            <td style="font-weight: 600; padding: 0.4rem 0;">Give over 5 minutes IV</td>
+                        </tr>
+                    </table>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.75rem;">
+                        <strong>No IV access?</strong> Karo syrup, pancake syrup, or honey applied to
+                        oral mucous membranes as a temporary bridge only, absorption is slow and
+                        unreliable. Obtain IV access immediately. Risk of aspiration in obtunded patients.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">3</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Dextrose CRI, maintenance</h3>
+                    <p>
+                        Once signs resolve, transition to a dextrose CRI
+                        to maintain low-normal euglycemia. Add 50% dextrose
+                        to an isotonic crystalloid (LRS or 0.9% NaCl).
+                        Never use D5W as the sole fluid, hyponatremia risk.
+                        Continue until underlying cause is identified and
+                        resolved (hours to days depending on aetiology).
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <th style="text-align: left; padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Target concentration</th>
+                            <th style="text-align: left; padding: 0.3rem 0; color: var(--ink-soft);">Recipe (per 1 L crystalloid)</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.4rem 0.5rem 0.4rem 0; font-weight: 600;">2.5% dextrose</td>
+                            <td style="padding: 0.4rem 0;">Add <strong>50 mL</strong> of 50% dextrose to <strong>950 mL</strong> crystalloid</td>
+                        </tr>
+                        <tr style="background: var(--paper);">
+                            <td style="padding: 0.4rem 0.5rem 0.4rem 0; font-weight: 600;">5% dextrose</td>
+                            <td style="padding: 0.4rem 0;">Add <strong>100 mL</strong> of 50% dextrose to <strong>900 mL</strong> crystalloid</td>
+                        </tr>
+                    </table>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.75rem;">
+                        Start at 2.5–5% and adjust based on serial BG. If &gt;10% dextrose is needed
+                        to maintain euglycemia, use a central line to prevent peripheral phlebitis.
+                        Monitor BG every 1–2 hr while adjusting rate.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">4</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Feed the patient, as soon as alert enough</h3>
+                    <p>
+                        Small, frequent meals low in simple sugars (higher
+                        in complex carbohydrates and protein). Institute as
+                        soon as the patient can eat and swallow safely. Oral
+                        feeding is the most physiologic method of glucose
+                        maintenance and should replace the CRI once tolerated.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">5</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Glucagon CRI, for insulinoma or refractory hypoglycemia</h3>
+                    <p>
+                        Preferred over large dextrose boluses in patients with
+                        confirmed or suspected insulinoma, bypasses the
+                        dextrose → insulin release cycle. Stimulates hepatic
+                        glycogenolysis and gluconeogenesis directly. Titrate
+                        to the lowest rate that resolves clinical signs and
+                        maintains low-normal euglycemia. Note: dose is in
+                        <strong>nanograms</strong>, not micrograms or mg.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 40%;">Reconstitute:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">Per manufacturer instructions → 1000 ng/mL solution in 0.9% NaCl</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Bolus:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">50 ng/kg IV</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">CRI:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">5–40 ng/kg/min, start low, titrate to effect</td>
+                        </tr>
+                    </table>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Median glucagon CRI doses are higher in non-survivors, use the
+                        lowest effective rate. Units are nanograms (ng), do not confuse
+                        with micrograms (µg) or milligrams (mg).
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">6</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Glucocorticoids, cause-specific only</h3>
+                    <p>
+                        Antagonise insulin effects and stimulate gluconeogenesis.
+                        Appropriate for paraneoplastic or endocrine-induced
+                        hypoglycemia. <strong>Contraindicated if infection
+                        is the cause</strong> (sepsis-induced hypoglycemia).
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 50%;">Hypoadrenocorticism:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">Dexamethasone 0.1–0.2 mg/kg IV (does not interfere with cortisol assay)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Insulinoma (chronic):</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">Prednisone 0.25–0.5 mg/kg PO q12h (cats: prednisolone preferred)</td>
+                        </tr>
+                    </table>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Dexamethasone is the preferred initial glucocorticoid for
+                        suspected hypoadrenocorticism, use before ACTH stimulation
+                        test because it will not be measured by the cortisol assay.
+                        Do not give prednisone or prednisolone before ACTH stim.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">7</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Treat the underlying cause</h3>
+                    <ul style="margin: 0.4rem 0 0; padding-left: 1.25rem; line-height: 1.8; font-size: 0.9rem;">
+                        <li><strong>Insulin overdose:</strong> discontinue insulin, feed as soon as able, monitor BG q1–2h; restart insulin at 25–50% reduced dose when eating and BG stable</li>
+                        <li><strong>Insulinoma:</strong> surgical excision ± prednisone, diazoxide, or toceranib for medical management; dietary management (small frequent low-GI meals)</li>
+                        <li><strong>Hypoadrenocorticism:</strong> aggressive 0.9% NaCl resuscitation, dexamethasone, ACTH stim test, then long-term mineralocorticoid (DOCP or fludrocortisone)</li>
+                        <li><strong>Sepsis:</strong> source control, broad-spectrum antimicrobials, supportive care, do NOT give glucocorticoids</li>
+                        <li><strong>Neonatal / toy breed:</strong> feed frequently, keep warm; recheck BG and repeat supplementation as needed</li>
+                        <li><strong>Xylitol toxicity:</strong> dextrose supplementation + liver protective support; monitor liver values 24–72h post-ingestion for delayed hepatotoxicity</li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">8</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Monitoring</h3>
+                    <ul style="margin: 0.4rem 0 0; padding-left: 1.25rem; line-height: 1.7;">
+                        <li>BG every 1–2 hr while on IV dextrose, more frequently during bolus phase</li>
+                        <li>Mentation, neurologic status, watch for signs of persistent neuroglycopenia</li>
+                        <li>Electrolytes, hypokalemia common with insulin-mediated cases</li>
+                        <li>Liver values if xylitol toxicity, paraneoplastic, or prolonged hypoglycemia</li>
+                        <li>Once stable: insulin level drawn <em>during</em> a hypoglycemic episode if insulinoma suspected (high or normal insulin with low BG is diagnostic)</li>
+                        <li>Thoracic radiographs for metastatic disease if insulinoma confirmed</li>
+                    </ul>
+                </div>
+            </li>
+
+        </ol>
+
+        <section style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Koenig A. Hypoglycemia. In: Silverstein DC, Hopper K, eds.
+                <em>Small Animal Critical Care Medicine</em>. 3rd ed.
+                St. Louis, MO: Elsevier; 2023. Chapter 75.
+                Primary source for all doses, dextrose preparation tables,
+                glucagon CRI protocol, and cause-specific management.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+
+
+{% endblock %}

@@ -1,0 +1,38 @@
+#
+# Production docker-compose for InfusionFox.
+#
+# Minimal single-service file — assumes cloudflared and watchtower are
+# already running on the host (e.g. on a Synology NAS).
+#
+# Deploy via Portainer: paste this file into a new stack, set the image
+# to match your GHCR path, and deploy. No .env file required.
+#
+# For Watchtower to auto-update this container, make sure your existing
+# Watchtower instance is configured to watch all containers or has
+# label-enable mode off. The label below opts this container in either way.
+#
+
+services:
+  infusionfox:
+    # Public image built by CI on push to main. If you fork this repo,
+    # update this to ghcr.io/<your-github-username-or-org>/<your-repo>:latest
+    # OR override locally via docker-compose.override.yml (gitignored).
+    image: ghcr.io/infusionfox/infusionfox:latest
+    container_name: infusionfox
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - infusionfox_data:/data
+      # Content is baked into the image by CI, but you can bind-mount it for
+      # hot edits without a full rebuild by uncommenting the next line:
+      # - ./content:/app/content:ro
+    labels:
+      # Watchtower opt-in label, kept commented out — Tim deploys manually
+      # via git rather than letting Watchtower auto-roll on :latest. Uncomment
+      # if reintroducing Watchtower into the deploy loop.
+      # - com.centurylinklabs.watchtower.enable=true
+      - com.infusionfox.description=Veterinary CRI calculators & reference
+
+volumes:
+  infusionfox_data:

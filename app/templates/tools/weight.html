@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Weight converter | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container" style="max-width: 720px;">
+        <div class="eyebrow">Utility</div>
+        <h1>Weight converter</h1>
+        <p style="color: var(--ink-soft);">Convert between lb, kg, g, and oz.</p>
+
+        <div class="tool-grid" style="margin-top: 2rem;">
+            <form
+                hx-post="/tools/weight/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:200ms, change, load"
+            >
+                <div class="field">
+                    <label for="value">Value</label>
+                    <input type="number" step="0.001" min="0" id="value" name="value" value="{{ value }}" required autofocus>
+                </div>
+                <div class="field">
+                    <label>From</label>
+                    <div class="segmented">
+                        {% for u, label in [("lb", "lb"), ("kg", "kg"), ("g", "g"), ("oz", "oz")] %}
+                        <input type="radio" name="unit" value="{{ u }}" id="wu-{{ u }}" {% if u == unit %}checked{% endif %}>
+                        <label for="wu-{{ u }}">{{ label }}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </form>
+
+            {% if result %}
+                {% include "tools/partials/weight_result.html" %}
+            {% else %}
+                {% include "partials/_invalid_input_placeholder.html" %}
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

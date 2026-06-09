@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+
+# Environments
+.env
+.env.local
+
+# Data — local dev SQLite, never commit
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# IDE
+.vscode/
+.idea/*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker
+docker-compose.override.yml
+
+# Build artifacts
+dist/
+build/
+
+# Internal strategy and tracking — never commit
+STATUS.md
+STATUS_INTERNAL.md
+notes/
+.private/
+
+# Internal docs — kept locally for development context, not published
+CLAUDE.md
+STATUS.md
+DEPLOYMENT.md
+READTHROUGH_PICKUP.md

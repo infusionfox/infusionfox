@@ -1,0 +1,139 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">{{ result.matched_tier.label }}</div>
+        {% if result.insulin_stopped %}
+            <div class="result__primary" style="color: var(--danger);">
+                STOP<span class="unit">insulin</span>
+            </div>
+            <div class="result__secondary">
+                Continue {{ result.fluid_composition }} only.
+                Re-check BG, resume insulin when BG &gt; 100 mg/dL.
+            </div>
+        {% else %}
+            <div class="result__primary">
+                {{ "%g"|format(result.pump_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+            </div>
+            <div class="result__secondary">
+                Run with: <strong>{{ result.fluid_composition }}</strong>
+            </div>
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Bag preparation</div>
+        <ol style="margin: 0; padding-left: 1.25rem; line-height: 1.7; font-size: 0.95rem;">
+            <li>
+                Take a fresh <strong>{{ "%g"|format(result.bag_volume_ml) }} mL bag of 0.9% NaCl</strong>.
+            </li>
+            <li>
+                Add <strong>{{ "%g"|format(result.total_units_added_to_bag) }} units</strong> of
+                regular crystalline insulin
+                ({{ "%g"|format(result.loading_units_per_kg) }} U/kg ×
+                {{ "%.2f"|format(result.weight_kg) }} kg).
+                Bag concentration:
+                <strong>{{ "%g"|format(result.bag_concentration_units_per_ml) }} U/mL</strong>.
+            </li>
+            <li>
+                <strong>Prime the administration set with the prepared
+                solution and discard the first
+                {{ "%g"|format(result.prime_discard_ml) }} mL</strong> before
+                connecting to the patient. Regular insulin binds to the
+                plastic tubing, this step saturates the binding sites
+                so the delivered dose matches the calculated rate.
+            </li>
+            {% if not result.insulin_stopped %}
+            <li>
+                Run at <strong>{{ "%g"|format(result.pump_rate_ml_per_hr) }} mL/hr</strong>
+                using a separate IV line with
+                <strong>{{ result.fluid_composition }}</strong>.
+            </li>
+            {% endif %}
+        </ol>
+    </div>
+
+    {% if tiers %}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.5rem;">Sliding scale</div>
+        <p style="margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--ink-soft); line-height: 1.5;">
+            Re-check BG every 2 hours and step to the new row. The bag stays
+            the same; only the pump rate and the carrier fluid change.
+        </p>
+        <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--rule);">
+                    <th style="text-align: left; padding: 0.35rem 0.5rem; color: var(--ink-soft); font-weight: 500;">Blood glucose</th>
+                    <th style="text-align: left; padding: 0.35rem 0.5rem; color: var(--ink-soft); font-weight: 500;">Fluid composition</th>
+                    <th style="text-align: right; padding: 0.35rem 0.5rem; color: var(--ink-soft); font-weight: 500;">Pump rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tier in tiers %}
+                <tr {% if tier.label == result.matched_tier.label %}style="background: var(--accent-soft); font-weight: 600;"{% endif %}>
+                    <td style="padding: 0.35rem 0.5rem;">{{ tier.label }}</td>
+                    <td style="padding: 0.35rem 0.5rem;">{{ tier.fluid_composition }}</td>
+                    <td style="padding: 0.35rem 0.5rem; text-align: right;">
+                        {% if tier.pump_rate_ml_per_hr is none %}
+                            <strong style="color: var(--danger);">STOP insulin</strong>
+                        {% else %}
+                            {{ "%g"|format(tier.pump_rate_ml_per_hr) }} mL/hr
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if not result.insulin_stopped and result.units_per_kg_per_hr_delivered is not none %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Delivered dose check</div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="color: var(--ink-soft);">Pump rate:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.pump_rate_ml_per_hr) }} mL/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Bag concentration:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.bag_concentration_units_per_ml) }} U/mL
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Insulin delivered:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%.4f"|format(result.units_per_kg_per_hr_delivered) }} U/kg/hr
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+    {% if result.valid %}
+    <template id="worked-example-source">$$\text{total units} = 2.2 \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.2f"|format(result.total_units_added_to_bag) }}\,\text{U in 250 mL}$$</template>
+    <template id="worked-example-source-concentration">$$\text{effective concentration} = \frac{ {{ "%.2f"|format(result.total_units_added_to_bag) }} }{200} = {{ "%.4f"|format(result.bag_concentration_units_per_ml) }}\,\text{U/mL (after prime)}$$</template>
+    {% if result.pump_rate_ml_per_hr is not none %}
+    <template id="worked-example-source-delivered">$$\text{delivered} = \frac{ {{ "%.2f"|format(result.pump_rate_ml_per_hr) }}_{\text{mL/hr}} \times {{ "%.4f"|format(result.bag_concentration_units_per_ml) }}_{\text{U/mL}} }{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} } = {{ "%.4f"|format(result.units_per_kg_per_hr_delivered) }}\,\text{U/kg/hr}$$</template>
+    {% endif %}
+    {% endif %}
+</div>

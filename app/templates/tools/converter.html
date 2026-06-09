@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Unit converter | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container" style="max-width: 880px;">
+        <div class="eyebrow">Utility</div>
+        <h1>Unit converter</h1>
+        <p style="color: var(--ink-soft);">
+            Convert between common veterinary units of body weight,
+            drug amount, concentration, and body surface area.
+        </p>
+
+        <nav class="calc-tabs" style="margin-top: 2rem;">
+            <a href="#weight" class="active">Body weight &amp; BSA</a>
+            <a href="#dose">Drug amount</a>
+            <a href="#concentration">Concentration</a>
+        </nav>
+
+        {# ===== BODY WEIGHT + BSA ===== #}
+        <section id="weight" style="margin-top: 2rem;">
+            <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Body weight &amp; surface area</h2>
+            <p style="color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 1rem;">
+                Convert between lb, kg, g, and oz. Body surface area (m²) for the same patient is calculated automatically using the species-specific allometric formula: BSA = K × weight(kg)^(2/3) ÷ 100, with K = 10.1 for dogs and K = 10.0 for cats.
+            </p>
+            <div class="tool-grid">
+                <form
+                    hx-post="/tools/converter/weight"
+                    hx-target="#weight-result"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:200ms, change, load"
+                >
+                    <div class="field">
+                        <label for="w_value">Value</label>
+                        <input type="number" step="0.001" min="0" id="w_value" name="value" value="{{ weight_value }}" required>
+                    </div>
+                    <div class="field">
+                        <label>From</label>
+                        <div class="segmented">
+                            {% for u, label in [("lb", "lb"), ("kg", "kg"), ("g", "g"), ("oz", "oz")] %}
+                            <input type="radio" name="unit" value="{{ u }}" id="wu-{{ u }}" {% if u == weight_unit %}checked{% endif %}>
+                            <label for="wu-{{ u }}">{{ label }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Species (for BSA)</label>
+                        <div class="segmented">
+                            {% for s, label in [("dog", "Dog"), ("cat", "Cat")] %}
+                            <input type="radio" name="species" value="{{ s }}" id="bsa-{{ s }}" {% if s == bsa_species %}checked{% endif %}>
+                            <label for="bsa-{{ s }}">{{ label }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </form>
+
+                {% with result = weight_result, bsa = bsa_result %}{% include "tools/partials/converter_weight_result.html" %}{% endwith %}
+            </div>
+        </section>
+
+        {# ===== DRUG AMOUNT ===== #}
+        <section id="dose" style="margin-top: 3rem;">
+            <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Drug amount</h2>
+            <p style="color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 1rem;">
+                Convert between mg, µg, and g.
+            </p>
+            <div class="tool-grid">
+                <form
+                    hx-post="/tools/converter/dose"
+                    hx-target="#dose-result"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:200ms, change, load"
+                >
+                    <div class="field">
+                        <label for="d_value">Value</label>
+                        <input type="number" step="0.0001" min="0" id="d_value" name="value" value="{{ dose_value }}" required>
+                    </div>
+                    <div class="field">
+                        <label>From</label>
+                        <div class="segmented">
+                            {% for u, label in [("mg", "mg"), ("ug", "µg"), ("g", "g")] %}
+                            <input type="radio" name="unit" value="{{ u }}" id="du-{{ u }}" {% if u == dose_unit %}checked{% endif %}>
+                            <label for="du-{{ u }}">{{ label }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </form>
+
+                {% with result = dose_result %}{% include "tools/partials/converter_dose_result.html" %}{% endwith %}
+            </div>
+        </section>
+
+        {# ===== CONCENTRATION ===== #}
+        <section id="concentration" style="margin-top: 3rem;">
+            <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Concentration</h2>
+            <p style="color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 1rem;">
+                Convert between %, mg/mL, and µg/mL. A w/v percent is grams per 100 mL, so 1% equals 10 mg/mL.
+            </p>
+            <div class="tool-grid">
+                <form
+                    hx-post="/tools/converter/concentration"
+                    hx-target="#concentration-result"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:200ms, change, load"
+                >
+                    <div class="field">
+                        <label for="c_value">Value</label>
+                        <input type="number" step="0.0001" min="0" id="c_value" name="value" value="{{ conc_value }}" required>
+                    </div>
+                    <div class="field">
+                        <label>From</label>
+                        <div class="segmented">
+                            {% for u, label in [("percent", "%"), ("mg_per_ml", "mg/mL"), ("ug_per_ml", "µg/mL")] %}
+                            <input type="radio" name="unit" value="{{ u }}" id="cu-{{ u }}" {% if u == conc_unit %}checked{% endif %}>
+                            <label for="cu-{{ u }}">{{ label }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </form>
+
+                {% with result = conc_result %}{% include "tools/partials/converter_concentration_result.html" %}{% endwith %}
+            </div>
+        </section>
+
+    </div>
+</section>
+{% endblock %}

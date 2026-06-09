@@ -1,0 +1,810 @@
+{% extends "base.html" %}
+
+{% block title %}Anesthesia worksheet | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+
+        <div class="calc-header no-print">
+            <div>
+                <div class="eyebrow">Anesthesia &amp; Sedation</div>
+                <h1>Anesthesia worksheet</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Generates a printable, patient-specific
+                    anesthesia worksheet for dogs and cats: premeds,
+                    induction doses, emergency drugs, fluid boluses,
+                    and vasopressor CRIs on one page.
+                </p>
+            </div>
+        </div>
+
+        <!-- Patient bar (above tabs; full width) -->
+        <form
+            id="anesthesia-form"
+            hx-post="/anesthesia/compute"
+            hx-target="#anesthesia-sheet-wrapper"
+            hx-swap="outerHTML"
+            hx-trigger="input changed delay:250ms, change, load"
+        >
+            <input type="hidden" name="active_tab" id="active_tab"
+                value="{{ active_tab|default('preop') }}">
+
+            <!-- Species: the first choice, visually prominent. Drives a
+                 full-page reload (see hx-get below), so this is logically
+                 separate from the patient-bar fields which feed the per-
+                 input compute. Rendered as two portrait cards with line
+                 art — large enough to thumb-tap reliably on a phone, with
+                 enough visual weight to keep the wrong-species choice
+                 from happening absently. -->
+            <div class="species-bar no-print">
+                <label class="visually-hidden" id="species-bar-label">Species</label>
+                <div class="species-cards" role="radiogroup" aria-labelledby="species-bar-label">
+                    <input type="radio" name="species" value="dog" id="sp-dog"
+                        class="species-cards__input"
+                        {% if result.species.value == 'dog' %}checked{% endif %}
+                        hx-get="/anesthesia?species=dog"
+                        hx-target="body"
+                        hx-swap="outerHTML"
+                        hx-trigger="change"
+                        hx-include="this">
+                    <label for="sp-dog" class="species-card">
+                        <span class="species-card__name">Dog</span>
+                    </label>
+
+                    <input type="radio" name="species" value="cat" id="sp-cat"
+                        class="species-cards__input"
+                        {% if result.species.value == 'cat' %}checked{% endif %}
+                        hx-get="/anesthesia?species=cat"
+                        hx-target="body"
+                        hx-swap="outerHTML"
+                        hx-trigger="change"
+                        hx-include="this">
+                    <label for="sp-cat" class="species-card">
+                        <span class="species-card__name">Cat</span>
+                    </label>
+                </div>
+            </div>
+
+            <fieldset class="patient-bar no-print">
+                <legend>Patient</legend>
+                <div class="patient-bar__grid">
+                    <div class="field">
+                        <label for="weight_value">Weight</label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="number" id="weight_value" name="weight_value"
+                                value="{{ weight_value }}" min="0.1" max="150" step="any"
+                                required style="width: 6rem;">
+                            <div class="segmented">
+                                <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                                <label for="wu-lb">lb</label>
+                                <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                                <label for="wu-kg">kg</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="patient_name">Name / ID</label>
+                        <input type="text" id="patient_name" name="patient_name"
+                            value="{{ patient_name }}" placeholder="e.g. Buddy"
+                            maxlength="40">
+                    </div>
+
+                    <div class="field">
+                        <label for="patient_age">Age</label>
+                        <input type="text" id="patient_age" name="patient_age"
+                            value="{{ patient_age }}" placeholder="e.g. 4 yr"
+                            maxlength="20">
+                    </div>
+                </div>
+            </fieldset>
+            <!-- Sheet (full width, no sidebar) -->
+                <!-- Drug sheet (left/main column) -->
+                <div id="sheet-wrapper">
+                    {% if weight_provided %}
+                        {% include "partials/anesthesia_sheet.html" %}
+                    {% else %}
+                        <div id="anesthesia-sheet-wrapper" class="result-panel-placeholder">
+                            <div class="eyebrow">Awaiting input</div>
+                            <p class="result-placeholder-text">
+                                Enter a valid patient weight above to generate the drug sheet.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+        </form>
+    </div>
+</section>
+
+<style>
+.check-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.check-dose-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.check-dose-row:last-child { border-bottom: none; }
+.check-dose-row > input[type="checkbox"] {
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+}
+.dose-drug-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+.dose-drug-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+.dose-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+.dose-unit {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+}
+.dose-range {
+    font-size: 0.75rem;
+    color: var(--ink-mute);
+}
+
+/* ---------- Per-drug stock-concentration selector ----------
+   Sits on its own line below the dose row inside the picker. Compact
+   so multiple drug rows still fit without scrolling. Only rendered for
+   drugs listed in STOCK_OPTIONS (see app/calculators/anesthesia_sheet.py).
+   The select is a normal HTML <select> so it inherits the system menu
+   on iOS/Android — easier than custom UI in a picker that already has
+   many controls. */
+.check-dose-row__stock {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.15rem;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+}
+.check-dose-row__stock-label {
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+.check-dose-row__stock-select {
+    font-size: 0.78rem;
+    padding: 0.15rem 0.35rem;
+    max-width: 100%;
+    /* Allow long labels (e.g. "0.5 mg/mL (Dexdomitor, standard vet)") to
+       truncate gracefully instead of forcing the picker to grow wider. */
+    text-overflow: ellipsis;
+}
+
+/* ---------- Collapsible drug-selection groups ---------- */
+.drug-picker-hint {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin: 0 0 0.5rem;
+}
+.drug-picker {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: white;
+    margin-bottom: 0.5rem;
+    /* Important: prevent the open animation from squashing the inputs. */
+    overflow: hidden;
+}
+.drug-picker > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 0.65rem 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--ink);
+    user-select: none;
+    transition: background 100ms ease;
+}
+.drug-picker > summary:hover {
+    background: var(--paper);
+}
+.drug-picker > summary::-webkit-details-marker {
+    display: none;
+}
+/* Add a custom caret on the right so it looks intentional. */
+.drug-picker > summary::after {
+    content: "▸";
+    color: var(--ink-mute);
+    font-size: 0.8rem;
+    margin-left: 0.25rem;
+    transition: transform 120ms ease;
+    display: inline-block;
+}
+.drug-picker[open] > summary::after {
+    transform: rotate(90deg);
+}
+.drug-picker__label {
+    flex: 1;
+}
+.drug-picker__count {
+    color: var(--ink-mute);
+    font-size: 0.8rem;
+    font-weight: 400;
+    /* Sits between label and caret. */
+    margin-right: 0.25rem;
+}
+/* Inner padding for the expanded content so the rows aren't flush
+   with the border. The check-dose-row styles still apply unchanged. */
+.drug-picker[open] > .check-dose-row:first-of-type,
+.drug-picker > .check-dose-row {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+}
+.drug-picker > .check-dose-row:last-of-type {
+    padding-bottom: 0.85rem;
+    border-bottom: none;
+}
+
+/* ---------- Patient bar (above tabs, full width) ---------- */
+/* ---------- Species cards (first choice, above the patient bar) -------
+   Two portrait cards with line art. The wrong-species mistake is the
+   worst possible failure on this worksheet — every dose, range, and
+   safety threshold downstream depends on it. Big, thumbable, visually
+   distinct cards make the choice unambiguous and hard to make absently.
+   Full-width on mobile so each card is half the screen; on desktop they
+   sit at a fixed width on the left, not sprawling across the row. */
+.species-bar {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.species-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+    /* On desktop, cap the total width so the two cards together stay
+       compact: prominent enough that the choice can't be made absently,
+       but not sprawling across a row. On mobile this is overridden to
+       100% so each card is half the screen wide. */
+    max-width: 18rem;
+}
+@media (max-width: 760px) {
+    .species-cards {
+        max-width: 100%;
+    }
+}
+
+/* Visually hide the radio inputs themselves. The <label> elements are
+   the visible cards — clicking a label fires the radio's change event,
+   which fires the hx-get reload. The label is also keyboard-activatable
+   because the radio underneath still receives focus when tabbed to
+   (we keep it focusable, just not visible). */
+.species-cards__input {
+    /* Position off-screen rather than display:none so the radio remains
+       focusable for keyboard users. Pairs with :focus-visible styles on
+       the card label below to show a focus ring. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.species-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.9rem 0.5rem 0.75rem;
+    min-height: 6.5rem;
+    background: white;
+    border: 2px solid var(--line-strong);
+    border-radius: var(--radius);
+    cursor: pointer;
+    color: var(--ink-soft);
+    transition: background 120ms, color 120ms, border-color 120ms,
+                transform 80ms;
+    /* No bottom margin — the grid gap handles spacing. */
+    margin-bottom: 0;
+    /* Resets for the label element. */
+    font-weight: 600;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.species-card:hover {
+    border-color: var(--ink-mute);
+    color: var(--ink);
+}
+
+/* Mild press feedback so the tap registers visually before the swap. */
+.species-card:active {
+    transform: scale(0.98);
+}
+
+/* Selected state: filled accent, white text. */
+.species-cards__input:checked + .species-card {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+/* Focus ring for keyboard users. Triggered by :focus-visible on the
+   hidden radio bubbling its focus state up to the visible label via
+   the adjacent-sibling selector. */
+.species-cards__input:focus-visible + .species-card {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.species-card__name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.patient-bar {
+    margin-bottom: 1.5rem;
+}
+.patient-bar__grid {
+    display: grid;
+    /* Weight first and widest (it's the only required field and the
+       one that drives the calculation); name and age share narrower
+       columns. */
+    grid-template-columns: 1.4fr 1.6fr 1fr;
+    gap: 1rem;
+    align-items: end;
+}
+.patient-bar .field {
+    margin-bottom: 0;
+}
+@media (max-width: 760px) {
+    .patient-bar__grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+}
+
+/* ---------- Preop customization picker (full-width section inside the
+   preop tab pane, between the warning banner and the drug tables). Hidden
+   on print since it's a picker, not part of the printed sheet. ---------- */
+.preop-picker {
+    margin: 1.25rem 0 1.75rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+.preop-picker__header {
+    margin-bottom: 0.9rem;
+}
+.preop-picker__title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+    color: var(--ink);
+}
+.preop-picker__hint {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+}
+/* Lay out the three drug-picker categories side-by-side on wider screens,
+   stacked on mobile. */
+.preop-picker > .drug-picker {
+    display: block;
+}
+@media (min-width: 720px) {
+    .preop-picker {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "pickers";
+    }
+    .preop-picker__header { grid-area: header; }
+    /* Wrap the three pickers in a 3-column grid via a wrapper. We use
+       grid-auto-flow on .preop-picker itself so all <details> children
+       past the header land in a 3-column flow. */
+    .preop-picker .drug-picker {
+        margin-bottom: 0;
+    }
+}
+@media (min-width: 900px) {
+    .preop-picker {
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-areas:
+            "header header header"
+            "p1 p2 p3";
+        gap: 1rem 1.25rem;
+        /* Don't stretch the columns to match the tallest one. When a user
+           expands one <details>, the others should stay collapsed at their
+           natural one-bar height rather than growing into tall empty boxes. */
+        align-items: start;
+    }
+    .preop-picker__header { grid-area: header; }
+    .preop-picker .drug-picker:nth-of-type(1) { grid-area: p1; }
+    .preop-picker .drug-picker:nth-of-type(2) { grid-area: p2; }
+    .preop-picker .drug-picker:nth-of-type(3) { grid-area: p3; }
+}
+
+/* ---------- Tab bar and tab panes for split preop/intraop sheet ---------- */
+.anesthesia-tab-bar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0;
+}
+.anesthesia-tab-btn {
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-bottom: none;
+    padding: 0.9rem 1.5rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-radius: var(--radius) var(--radius) 0 0;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    position: relative;
+    /* Make tabs feel substantial — clearly clickable cards */
+    min-width: 12rem;
+    text-align: center;
+}
+.anesthesia-tab-btn:hover {
+    background: white;
+    color: var(--ink);
+    border-color: var(--ink-mute);
+}
+.anesthesia-tab-btn.is-active {
+    background: white;
+    border-color: var(--ink);
+    color: var(--ink);
+    font-weight: 700;
+    /* Cover the bottom border of the tab bar so the active tab looks
+       like it lives on the same plane as the sheet. */
+    margin-bottom: -2px;
+    padding-bottom: calc(0.9rem + 2px);
+    /* Visual emphasis: a colored bar above the active tab */
+    box-shadow: inset 0 4px 0 0 var(--accent);
+    padding-top: calc(0.9rem - 2px);
+}
+.anesthesia-tab-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.anesthesia-print-btn {
+    margin-left: auto;
+    align-self: center;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.55rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+.anesthesia-print-btn:hover {
+    filter: brightness(1.05);
+}
+
+/* "Next phase" navigation at the bottom of each tab pane */
+.anesthesia-tab-next {
+    margin-top: 2rem;
+    padding: 1rem 1.25rem;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.anesthesia-tab-next__label {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+.anesthesia-tab-next__title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+.anesthesia-tab-next__btn {
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.65rem 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.anesthesia-tab-next__btn:hover {
+    filter: brightness(1.15);
+}
+
+/* Tab panes — hidden by default, shown when active. */
+.anesthesia-tab-pane {
+    display: none;
+}
+.anesthesia-tab-pane.is-active {
+    display: block;
+}
+
+/* ---------- Print styles ---------- */
+@media print {
+    .no-print,
+    .site-header,
+    .site-footer,
+    nav.calc-tabs,
+    .feedback-widget,
+    #fb-widget,
+    .anesthesia-tab-bar {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+        font-size: 10px !important;
+    }
+    /* Only the active tab pane prints. Inactive tabs are hidden as if
+       they don't exist. Whichever tab the user has selected is what
+       comes out of the printer — that's the one-button-per-sheet model. */
+    .anesthesia-tab-pane {
+        display: none !important;
+    }
+    .anesthesia-tab-pane.is-active {
+        display: block !important;
+    }
+    #anesthesia-sheet-wrapper,
+    .anesthesia-tab-pane.is-active {
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    #sheet-wrapper {
+        width: 100% !important;
+        grid-column: 1 / -1 !important;
+    }
+    section.calc-page {
+        padding: 0 !important;
+    }
+
+    /* Flatten any grid/flex ancestor of the sheet so page-break-before
+       can resolve on descendants. Browser print engines cannot resolve
+       `page-break-before: always` when the target is nested inside flex
+       or grid containers; every ancestor of the active tab pane must be
+       plain block flow at print time. */
+    section.calc-page,
+    section.calc-page > .container,
+    #anesthesia-form,
+    #sheet-wrapper,
+    #anesthesia-sheet-wrapper {
+        display: block !important;
+    }
+
+    /* Titration ladders take up far too much vertical space at default
+       sizing on paper. Force them side-by-side and compact the cells so
+       all visible ladders fit on the page next to each other (matching
+       the on-screen layout). */
+    .titration-grid {
+        gap: 0.5rem !important;
+        margin: 0.5rem 0 0.75rem !important;
+        /* Equal-width columns regardless of card count. Two cards → two
+           half-width columns; three cards → three thirds. The auto-fit
+           default would respect the 280px minimum, but at print width
+           (~750px usable) that can collapse to single-column unexpectedly,
+           so we pin the layout explicitly here. */
+        grid-auto-flow: column !important;
+        grid-auto-columns: 1fr !important;
+        grid-template-columns: none !important;
+    }
+    .titration-card {
+        margin: 0 !important;
+        border-width: 1px !important;
+    }
+    .titration-card__head {
+        padding: 0.35rem 0.6rem 0.25rem !important;
+    }
+    .titration-card__head strong {
+        font-size: 0.85rem !important;
+    }
+    .titration-card__hint {
+        font-size: 0.7rem !important;
+        margin-top: 0.1rem !important;
+    }
+    .titration-table {
+        font-size: 0.78rem !important;
+    }
+    .titration-table th {
+        padding: 0.2rem 0.5rem !important;
+        font-size: 0.62rem !important;
+    }
+    .titration-table td {
+        padding: 0.18rem 0.5rem !important;
+    }
+
+    .sheet-table {
+        font-size: 0.72rem !important;
+    }
+    .sheet-table th,
+    .sheet-table td {
+        padding: 0.18rem 0.45rem !important;
+        line-height: 1.3 !important;
+    }
+    .sheet-section {
+        margin-bottom: 0.55rem !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    .sheet-warning-banner {
+        margin-bottom: 0.55rem !important;
+        padding: 0.3rem 0.6rem !important;
+        font-size: 0.72rem !important;
+        line-height: 1.35 !important;
+    }
+    .sheet-section-title {
+        font-size: 0.78rem !important;
+        padding: 0.15rem 0 0.2rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+    .sheet-section-title > span {
+        font-size: 0.65rem !important;
+    }
+    .sheet-header {
+        padding: 0.4rem 0.6rem !important;
+        margin-bottom: 0.55rem !important;
+    }
+    .sheet-patient-name {
+        font-size: 1.05rem !important;
+    }
+    .sheet-patient-meta {
+        font-size: 0.72rem !important;
+    }
+    .sheet-footer {
+        margin-top: 0.6rem !important;
+        padding-top: 0.4rem !important;
+        font-size: 0.65rem !important;
+        line-height: 1.35 !important;
+    }
+
+    /* Same protection for each individual titration ladder card —
+       prevents a single ladder from being split across two pages. */
+    .titration-card {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* The titration ladder section as a whole is the largest single block.
+       If it can't fit where it sits, force it onto the next page so the
+       ladders print cleanly together rather than being broken across
+       pages. This is what keeps the intraop sheet at two pages: the
+       fluids + emergency drugs + vasopressor-CRI tables fit on page 1,
+       and the titration ladders fill page 2. */
+    .sheet-titration-section {
+        page-break-before: auto;
+        break-before: auto;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+}
+</style>
+
+<script>
+// Tab switcher for the anesthesia worksheet. Activates a tab visually
+// (toggles .is-active classes on the buttons + panes) AND updates
+// the hidden form input so the next HTMX swap re-renders the same
+// active state from the server. We don't re-submit the form on tab
+// switch — the swap target only changes on actual input edits.
+function infusionfox_anesthesia_activateTab(target) {
+    if (target !== 'preop' && target !== 'intraop') return;
+
+    // Update hidden form field so subsequent HTMX swaps preserve the tab.
+    var hidden = document.getElementById('active_tab');
+    if (hidden) hidden.value = target;
+
+    // Toggle tab buttons.
+    document.querySelectorAll('.anesthesia-tab-btn').forEach(function (btn) {
+        var on = btn.dataset.target === target;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+
+    // Toggle tab panes.
+    document.querySelectorAll('.anesthesia-tab-pane').forEach(function (pane) {
+        pane.classList.toggle('is-active', pane.dataset.tab === target);
+    });
+}
+
+// Print only the currently active sheet. The print CSS handles hiding
+// the inactive sheet; this is just a convenience wrapper so the button
+// reads "Print this sheet" and Does What It Says.
+function infusionfox_anesthesia_print() {
+    window.print();
+}
+
+// Species change now triggers a full page reload via hx-get on the
+// radio inputs (see the species fieldset in the form above). The new
+// page renders at the chosen species with everything else blank —
+// weight, patient info, picker selections, result panel. No DOM
+// state from the previous species can leak into the new species
+// because there IS no previous-species DOM to leak from. This
+// replaced an earlier in-place toggle that needed a fragile JS
+// handler to clear dose_* fields and strip hx-preserve from the
+// picker; that whole approach is gone now.
+
+// The picker section is marked hx-preserve, so its DOM survives HTMX
+// swaps (open/closed disclosures, dose inputs, checkbox state — all
+// preserved naturally because the elements aren't replaced). The only
+// thing the server would normally update inside the picker is the
+// count badge ("3 of 3") in each summary; with hx-preserve those would
+// go stale. Update them client-side instead, based on checkbox state.
+(function () {
+    var CATEGORIES = [
+        { name: 'opioids',   inputName: 'sel_opioid' },
+        { name: 'sedatives', inputName: 'sel_sedative' },
+        { name: 'induction', inputName: 'sel_induction' },
+    ];
+
+    function refreshCounts() {
+        CATEGORIES.forEach(function (c) {
+            var picker = document.querySelector('details.drug-picker[data-category="' + c.name + '"]');
+            if (!picker) return;
+            var inputs = picker.querySelectorAll('input[name="' + c.inputName + '"]');
+            var checked = 0;
+            inputs.forEach(function (i) { if (i.checked) checked++; });
+            var badge = picker.querySelector('.drug-picker__count');
+            if (badge) {
+                badge.textContent = checked + ' of ' + inputs.length;
+            }
+        });
+    }
+
+    // Update counts whenever a checkbox inside the picker is toggled.
+    document.addEventListener('change', function (e) {
+        if (!e.target || !e.target.name) return;
+        if (e.target.name === 'sel_opioid' || e.target.name === 'sel_sedative' || e.target.name === 'sel_induction') {
+            refreshCounts();
+        }
+    });
+})();
+</script>
+{% endblock %}

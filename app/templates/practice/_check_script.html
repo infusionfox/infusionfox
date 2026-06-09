@@ -1,0 +1,78 @@
+{# Inline JS for the practice-section answer check. Each .practice-check
+   element carries data-mode = "numeric" or "mc". Numeric mode compares
+   the typed value against data-expected with ±data-tolerance % wiggle
+   room. MC mode compares the selected radio's value against
+   data-expected (the index of the correct option). No server round-trip. #}
+<script>
+(function () {
+    const FEEDBACK_CORRECT = "✓ Correct!";
+    const FEEDBACK_INCORRECT = "✗ Not quite. Try again or open a hint.";
+    const FEEDBACK_CLOSE = "Close. Check your rounding or units.";
+    const FEEDBACK_BAD_NUMBER = "Enter a number to check.";
+    const FEEDBACK_BAD_CHOICE = "Pick an option to check.";
+
+    function setFeedback(el, msg, kind) {
+        const fb = el.querySelector(".practice-check__feedback");
+        fb.textContent = msg;
+        fb.className = "practice-check__feedback" + (kind ? " practice-check__feedback--" + kind : "");
+    }
+
+    function checkNumeric(el) {
+        const expected = parseFloat(el.dataset.expected);
+        // Tolerance in percent (e.g. 2 = ±2%); convert to a decimal.
+        const tolPct = parseFloat(el.dataset.tolerance);
+        const input = el.querySelector(".practice-check__input");
+        const raw = input.value.trim();
+        if (!raw) { setFeedback(el, FEEDBACK_BAD_NUMBER, "bad-input"); return; }
+        const user = parseFloat(raw);
+        if (Number.isNaN(user)) { setFeedback(el, FEEDBACK_BAD_NUMBER, "bad-input"); return; }
+        const band = Math.abs(expected) * (tolPct / 100);
+        const diff = Math.abs(user - expected);
+        if (diff <= band) {
+            setFeedback(el, FEEDBACK_CORRECT, "correct");
+        } else if (diff <= Math.abs(expected) * 0.10) {
+            // Within 10% but outside tolerance — hint they're close.
+            setFeedback(el, FEEDBACK_CLOSE, "close");
+        } else {
+            setFeedback(el, FEEDBACK_INCORRECT, "incorrect");
+        }
+    }
+
+    function checkMC(el) {
+        const expected = parseInt(el.dataset.expected, 10);
+        const selected = el.querySelector('input[type="radio"]:checked');
+        if (!selected) { setFeedback(el, FEEDBACK_BAD_CHOICE, "bad-input"); return; }
+        const userIdx = parseInt(selected.value, 10);
+        if (userIdx === expected) {
+            setFeedback(el, FEEDBACK_CORRECT, "correct");
+        } else {
+            setFeedback(el, FEEDBACK_INCORRECT, "incorrect");
+        }
+    }
+
+    document.querySelectorAll(".practice-check").forEach(function (el) {
+        const mode = el.dataset.mode;
+        const btn = el.querySelector(".practice-check__btn");
+        if (mode === "mc") {
+            btn.addEventListener("click", function () { checkMC(el); });
+            // Clear stale feedback when the user picks a new option.
+            el.querySelectorAll('input[type="radio"]').forEach(function (r) {
+                r.addEventListener("change", function () {
+                    setFeedback(el, "", null);
+                });
+            });
+        } else {
+            // numeric mode
+            const input = el.querySelector(".practice-check__input");
+            btn.addEventListener("click", function () { checkNumeric(el); });
+            input.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    checkNumeric(el);
+                }
+            });
+            input.addEventListener("input", function () { setFeedback(el, "", null); });
+        }
+    });
+})();
+</script>

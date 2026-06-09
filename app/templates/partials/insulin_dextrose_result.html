@@ -1,0 +1,76 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+
+    <div class="result__headline">
+        <div class="eyebrow">Insulin (regular, U-100)</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.total_insulin_u) }}<span class="unit">U</span>
+        </div>
+        <div class="result__secondary">
+            = {{ "%g"|format(result.insulin_dose_u_per_kg) }} U/kg × {{ "%.2f"|format(result.weight_kg) }} kg
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--ink-soft);">
+            Draw to the {{ "%g"|format(result.total_insulin_u) }} U mark on a U-100 insulin syringe
+            (= {{ "%g"|format(result.insulin_volume_u100_ml) }} mL).
+            Give IV bolus.
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Concurrent dextrose bolus</div>
+        <div style="font-size: 1.4rem; font-weight: 700; line-height: 1.2;">
+            {{ "%g"|format(result.d50_volume_ml) }} mL of D50
+        </div>
+        <div style="font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.3rem;">
+            = {{ "%g"|format(result.dextrose_total_g) }} g dextrose
+            ({{ "%g"|format(result.dextrose_g_per_u) }} g per U insulin)
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.85rem;">
+            <strong>Dilute before bolus:</strong> mix the
+            {{ "%g"|format(result.d50_volume_ml) }} mL of D50 with
+            {{ "%g"|format(result.d25_dilution_volume_ml) }} mL of 0.9% NaCl
+            (final D25), or further dilute into 50–100 mL saline (final
+            D5–D10) and give over 5–10 minutes.
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Follow-up dextrose CRI</div>
+        <p style="margin: 0; line-height: 1.6;">
+            Add 2.5–5% dextrose to the maintenance fluids for 4–6 hours
+            after the bolus to prevent rebound hypoglycemia. Monitor BG
+            every 1 hour × 6 hours.
+        </p>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Expected clinical effect</div>
+        <p style="margin: 0; line-height: 1.6;">
+            Onset 15–30 minutes; effect lasts 4–6 hours. Typical
+            K reduction <strong>0.5–1.2 mEq/L</strong>. Recheck serum K
+            at 30 min and 1 hr after the bolus.
+        </p>
+    </div>
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+    {% if result.valid %}
+    <template id="worked-example-source">$$\text{insulin} = {{ result.insulin_dose_u_per_kg }}_{\text{U/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.2f"|format(result.total_insulin_u) }}\,\text{U}$$</template>
+    <template id="worked-example-source-dextrose">$$\text{dextrose} = {{ "%.2f"|format(result.total_insulin_u) }}_{\text{U}} \times {{ result.dextrose_g_per_u }}_{\text{g/U}} = {{ "%.2f"|format(result.dextrose_total_g) }}\,\text{g} = {{ "%.2f"|format(result.d50_volume_ml) }}\,\text{mL of D50}$$</template>
+    {% endif %}
+</div>

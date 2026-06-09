@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ drug.display_name }} | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container" style="max-width: 820px;">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ drug.category }} · Protocol</div>
+                <h1>{{ drug.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ drug.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#protocol" class="active">Protocol</a>
+            {% if drug.slug in available_articles %}
+            <a href="/learn/{{ drug.slug }}">Clinical background</a>
+            {% endif %}
+            {% if drug.sources %}<a href="#sources">Sources</a>{% endif %}
+        </nav>
+
+        {% if drug.mechanism_summary %}
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Overview</div>
+            <p style="margin: 0;">{{ drug.mechanism_summary }}</p>
+        </div>
+        {% endif %}
+
+        <div id="protocol">
+            {% for step in rendered_steps %}
+            <article class="protocol-step">
+                <header class="protocol-step__head">
+                    <span class="protocol-step__num">{{ step.step_number }}</span>
+                    <h2>{{ step.title }}</h2>
+                </header>
+
+                <div class="protocol-step__body">
+                    {{ step.content_html | safe }}
+                </div>
+
+                {% if step.conditions %}
+                <div class="protocol-step__conditions">
+                    {% for cond in step.conditions %}
+                    <div class="protocol-condition">
+                        <div class="protocol-condition__when">{{ cond.when }}</div>
+                        <div class="protocol-condition__then">→ {{ cond.then }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+
+        {% if drug.sources %}
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                {% for s in drug.sources %}
+                <li>
+                    {{ s.citation }}
+                    {% if s.url %}· <a href="{{ s.url }}" target="_blank" rel="noopener">link</a>{% endif %}
+                    {% if s.reviewer %}<br><em style="color: var(--ink-mute); font-size: 0.9em;">{{ s.reviewer }}</em>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Hypokalemia / KCl supplementation | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>0.5 mEq/kg/hr ceiling.</strong>
+                    KCl IV infusion above this rate risks cardiac toxicity.
+                    The maximum pump rate shown is the highest rate at
+                    which this patient can receive the prescribed
+                    concentration without exceeding that ceiling.
+                </li>
+                <li>
+                    <strong>Mix the bag thoroughly.</strong>
+                    Inadequate mixing of KCl in flexible bags has been shown to
+                    cause up to 4× concentration spikes at the outflow port.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">How this calculator works</div>
+            <p style="margin: 0;">
+                Looks up the recommended KCl supplementation per IV fluid
+                bag from a published sliding scale by serum K, then
+                computes the maximum safe pump rate for this patient
+                based on weight. InfusionFox identifies pattern; clinical
+                decisions remain with the practitioner.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/hypokalemia">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#scale">Sliding scale</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/hypokalemia/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label for="weight_value">Weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="serum_k_meq_per_l">Serum potassium (mEq/L)</label>
+                    <input type="number" step="0.01" min="0.5" max="10" id="serum_k_meq_per_l"
+                           name="serum_k_meq_per_l" value="{{ inputs.serum_k_meq_per_l }}" required>
+                    <div class="help">
+                        Reference range typically 3.5–5.5 mEq/L. Below 3.5 = hypokalemia.
+                        Severe (&lt;2.5) usually warrants IV supplementation.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>IV fluid bag size</label>
+                    <div class="segmented">
+                        <input type="radio" name="bag_size" value="250" id="bs-250"
+                               {% if inputs.bag_size.value == '250' %}checked{% endif %}>
+                        <label for="bs-250">250 mL</label>
+                        <input type="radio" name="bag_size" value="1000" id="bs-1000"
+                               {% if inputs.bag_size.value == '1000' %}checked{% endif %}>
+                        <label for="bs-1000">1 L</label>
+                    </div>
+                    <div class="help">
+                        Smaller bags are typical for ICU patients on tighter K control.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/hypokalemia_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The scale row gives KCl to add per bag and a maximum rate (mL/kg/hr) so total K delivery stays ≤ 0.5 mEq/kg/hr. Maximum pump rate for this patient:
+            </p>
+            <div class="formula-display">
+                $$\text{max pump rate (mL/hr)} = \text{weight}_{\text{kg}} \times \text{max rate}_{\text{mL/kg/hr}}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Final bag concentration:
+            </p>
+            <div class="formula-display">
+                $$\text{concentration (mEq/L)} = \frac{\text{KCl added (mEq)}}{\text{bag size (L)}}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result and result.matched_row %}
+                $$\text{max rate} = {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.matched_row.max_rate_ml_per_kg_per_hr }}_{\text{mL/kg/hr}} = {{ "%.1f"|format(result.max_pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div class="formula-display">
+                {% if result and result.matched_row %}
+                $$\text{concentration} = \frac{ {{ result.kcl_to_add_meq }}_{\text{mEq}} }{ {{ "%.3f"|format(result.bag_size_ml / 1000) }}_{\text{L}} } = {{ "%.1f"|format(result.final_concentration_meq_per_l) }}\,\text{mEq/L}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="scale" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Sliding scale</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Guidelines for routine intravenous supplementation of potassium
+                in dogs and cats, designed so that the K delivery rate does not
+                exceed 0.5 mEq/kg/hr at the maximum listed pump rate.
+            </p>
+            <table class="data-table" style="width: 100%; margin-top: 1rem; font-size: 0.95rem;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Serum K (mEq/L)</th>
+                        <th style="text-align: right;">mEq KCl per 1 L bag</th>
+                        <th style="text-align: right;">mEq KCl per 250 mL bag</th>
+                        <th style="text-align: right;">Max pump rate (mL/kg/hr)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in scale_rows %}
+                    <tr>
+                        <td>{{ row.label }}</td>
+                        <td style="text-align: right;">{{ row.kcl_per_liter }}</td>
+                        <td style="text-align: right;">{{ row.kcl_per_250ml }}</td>
+                        <td style="text-align: right;">{{ row.max_rate_ml_per_kg_per_hr }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Concentration ceilings</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li><strong>Peripheral vein:</strong> ≤ 60 mEq/L (above this causes vein irritation and sclerosis; central line preferred).</li>
+                <li><strong>Subcutaneous route:</strong> ≤ 35 mEq/L.</li>
+                <li>The K&lt;2.0 row's 80 mEq/L concentration exceeds the peripheral ceiling, central access is recommended for that band.</li>
+            </ul>
+
+            <h3>Practical notes</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>KCl IV infusion should not exceed 0.5 mEq/kg/hr to avoid cardiac toxicity.</li>
+                <li>DKA exception: rates up to 0.9 mEq/kg/hr have been used safely in human patients with continuous ECG monitoring; InfusionFox enforces the 0.5 mEq/kg/hr ceiling regardless.</li>
+                <li>Begin oral potassium supplementation as soon as the patient can tolerate it.</li>
+                <li>For lab samples drawn from K-containing fluid lines, discard the initial volume to avoid spuriously high results.</li>
+                <li>Mix the bag thoroughly after addition to prevent localized concentration spikes (up to 4× reported with inadequate mixing).</li>
+            </ul>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    DiBartola SP, ed. <em>Fluid, Electrolyte, and Acid-Base
+                Disorders in Small Animal Practice</em>. 4th ed. St. Louis,
+                MO: Elsevier Saunders; 2012. Chapter 5 (Disorders of
+                Potassium: Hypokalemia and Hyperkalemia), pp. 107-108,
+                Table 5-2.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Table 5-2 originally from: Greene RW, Scott RC. Lower urinary
+                tract disease. In: Ettinger SJ, ed. <em>Textbook of Veterinary
+                Internal Medicine</em>. Philadelphia: WB Saunders; 1975:1572.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

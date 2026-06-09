@@ -1,0 +1,30 @@
+{% if query %}
+<div class="search-dropdown__inner" data-query="{{ query }}">
+    {% if results %}
+        <ul role="listbox" id="search-dropdown-list" style="list-style: none; margin: 0; padding: 0;">
+            {% for r in results %}
+            <li role="option" data-url="{{ r.url }}">
+                <a href="{{ r.url }}" class="search-result">
+                    <div class="search-result__row">
+                        <span class="search-result__title">{{ r.title_html|safe }}</span>
+                        <span class="search-result__type">{{ r.type }}</span>
+                    </div>
+                    <div class="search-result__meta">
+                        <span class="search-result__category">{{ r.display_category }}</span>
+                        {% if r.blurb %}<span class="search-result__blurb">— {{ r.blurb[:120] }}{% if r.blurb|length > 120 %}…{% endif %}</span>{% endif %}
+                    </div>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="{{ see_all_url }}" class="search-dropdown__see-all">See all results for "{{ query }}" →</a>
+    {% else %}
+        <div class="search-dropdown__empty">
+            <p>No matches for <strong>{{ query }}</strong>.</p>
+            <p class="muted">Try a single keyword, or press Enter for full-page search.</p>
+        </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="search-dropdown__inner"></div>
+{% endif %}

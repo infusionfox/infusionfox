@@ -1,0 +1,16 @@
+<div class="result" id="concentration-result">
+    <dl class="result__details" style="grid-template-columns: 1fr;">
+        <div class="result__detail">
+            <dt>Percent (% w/v)</dt>
+            <dd>{{ "%g"|format(result.percent) }}%</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Milligrams per milliliter</dt>
+            <dd>{{ "%g"|format(result.mg_per_ml) }} mg/mL</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Micrograms per milliliter</dt>
+            <dd>{{ "%g"|format(result.ug_per_ml) }} µg/mL</dd>
+        </div>
+    </dl>
+</div>

@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Fluid therapy | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">isotonic crystalloid</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Phases for a dehydrated patient.</strong> If the
+                    patient is in shock, that is addressed FIRST with rapid
+                    bolus(es), not by running the rehydration + maintenance
+                    rate faster. Only after volume status is restored do you
+                    switch to the active-phase combined rate. Then, after
+                    the rehydration window completes, REDUCE to the
+                    post-rehydration rate. For a euhydrated patient the plan
+                    is a single maintenance rate; no phases.
+                </li>
+                <li>
+                    <strong>Reassess every 2–6 hours.</strong> Fluid
+                    therapy is dynamic. Watch for over-rehydration
+                    (chemosis, respiratory crackles, peripheral edema,
+                    weight gain >10%) and reduce the rate accordingly.
+                    Watch electrolytes, hypokalemia, hypophosphatemia,
+                    and hypomagnesemia worsen with continued therapy in
+                    many conditions (see /hypokalemia, /hypophosphatemia,
+                    /hypomagnesemia).
+                </li>
+                <li>
+                    <strong>Choose the right fluid.</strong> Replacement
+                    isotonic crystalloid is the default. Buffered
+                    solutions (LRS, Plasma-Lyte, Normosol-R) are usually
+                    preferred over 0.9% NaCl in non-emergent rehydration,
+                    they correct acidosis faster, reduce hyperchloremia,
+                    and contribute small amounts of K and bicarbonate
+                    precursors. Use 0.9% NaCl for documented severe
+                    hyponatremia, hypochloremia, or hypercalcemia.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Using this in DKA?</div>
+            <p style="margin: 0 0 0.5rem;">
+                The math on this page is general-purpose for any
+                dehydration scenario. When using it specifically for DKA
+                management, two interactions matter:
+            </p>
+            <ul style="margin: 0; padding-left: 1.25rem; line-height: 1.7;">
+                <li>
+                    <strong>Insulin runs through a SEPARATE line.</strong>
+                    See <a href="/insulin-cri-dka">/insulin-cri-dka</a>
+                    or <a href="/insulin-im-dka">/insulin-im-dka</a>.
+                </li>
+                <li>
+                    <strong>The fluid composition of this line changes with BG</strong>
+                    when an insulin CRI is also running
+                    (NaCl alone above 250 → NaCl + 2.5% dextrose at
+                    150–250 → NaCl + 5% dextrose below 150). The RATE
+                    calculated here doesn't change with BG, only the
+                    composition does.
+                </li>
+                <li>
+                    See the <a href="/dka">DKA management hub</a> for the
+                    full workflow.
+                </li>
+            </ul>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/fluid-therapy">Clinical background</a>
+            <a href="#how-it-works">How the math works</a>
+            <a href="#formula">Formula</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/fluid-therapy/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Currently in shock?</label>
+                    <div class="segmented">
+                        <input type="radio" name="in_shock" value="" id="sh-no"
+                               {% if not inputs.in_shock %}checked{% endif %}>
+                        <label for="sh-no">No</label>
+                        <input type="radio" name="in_shock" value="yes" id="sh-yes"
+                               {% if inputs.in_shock %}checked{% endif %}>
+                        <label for="sh-yes">Yes &mdash; show bolus output</label>
+                    </div>
+                    <div class="help">
+                        If yes, the result panel will surface the shock-bolus
+                        increments and ceilings (dogs up to 90 mL/kg total,
+                        cats up to 60 mL/kg). Shock bolus is delivered FIRST,
+                        then the rehydration+maintenance rate begins.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Dehydration estimate (physical exam)</label>
+                    {% for band in dehydration_bands %}
+                    <div style="margin-top: 0.5rem;">
+                        <label style="display: flex; align-items: flex-start; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                            <input type="radio" name="dehydration_band_key" value="{{ band.key }}"
+                                   {% if inputs.dehydration_band_key == band.key %}checked{% endif %}
+                                   style="margin-top: 0.25rem;">
+                            <span>
+                                <strong>{{ band.label }}</strong>
+                                <span style="color: var(--ink-soft); font-size: 0.85rem; display: block; margin-top: 0.1rem;">
+                                    {{ band.description }}
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="field" id="field-rehydration-window">
+                    <label>Rehydration window</label>
+                    <div class="segmented">
+                        <input type="radio" name="rehydration_window_hr" value="4" id="rw-4"
+                               {% if inputs.rehydration_window_hr == 4 %}checked{% endif %}>
+                        <label for="rw-4">4 hr</label>
+                        <input type="radio" name="rehydration_window_hr" value="6" id="rw-6"
+                               {% if inputs.rehydration_window_hr == 6 %}checked{% endif %}>
+                        <label for="rw-6">6 hr</label>
+                        <input type="radio" name="rehydration_window_hr" value="12" id="rw-12"
+                               {% if inputs.rehydration_window_hr == 12 %}checked{% endif %}>
+                        <label for="rw-12">12 hr</label>
+                        <input type="radio" name="rehydration_window_hr" value="24" id="rw-24"
+                               {% if inputs.rehydration_window_hr == 24 %}checked{% endif %}>
+                        <label for="rw-24">24 hr</label>
+                    </div>
+                    <div class="help">
+                        Published range is 4–24 hours. Shorter windows
+                        (4–6 hr) for severely dehydrated patients with
+                        intact cardiovascular function. Longer windows
+                        (12–24 hr) for cardiac, renal, or geriatric
+                        patients where fluid loading is a risk.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Maintenance rate factor</label>
+                    <div class="segmented">
+                        <input type="radio" name="maintenance_mlpkg_hr" value="2" id="mf-2"
+                               {% if inputs.maintenance_mlpkg_hr == 2.0 %}checked{% endif %}>
+                        <label for="mf-2">2 mL/kg/hr</label>
+                        <input type="radio" name="maintenance_mlpkg_hr" value="3" id="mf-3"
+                               {% if inputs.maintenance_mlpkg_hr == 3.0 %}checked{% endif %}>
+                        <label for="mf-3">3 mL/kg/hr</label>
+                        <input type="radio" name="maintenance_mlpkg_hr" value="4" id="mf-4"
+                               {% if inputs.maintenance_mlpkg_hr == 4.0 %}checked{% endif %}>
+                        <label for="mf-4">4 mL/kg/hr</label>
+                    </div>
+                    <div class="help">
+                        Published range is 2–4 mL/kg/hr. Default 3 mL/kg/hr
+                        (mid-range). Lower (2) for patients with cardiac
+                        or renal limitations; higher (4) for active
+                        ongoing demand or hypermetabolic states.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="ongoing_losses_ml_per_hr">Ongoing losses (mL/hr)</label>
+                    <input type="number" step="any" min="0" id="ongoing_losses_ml_per_hr"
+                           name="ongoing_losses_ml_per_hr" value="{{ inputs.ongoing_losses_ml_per_hr }}">
+                    <div class="help">
+                        Estimate of ongoing fluid losses, vomiting,
+                        osmotic polyuria, diarrhea. Default 0. A 20 kg dog
+                        with active vomiting and severe glucosuria might
+                        easily lose 50–100 mL/hr. Re-estimate hourly and
+                        adjust as needed.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/fluid_therapy_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Method</div>
+            <h2>How the math works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Fluid therapy in a dehydrated patient combines four components.
+                Three are calculated by this tool; the fourth (shock bolus)
+                is surfaced as a separate ceiling and increment.
+            </p>
+
+            <h3>1. Shock bolus (if applicable)</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                If the patient is hypovolemic at presentation: 10–30 mL/kg
+                isotonic crystalloid IV, reassess after each increment, up
+                to a ceiling of 90 mL/kg in dogs or 60 mL/kg in cats. Most
+                patients respond well before reaching the maximum. Shock
+                bolus is delivered FIRST and is NOT additive to the
+                rehydration+maintenance rate that follows.
+            </p>
+
+            <h3>2. Rehydration deficit</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                $$\text{deficit (mL)} = \text{weight (kg)} \times \%\text{ dehydration} \times 10$$
+                Replaced over the chosen rehydration window (4–24 hr).
+                Rehydration rate = deficit ÷ window.
+            </p>
+
+            <h3>3. Maintenance rate</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Published range is 2–4 mL/kg/hr. This is the older
+                mL/kg/hr maintenance rule, not the allometric formula,
+                and is the convention used by this calculator.
+            </p>
+
+            <h3>4. Combined rate during the active phase</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                $$\text{total (mL/hr)} = \text{rehydration} + \text{maintenance} + \text{ongoing losses}$$
+                Continue at this rate for the full rehydration window. At
+                the end of the window, REDUCE to (maintenance + ongoing
+                losses) until the patient is eating, drinking, and
+                ketone-negative.
+            </p>
+        </section>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <h2>Formula</h2>
+
+            <h3 style="margin-top: 1rem;">Rehydration deficit</h3>
+            <div class="formula-display">
+                $$\text{deficit}_{\text{mL}} = \text{weight}_{\text{kg}} \times \text{dehydration}_{\%} \times 10$$
+            </div>
+            <div class="formula-display">
+                $$\text{rehydration rate}_{\text{mL/hr}} = \frac{\text{deficit}_{\text{mL}}}{\text{window}_{\text{hr}}}$$
+            </div>
+
+            <h3>Maintenance</h3>
+            <div class="formula-display">
+                $$\text{maintenance}_{\text{mL/hr}} = \text{weight}_{\text{kg}} \times \text{rate}_{\text{mL/kg/hr}}$$
+            </div>
+
+            <h3>Total active phase rate</h3>
+            <div class="formula-display">
+                $$\text{total}_{\text{mL/hr}} = \text{rehydration}_{\text{mL/hr}} + \text{maintenance}_{\text{mL/hr}} + \text{ongoing losses}_{\text{mL/hr}}$$
+            </div>
+
+            {% if result %}
+            <div id="worked-example" class="formula-display">
+                $$\text{deficit} = {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ "%.1f"|format(result.dehydration_percent) }}_{\%} \times 10 = {{ "%.1f"|format(result.deficit_ml) }}\,\text{mL}$$
+                $$\text{rehydration rate} = \frac{ {{ "%.1f"|format(result.deficit_ml) }}_{\text{mL}} }{ {{ result.rehydration_window_hr }}_{\text{hr}} } = {{ "%.1f"|format(result.rehydration_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                $$\text{maintenance} = {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.maintenance_mlpkg_hr }}_{\text{mL/kg/hr}} = {{ "%.1f"|format(result.maintenance_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                $$\text{total} = {{ "%.1f"|format(result.rehydration_rate_ml_per_hr) }} + {{ "%.1f"|format(result.maintenance_rate_ml_per_hr) }} + {{ "%.1f"|format(result.ongoing_losses_ml_per_hr) }} = {{ "%.1f"|format(result.active_phase_rate_ml_per_hr) }}\,\text{mL/hr}$$
+            </div>
+            {% endif %}
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Hoehne SN. Diabetic Ketoacidosis. In: Silverstein DC,
+                Hopper K, eds. <em>Small Animal Critical Care Medicine</em>.
+                3rd ed. St. Louis, MO: Elsevier; 2023. Chapter 73,
+                Box 73.1 (Recommended Treatment and Monitoring Schedule
+                for Dogs and Cats with Diabetic Ketoacidosis).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Dehydration physical-exam bands: standard veterinary
+                internal-medicine assessment as described in DiBartola
+                <em>Fluid, Electrolyte, and Acid-Base Disorders</em> and
+                referenced by most major IM texts.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+
+<script>
+(function() {
+    // Hide the "Rehydration window" segmented control when the user selects
+    // the Euhydrated band. The compute engine still receives a window value
+    // (it's just unused when % dehydration is 0) but the UI shouldn't
+    // imply that a rehydration phase exists.
+    var bandRadios = document.querySelectorAll('input[name="dehydration_band_key"]');
+    var rehydrationField = document.getElementById('field-rehydration-window');
+
+    function currentBand() {
+        for (var r of bandRadios) if (r.checked) return r.value;
+        return '';
+    }
+    function applyVisibility() {
+        if (!rehydrationField) return;
+        rehydrationField.style.display = (currentBand() === 'euhydrated') ? 'none' : '';
+    }
+    bandRadios.forEach(function(r) { r.addEventListener('change', applyVisibility); });
+    applyVisibility();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Hydromorphone CRI · InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Analgesia</div>
+                <h1>Hydromorphone CRI</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Loading bolus and continuous-rate infusion for dogs and cats.
+                    Combined analgesia and anesthesia ranges per Plumb's; titration
+                    ladder shows pump rate at every dose step.
+                </p>
+            </div>
+        </div>
+
+        <div id="calculator">
+
+        <div class="calc-grid">
+            <div class="calc-form-col">
+                <form
+                    hx-post="/hydromorphone-cri/compute"
+                    hx-target="#result-panel"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:250ms, change, load"
+                >
+                    <fieldset>
+                        <legend>Patient</legend>
+                        <div class="field field--inline">
+                            <label for="weight_value">Weight</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="weight_value" name="weight_value"
+                                    value="{{ weight_value }}" min="0.5" max="150" step="any"
+                                    required style="width: 8rem;">
+                                <div class="segmented">
+                                    <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                                    <label for="wu-lb">lb</label>
+                                    <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                                    <label for="wu-kg">kg</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-top: 1rem;">
+                            <label>Species</label>
+                            <div class="segmented">
+                                <input type="radio" name="species" value="dog" id="species-dog"
+                                    {% if (result.species.value if result else species|default('dog')) == 'dog' %}checked{% endif %}>
+                                <label for="species-dog">Dog</label>
+                                <input type="radio" name="species" value="cat" id="species-cat"
+                                    {% if (result.species.value if result else species|default('dog')) == 'cat' %}checked{% endif %}>
+                                <label for="species-cat">Cat</label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset style="margin-top: 1.25rem;">
+                        <legend>Concentration</legend>
+                        {#
+                            Hydromorphone-specific concentration UX, modeled
+                            on the norepinephrine pattern. The 2 mg/mL stock
+                            vial is the right default for almost all
+                            veterinary use; the 1, 4, and 10 mg/mL preps
+                            exist in human pharmacy stock and are surfaced
+                            via the disclosure for clinicians who encounter
+                            them in mixed-use settings. The hidden input
+                            carries the current concentration so the form
+                            posts correctly; the radio group in the
+                            disclosure updates it and re-fires the change
+                            event HTMX listens for.
+
+                            Unlike norepi (which is a bag preparation with
+                            a mixing recipe), hydromorphone is drawn from
+                            a stock vial; the prep card therefore shows
+                            only the concentration value, no recipe.
+                        #}
+                        <div class="field">
+                            {% set current_stock = (result.stock_mg_per_ml if result else stock_mg_per_ml)|float %}
+                            <div class="prep-card" id="hydro-concentration-display">
+                                <div class="prep-card__concentration">
+                                    <span class="prep-card__value" id="hydro-stock-display">{{ "%g"|format(current_stock) }}</span>
+                                    <span class="prep-card__unit">mg/mL</span>
+                                </div>
+                            </div>
+
+                            {# Hidden input carries the active concentration to the server. #}
+                            <input type="hidden" id="stock_mg_per_ml" name="stock_mg_per_ml"
+                                   value="{{ current_stock }}">
+
+                            <details class="alt-concentration-panel">
+                                <summary>Use a different concentration</summary>
+                                <div class="alt-concentration-panel__body">
+                                    <p class="alt-concentration-panel__intro">
+                                        All four preparations are pharmacologically
+                                        equivalent. The default (2 mg/mL) is the
+                                        standard veterinary vial. The alternatives
+                                        exist in human pharmacy stock and may be
+                                        encountered in mixed-use settings; verify
+                                        the vial label before drawing up.
+                                    </p>
+                                    <div class="alt-concentration-panel__options">
+                                        {% for option_value, option_label in stock_options %}
+                                        <label class="alt-concentration-option">
+                                            <input type="radio" name="alt_stock"
+                                                   value="{{ option_value }}"
+                                                   {% if current_stock == option_value %}checked{% endif %}>
+                                            <div>
+                                                <strong>{{ option_label }}</strong>
+                                                {% if option_value == 2.0 %}
+                                                    <span class="alt-concentration-option__when">
+                                                        Standard veterinary vial. Most clinics stock this concentration.
+                                                    </span>
+                                                {% elif option_value == 1.0 %}
+                                                    <span class="alt-concentration-option__when">
+                                                        Small-volume vial. Useful for very small patients where TB-syringe accuracy matters.
+                                                    </span>
+                                                {% elif option_value == 4.0 %}
+                                                    <span class="alt-concentration-option__when">
+                                                        Premixed concentrate. Reduces bag-exchange frequency on prolonged infusions.
+                                                    </span>
+                                                {% elif option_value == 10.0 %}
+                                                    <span class="alt-concentration-option__when">
+                                                        High-potency preparation. Used for very small volume draws; double-check the label.
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    </fieldset>
+                </form>
+
+                {#
+                    Tiny JS shim: when the user picks an alt-stock radio,
+                    sync the hidden input + display, then fire a 'change'
+                    event on the form so HTMX recomputes. Mirrors the
+                    norepinephrine prep-card handler.
+                #}
+                <script>
+                (function () {
+                    var hidden = document.getElementById('stock_mg_per_ml');
+                    var display = document.getElementById('hydro-stock-display');
+                    if (!hidden || !display) return;
+                    var radios = document.querySelectorAll('input[name="alt_stock"]');
+                    radios.forEach(function (radio) {
+                        radio.addEventListener('change', function () {
+                            if (!radio.checked) return;
+                            var v = parseFloat(radio.value);
+                            if (isNaN(v) || v <= 0) return;
+                            hidden.value = v;
+                            // Pretty-print without trailing zeros.
+                            display.textContent = (v % 1 === 0) ? v.toFixed(0) : String(v);
+                            hidden.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                    });
+                })();
+                </script>
+            </div>
+
+            <div class="calc-result-col">
+                {% if result %}
+                    {% include "partials/hydromorphone_cri_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 3rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/hydromorphone-cri">Background</a>
+        </nav>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

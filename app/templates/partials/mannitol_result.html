@@ -1,0 +1,117 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+        {% include "partials/_invalid_result.html" %}
+    {% else %}
+
+    {# Headline: total dose and volume are what the clinician will
+       actually draw and infuse. Lead with these. #}
+    <div class="result__headline">
+        <div class="eyebrow">Mannitol dose</div>
+        <div class="result__primary" style="font-size: 1.5rem; line-height: 1.3;">
+            {{ "%.2f"|format(result.total_dose_g) }} g
+            ({{ "%.1f"|format(result.volume_ml) }} mL of
+            {{ result.inputs.concentration_percent }}%)
+        </div>
+        <div class="result__secondary">
+            {{ result.indication_profile.label }}
+            · {{ "%.2f"|format(result.weight_kg) }} kg patient
+        </div>
+    </div>
+
+    {# Pump rate and infusion summary. #}
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Pump rate</dt>
+            <dd>
+                <strong>{{ "%.0f"|format(result.rate_ml_per_hr) }} mL/hr</strong>
+                <span style="color: var(--ink-mute); font-size: 0.85em;">
+                    ({{ "%.1f"|format(result.rate_ml_per_min) }} mL/min)
+                </span>
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>Infusion duration</dt>
+            <dd>{{ result.inputs.duration_min }} min</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Dose</dt>
+            <dd>
+                {{ "%g"|format(result.inputs.dose_g_per_kg) }} g/kg
+                {% if not result.dose_within_indication_range %}
+                <span style="color: var(--ink-mute); font-size: 0.85em;">
+                    (outside published range
+                    {{ "%g"|format(result.indication_profile.dose_low_g_per_kg) }}–{{ "%g"|format(result.indication_profile.dose_high_g_per_kg) }})
+                </span>
+                {% endif %}
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>Total volume</dt>
+            <dd>{{ "%.1f"|format(result.volume_ml) }} mL</dd>
+        </div>
+    </dl>
+
+    {# Worked example showing the math, KaTeX-rendered. #}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Math</div>
+        <div class="formula-box" style="margin-top: 0.6rem;">
+            $$\text{Total dose} = {{ "%g"|format(result.inputs.dose_g_per_kg) }} \,\tfrac{g}{kg} \times {{ "%.2f"|format(result.weight_kg) }} \,kg = {{ "%.2f"|format(result.total_dose_g) }} \,g$$
+            $$\text{Volume} = \frac{{ "%.2f"|format(result.total_dose_g) }} \,g}{{ "%.2f"|format(result.concentration_g_per_ml) }} \,g/mL} = {{ "%.1f"|format(result.volume_ml) }} \,mL$$
+            $$\text{Rate} = \frac{{ "%.1f"|format(result.volume_ml) }} \,mL}{{ result.inputs.duration_min }} \,min} \times 60 = {{ "%.0f"|format(result.rate_ml_per_hr) }} \,mL/hr$$
+        </div>
+    </div>
+
+    {# Maintenance CRI follow-up (shown only when the indication has one
+       per Plumb's: oliguric AKI 60-120 mg/kg/hr, uroliths fixed 1 mg/kg/min). #}
+    {% if result.cri_rate_low_ml_per_hr is not none and result.cri_rate_high_ml_per_hr is not none %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Maintenance CRI (post-bolus)</div>
+        {% if result.cri_rate_low_ml_per_hr == result.cri_rate_high_ml_per_hr %}
+        <div style="font-size: 1.1rem; margin: 0.4rem 0; color: var(--ink);">
+            <strong>{{ "%.1f"|format(result.cri_rate_low_ml_per_hr) }} mL/hr</strong>
+            <span style="color: var(--ink-mute); font-size: 0.85em;">
+                (at {{ "%.0f"|format(result.indication_profile.cri_rate_low_mg_per_kg_per_hr) }} mg/kg/hr, {{ result.inputs.concentration_percent }}% mannitol)
+            </span>
+        </div>
+        {% else %}
+        <div style="font-size: 1.1rem; margin: 0.4rem 0; color: var(--ink);">
+            <strong>{{ "%.1f"|format(result.cri_rate_low_ml_per_hr) }}–{{ "%.1f"|format(result.cri_rate_high_ml_per_hr) }} mL/hr</strong>
+            <span style="color: var(--ink-mute); font-size: 0.85em;">
+                (at {{ "%.0f"|format(result.indication_profile.cri_rate_low_mg_per_kg_per_hr) }}–{{ "%.0f"|format(result.indication_profile.cri_rate_high_mg_per_kg_per_hr) }} mg/kg/hr, {{ result.inputs.concentration_percent }}% mannitol)
+            </span>
+        </div>
+        {% endif %}
+        {% if result.indication_profile.cri_note %}
+        <p style="margin: 0.4rem 0 0; color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55;">
+            {{ result.indication_profile.cri_note }}
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {# Clinical interpretation list. #}
+    {% if result.interpretation %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Clinical context</div>
+        <ul style="margin: 0.4rem 0 0; padding-left: 1.3rem; color: var(--ink); font-size: 0.92rem; line-height: 1.6;">
+            {% for line in result.interpretation %}<li style="margin-bottom: 0.4rem;">{{ line }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# Persistent safety warning surfaces on every result. The
+       cumulative-dose violation triggers the danger styling because the
+       reverse-osmotic-shift and osmotic-nephrosis risks are real and
+       under-recognized. #}
+    {% if result.warnings %}
+        {% set ns = namespace(danger=false) %}
+        {% if result.cumulative_dose_warning %}{% set ns.danger = true %}{% endif %}
+        <div class="warnings {% if ns.danger %}danger{% endif %}" style="margin-top: 1.25rem;">
+            <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+    {% endif %}
+</div>

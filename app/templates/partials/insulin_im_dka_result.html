@@ -1,0 +1,97 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        {% if result.mode.value == 'loading' %}
+            <div class="eyebrow">Initial loading dose</div>
+        {% elif result.matched_tier %}
+            <div class="eyebrow">{{ result.matched_tier.label }}</div>
+        {% else %}
+            <div class="eyebrow">Awaiting BG values</div>
+        {% endif %}
+
+        {% if result.dose_u_per_kg > 0 %}
+            <div class="result__primary">
+                {{ "%g"|format(result.total_units) }}<span class="unit">U IM</span>
+            </div>
+            <div class="result__secondary">
+                = {{ "%g"|format(result.dose_u_per_kg) }} U/kg ×
+                {{ "%.2f"|format(result.weight_kg) }} kg
+                · {{ "%g"|format(result.volume_ml_u100) }} mL of U-100 stock
+            </div>
+        {% else %}
+            <div class="result__primary" style="color: var(--ink-soft);">
+                —
+            </div>
+            <div class="result__secondary">
+                Enter previous and current BG to compute.
+            </div>
+        {% endif %}
+    </div>
+
+    {% if result.mode.value == 'subsequent' and result.bg_drop_mg_per_dl is not none %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">BG trend</div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="color: var(--ink-soft);">Previous BG:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.previous_bg) }} mg/dL
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Current BG:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.current_bg) }} mg/dL
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Drop in last hour:</td>
+                <td style="text-align: right; font-weight: 600;
+                           {% if result.bg_drop_mg_per_dl < 0 %}color: var(--danger);{% endif %}">
+                    {{ "%g"|format(result.bg_drop_mg_per_dl) }} mg/dL
+                    {% if result.bg_drop_mg_per_dl >= result.target_drop_band_low and result.bg_drop_mg_per_dl <= result.target_drop_band_high %}
+                        <span style="color: var(--ink-soft); font-weight: normal;">(target band ✓)</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if result.mode.value == 'loading' %}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Next steps</div>
+        <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">
+            Give the loading dose IM. Re-check BG in 1 hour. Then return
+            to this calculator, switch to <strong>Subsequent</strong>
+            mode, and enter both the previous BG (before this loading
+            dose) and the current BG to get the next IM dose.
+        </p>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+    {% if result.valid %}
+    <template id="worked-example-source">$$\text{total units} = {{ result.dose_u_per_kg }}_{\text{U/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.2f"|format(result.total_units) }}\,\text{U}$$</template>
+    <template id="worked-example-source-volume">$$\text{volume} = \frac{ {{ "%.2f"|format(result.total_units) }} }{100} = {{ "%.3f"|format(result.volume_ml_u100) }}\,\text{mL (U-100 syringe)}$$</template>
+    {% if result.bg_drop_mg_per_dl is not none %}
+    <template id="worked-example-source-bg">$$\Delta\text{BG} = {{ result.previous_bg|int }} - {{ result.current_bg|int }} = {{ result.bg_drop_mg_per_dl|int }}\,\text{mg/dL/hr}$$</template>
+    {% endif %}
+    {% endif %}
+</div>

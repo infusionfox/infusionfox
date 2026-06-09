@@ -1,0 +1,201 @@
+{# Intraoperative drug sheet — fluids, emergency drugs, vasopressor CRIs
+   with titration ladders. Premed and induction live on the preop sheet. #}
+<div id="anesthesia-sheet-intraop" class="anesthesia-tab-pane{% if active_tab == 'intraop' %} is-active{% endif %}" data-tab="intraop">
+
+    {% with sheet_kind="intraop" %}
+    {% include "partials/_anesthesia_sheet_header.html" %}
+    {% endwith %}
+
+    <div class="sheet-warning-banner">
+        Correct hypovolemia before vasopressors. Vasopressors are not a substitute for adequate fluid replacement. Continuous BP and ECG monitoring required for any vasoactive CRI.
+    </div>
+
+    <!-- FLUIDS -->
+    <div class="sheet-section">
+        <div class="sheet-section-title">Fluids <span style="font-weight: 400; font-size: 0.75rem;">Correct hypovolemia before inotropes or vasopressors. Administer in aliquots, reassess after each.</span></div>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Indication</th>
+                    <th>Rate / dose</th>
+                    <th class="col-vol">Volume</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Blood volume</strong></td>
+                    <td>{{ "90" if result.species.value == "dog" else "60" }} mL/kg</td>
+                    <td class="col-vol"><strong>{{ result.blood_volume_ml|int }} mL</strong></td>
+                    <td>Reference for shock dose calculation. Dogs 80–90 mL/kg; cats 50–60 mL/kg.</td>
+                </tr>
+                <tr>
+                    <td><strong>Shock: ¼ aliquot</strong></td>
+                    <td>¼ blood volume IV over 15 min</td>
+                    <td class="col-vol"><strong>{{ result.shock_quarter_dose_ml|int }} mL</strong></td>
+                    <td>Reassess after each aliquot (HR, MAP, MM, CRT, mentation). Max 1 blood volume ({{ result.shock_full_dose_ml|int }} mL) in 1 hr. Balanced isotonic crystalloid (LRS or Plasma-Lyte®). Avoid if uncontrolled hemorrhage, aim MAP ≥ 60 mmHg.</td>
+                </tr>
+                <tr>
+                    <td><strong>Anesthetic maintenance</strong></td>
+                    <td>{{ result.maintenance_rate_ml_per_kg_per_hr }} mL/kg/hr</td>
+                    <td class="col-vol"><strong>{{ result.maintenance_ml_per_hr }} mL/hr</strong></td>
+                    <td>AAHA/AAFP target rate. Adjust based on BP, HR, urine output. Recent evidence supports restrictive approach, avoid fluid overload (risk: pulmonary edema, coagulopathy, hemodilution).</td>
+                </tr>
+                <tr>
+                    <td><strong>Fluid bolus</strong></td>
+                    <td>5–10 mL/kg LRS over 10–15 min</td>
+                    <td class="col-vol"><strong>{{ result.fluid_bolus_low_ml|int }}–{{ result.fluid_bolus_high_ml|int }} mL</strong></td>
+                    <td>For volume-responsive intraoperative hypotension. Reassess after each bolus. Skip in cardiac, advanced renal, or volume-overload patients. (Lumb & Jones)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- EMERGENCY DRUGS -->
+    <div class="sheet-section">
+        <div class="sheet-section-title">Emergency Drugs</div>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Drug</th>
+                    <th>Dose</th>
+                    <th>Stock</th>
+                    <th class="col-vol">Volume</th>
+                    <th>Route</th>
+                    <th>Indication / Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in result.emergency_drugs %}
+                <tr>
+                    <td><strong>{{ d.name }}</strong></td>
+                    <td>{{ d.dose_label }}</td>
+                    <td style="color: var(--ink-mute);">{{ d.stock_label }}</td>
+                    <td class="col-vol">
+                        {% if d.name == 'Atipamezole' %}
+                        <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                        {% elif d.vol_low_ml == d.vol_high_ml %}
+                        <strong>{{ "%.3f"|format(d.vol_low_ml) }} mL</strong>
+                        {% else %}
+                        <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                        {% endif %}
+                    </td>
+                    <td>{{ d.route }}</td>
+                    <td>{{ d.note }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- BRIDGE BOLUS PRESSORS -->
+    <div class="sheet-section">
+        <div class="sheet-section-title">Bridge bolus pressors <span style="font-weight: 400; font-size: 0.75rem;">(single-dose IV while preparing a CRI · if MAP requires repeat dosing, switch to a CRI)</span></div>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Drug</th>
+                    <th>Dose range</th>
+                    <th class="col-vol">Volume per bolus</th>
+                    <th>Preparation</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bolus in [result.phenylephrine_bolus, result.ephedrine_bolus] %}
+                <tr>
+                    <td><strong>{{ bolus.name }}</strong></td>
+                    <td>{{ bolus.dose_label }}</td>
+                    <td class="col-vol">
+                        <strong>{{ "%.2f"|format(bolus.volume_low_ml) }}–{{ "%.2f"|format(bolus.volume_high_ml) }} mL</strong>
+                    </td>
+                    <td style="font-size: 0.82rem;">{{ bolus.prep_note }}</td>
+                    <td>{{ bolus.note }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- VASOPRESSOR / INOTROPE CRIs -->
+    <div class="sheet-section">
+        <div class="sheet-section-title">Vasopressor / Inotrope CRI <span style="font-weight: 400; font-size: 0.75rem;">(correct hypovolemia first · choose based on mechanism: low CO → dobutamine; vasodilation → norepinephrine; both → dopamine)</span></div>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Drug</th>
+                    <th>Dose range</th>
+                    <th class="col-vol">Pump rate</th>
+                    <th>Preparation</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cri in [result.dopamine_cri, result.dobutamine_cri, result.norepi_cri] %}
+                <tr>
+                    <td><strong>{{ cri.name }}</strong></td>
+                    <td>{{ cri.dose_label }}</td>
+                    <td class="col-vol">
+                        {% if cri.rate_low_ml_per_hr > 0 or cri.rate_high_ml_per_hr > 0 %}
+                        <strong>{{ "%.2f"|format(cri.rate_low_ml_per_hr) }}–{{ "%.2f"|format(cri.rate_high_ml_per_hr) }} mL/hr</strong>
+                        {% else %}
+                        <span style="color: var(--ink-soft);">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.82rem;">{{ cri.prep_note }}</td>
+                    <td>{{ cri.note }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TITRATION LADDERS -->
+    <div class="sheet-section sheet-titration-section">
+        <div class="sheet-section-title">CRI titration ladders <span style="font-weight: 400; font-size: 0.75rem;">(pump rate at each dose step, calibrated to the prep above)</span></div>
+        <div class="titration-grid">
+            {% for cri in [result.dopamine_cri, result.dobutamine_cri, result.norepi_cri] %}
+            {% if cri.titration_steps %}
+            <div class="titration-card">
+                <div class="titration-card__head">
+                    <strong>{{ cri.name }}</strong>
+                    <p class="titration-card__hint">{{ cri.titration_concentration_label }}</p>
+                </div>
+                <table class="titration-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Dose (µg/kg/min)</th>
+                            <th scope="col">Pump (mL/hr)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for step in cri.titration_steps %}
+                        <tr {% if step.is_caution %}class="is-caution"{% endif %}>
+                            <td class="titration-table__dose">{{ "%g"|format(step.dose_ug_per_kg_per_min) }}{% if step.is_caution %} ⚠{% endif %}</td>
+                            <td class="titration-table__rate">{{ "%.2f"|format(step.ml_per_hr) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="anesthesia-tab-next no-print" aria-label="Return to the preoperative phase">
+        <div>
+            <div class="anesthesia-tab-next__label">Previous phase</div>
+            <div class="anesthesia-tab-next__title">Preoperative: premedication, induction, and maintenance planning</div>
+        </div>
+        <button type="button" class="anesthesia-tab-next__btn"
+            onclick="infusionfox_anesthesia_activateTab('preop')">
+            ← Open preoperative sheet
+        </button>
+    </div>
+
+    <div class="sheet-footer">
+        Intraoperative sheet · infusionfox.com · For use by licensed veterinary professionals only.
+        Verify all doses and concentrations independently. Not a substitute for clinical judgment.
+    </div>
+</div>

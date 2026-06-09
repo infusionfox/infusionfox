@@ -1,0 +1,121 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">Interpretation</div>
+        <div style="font-family: var(--font-display); font-size: 1.4rem; line-height: 1.25; color: var(--ink); margin: 0.5rem 0 0;">
+            {{ result.category_title }}
+        </div>
+    </div>
+
+    <div style="border-top: 1px solid var(--line); padding-top: 1rem;">
+        <div class="eyebrow">Stage 1. HAC present?</div>
+        <p style="color: var(--ink); margin: 0.4rem 0 0; font-size: 0.95rem; line-height: 1.6;">
+            {{ result.stage1_explanation }}
+        </p>
+    </div>
+
+    {% if result.hac_present %}
+    <div style="border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 1rem;">
+        <div class="eyebrow">Stage 2. PDH suppression criteria</div>
+        <ul style="margin: 0.5rem 0 0; padding-left: 0; list-style: none;">
+            {% for c in result.pdh_criteria %}
+                <li style="display: flex; align-items: baseline; gap: 0.5rem; padding: 0.3rem 0; font-size: 0.92rem;">
+                    <span style="color: {% if c.met %}var(--success){% else %}var(--ink-mute){% endif %}; font-family: var(--font-mono); font-weight: 600;">
+                        [{% if c.met %}✓{% else %} {% endif %}]
+                    </span>
+                    <span>
+                        {{ c.label }}
+                        <span style="color: var(--ink-mute); font-size: 0.85em;">
+                            ({{ c.detail }})
+                        </span>
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div style="border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 1rem; color: var(--ink); line-height: 1.7;">
+        <p style="margin: 0; font-size: 0.95rem;">{{ result.category_description }}</p>
+    </div>
+
+    <dl class="result__details" style="margin-top: 1.25rem;">
+        <div class="result__detail">
+            <dt>Baseline</dt>
+            <dd>
+                {% if result.unit.value == 'nmol_l' %}
+                    {{ "%.1f"|format(result.baseline) }} nmol/L
+                    <span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.2f"|format(result.baseline_ug_dl) }} µg/dL)</span>
+                {% else %}
+                    {{ "%.2f"|format(result.baseline) }} µg/dL
+                {% endif %}
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>4-hour</dt>
+            <dd>
+                {% if result.unit.value == 'nmol_l' %}
+                    {{ "%.1f"|format(result.cortisol_4h) }} nmol/L
+                    <span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.2f"|format(result.cortisol_4h_ug_dl) }} µg/dL)</span>
+                {% else %}
+                    {{ "%.2f"|format(result.cortisol_4h) }} µg/dL
+                {% endif %}
+                {% if result.percent_4h is not none %}
+                <br><span style="color: var(--ink-mute); font-size: 0.85em;">{{ result.percent_4h }}% of baseline</span>
+                {% endif %}
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>8-hour</dt>
+            <dd>
+                {% if result.unit.value == 'nmol_l' %}
+                    {{ "%.1f"|format(result.cortisol_8h) }} nmol/L
+                    <span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.2f"|format(result.cortisol_8h_ug_dl) }} µg/dL)</span>
+                {% else %}
+                    {{ "%.2f"|format(result.cortisol_8h) }} µg/dL
+                {% endif %}
+                {% if result.percent_8h is not none %}
+                <br><span style="color: var(--ink-mute); font-size: 0.85em;">{{ result.percent_8h }}% of baseline</span>
+                {% endif %}
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>Cut-off used</dt>
+            <dd>
+                {% if result.unit.value == 'nmol_l' %}
+                    {{ "%.1f"|format(result.cutoff_8h) }} nmol/L
+                {% else %}
+                    {{ "%.2f"|format(result.cutoff_8h) }} µg/dL
+                {% endif %}
+            </dd>
+        </div>
+    </dl>
+
+    {% if result.percent_4h is not none and result.percent_8h is not none %}
+    <div class="formula-box">
+        <div class="eyebrow">Suppression calculations</div>
+        $$\%\,\text{baseline}_{\,4hr} = \frac{ {{ "%.2f"|format(result.cortisol_4h_ug_dl) }} }{ {{ "%.2f"|format(result.baseline_ug_dl) }} } \times 100 = {{ result.percent_4h }}\%$$
+        $$\%\,\text{baseline}_{\,8hr} = \frac{ {{ "%.2f"|format(result.cortisol_8h_ug_dl) }} }{ {{ "%.2f"|format(result.baseline_ug_dl) }} } \times 100 = {{ result.percent_8h }}\%$$
+        <p class="formula-caption">cortisol at timepoint ÷ baseline cortisol × 100. Suppression is &lt; 50%.</p>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings"><ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+    {% if result.valid %}
+    <template id="worked-example-source">$$50\%\;\text{baseline} = {{ "%.2f"|format(result.baseline * 0.50) }} \quad \text{4h} = {{ "%.2f"|format(result.cortisol_4h) }} \quad \text{8h} = {{ "%.2f"|format(result.cortisol_8h) }} \quad \text{cut-off} = {{ "%.2f"|format(result.cutoff_8h) }}$$</template>
+    {% endif %}
+</div>

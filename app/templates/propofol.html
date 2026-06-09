@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Propofol (TIVA / Status epilepticus) | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>Propofol</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Stock: 10 mg/mL (1% emulsion)</div>
+        </div>
+
+        <div class="warnings" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>No analgesia.</strong> Propofol is a sedative-
+                    hypnotic with no analgesic activity. Add multimodal
+                    analgesia (opioid, local block, NSAID where appropriate)
+                    for surgical procedures.
+                </li>
+                <li>
+                    <strong>Continuous monitoring required.</strong>
+                    Respiratory and cardiovascular support must be
+                    immediately available, apnea is possible, especially
+                    with rapid administration. Endotracheal intubation
+                    capability and supplemental oxygen are mandatory.
+                </li>
+                <li>
+                    <strong>Cat TIVA not supported by this calculator.</strong>
+                    Cats are susceptible to long recoveries and Heinz-body
+                    anemia with repeated/prolonged propofol exposure. Use
+                    short procedures with intermittent propofol bolus, or
+                    consider alfaxalone CRI or inhalant maintenance instead.
+                    (Status epilepticus protocol IS available for cats,
+                    select that indication.)
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Two indication modes</div>
+            <p style="margin: 0;">
+                <strong>TIVA maintenance</strong>, short procedures or
+                inhalant-contraindicated general anesthesia (dog-only).
+                Range 0.1–0.5 mg/kg/min IV CRI.
+                <br><br>
+                <strong>Refractory status epilepticus</strong>, alternative
+                to barbiturates with less cardiorespiratory depression
+                (dogs and cats). Range 0.1–0.25 mg/kg/min IV CRI, preceded
+                by a 2–8 mg/kg IV bolus titrated to effect. Maintain
+                6–12 hr then taper; max ≈48 hr.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/propofol">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#induction">Induction reference</a>
+            <a href="#cautions">Cautions &amp; populations</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/propofol/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Indication</label>
+                    <div class="segmented">
+                        <input type="radio" name="indication" value="tiva_maintenance" id="ind-tiva"
+                               {% if inputs.indication.value == 'tiva_maintenance' %}checked{% endif %}>
+                        <label for="ind-tiva">TIVA maintenance</label>
+                        <input type="radio" name="indication" value="status_epilepticus" id="ind-status"
+                               {% if inputs.indication.value == 'status_epilepticus' %}checked{% endif %}>
+                        <label for="ind-status">Status epilepticus</label>
+                    </div>
+                    <div class="help">
+                        TIVA: 0.1–0.5 mg/kg/min, dog-only. Status epi:
+                        0.1–0.25 mg/kg/min, both species, time-limited.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                    <div class="help">
+                        Cat TIVA is blocked. Cat status epi is supported
+                        with persistent caution about recovery time and
+                        Heinz-body monitoring.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="dose_mg_per_kg_per_min">Dose (mg/kg/min)</label>
+                    <input type="number" step="any" min="0.01" max="2" id="dose_mg_per_kg_per_min"
+                           name="dose_mg_per_kg_per_min" value="{{ inputs.dose_mg_per_kg_per_min }}" required>
+                    <div class="help">
+                        TIVA range 0.1–0.5 (default 0.1, assumes premed,
+                        unpremedicated patients may need ~0.3). Status epi
+                        range 0.1–0.25 (default 0.15). Reduce in
+                        debilitated or elderly patients.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/propofol_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Propofol stock is 10 mg/mL (1% emulsion). The dose is in mg/kg/min. Converting to a pump rate:
+            </p>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{\text{mg/kg/min}} \times 60}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Multiplying by 60 converts the per-minute dose to per-hour so the pump rate (mL/hr) matches the standard syringe-driver convention.
+            </p>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.dose_mg_per_kg_per_min }}_{\text{mg/kg/min}} \times 60 }{ 10_{\text{mg/mL}} } = {{ "%.2f"|format(result.pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="induction" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Induction dose reference (Plumb's, label data)</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Induction dosing is a clinical judgment, not a calculation.
+                Plumb's explicitly states: <em>"all dosages are provided for
+                guidance only and individual animal response should dictate
+                the dose used."</em> Premedications reduce induction
+                requirements substantially (commonly 25–60% lower than
+                unpremedicated). The tables below are reproduced from the
+                Plumb's monograph for bedside reference.
+            </p>
+
+            <h3 style="margin-top: 1.25rem;">Propofol induction dose in dogs, by premedication protocol</h3>
+            <table class="data-table" style="width: 100%; font-size: 0.9rem;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Premedication protocol</th>
+                        <th style="text-align: center;">Propofol dose (mg/kg)</th>
+                        <th style="text-align: center;">Rate (sec)</th>
+                        <th style="text-align: left;">Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in induction_table_dog %}
+                    <tr>
+                        <td>{{ row.premed }}</td>
+                        <td style="text-align: center; font-weight: 600;">{{ row.dose }}</td>
+                        <td style="text-align: center; color: var(--ink-soft);">{{ row.rate }}</td>
+                        <td style="color: var(--ink-soft); font-size: 0.85rem;">{{ row.note }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Propofol induction dose in cats, by premedication protocol</h3>
+            <table class="data-table" style="width: 100%; font-size: 0.9rem;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Premedication protocol</th>
+                        <th style="text-align: center;">Propofol dose (mg/kg)</th>
+                        <th style="text-align: center;">Rate (sec)</th>
+                        <th style="text-align: left;">Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in induction_table_cat %}
+                    <tr>
+                        <td>{{ row.premed }}</td>
+                        <td style="text-align: center; font-weight: 600;">{{ row.dose }}</td>
+                        <td style="text-align: center; color: var(--ink-soft);">{{ row.rate }}</td>
+                        <td style="color: var(--ink-soft); font-size: 0.85rem;">{{ row.note }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="admonition" style="margin-top: 1rem;">
+                <div class="admonition-title">Induction technique</div>
+                <p style="margin: 0;">
+                    IV administration over 30–90 seconds. <strong>Rapid
+                    injection (&lt;5 sec) is associated with apnea</strong>;
+                    too-slow injection results in inadequate plane of
+                    anesthesia (titrate additional incremental doses if
+                    needed). Premedication-induced excitation can be
+                    minimized by giving ≈1 mg/kg propofol slowly first,
+                    then the benzodiazepine, then the remainder of the
+                    propofol titrated to effect.
+                </p>
+            </div>
+        </section>
+
+        <section id="cautions" style="margin-top: 3rem;">
+            <div class="eyebrow">Special populations &amp; warnings</div>
+            <h2>Cautions and populations</h2>
+
+            <h3 style="margin-top: 1rem;">Cats, repeated or prolonged exposure</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Plumb's notes that repeated or prolonged propofol use in cats
+                has been associated with increased Heinz-body production,
+                anorexia, lethargy, malaise, and diarrhea. Cats are also
+                susceptible to long recoveries due to slower glucuronidation.
+                Keep CRI duration short. Monitor CBC for Heinz-body anemia
+                with repeat exposure.
+            </p>
+
+            <h3 style="margin-top: 1.25rem;">Greyhounds and sighthounds</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Greyhounds metabolize propofol more slowly than other breeds
+                due to decreased CYP2B11 expression. Recovery may be
+                prolonged after multiple repeated doses or CRI. Recovery is
+                generally normal after 1–2 induction boluses, especially
+                when followed by inhalant maintenance. Effects in other
+                sighthounds are not well characterized, caution is
+                warranted.
+            </p>
+
+            <h3 style="margin-top: 1.25rem;">Debilitated patients</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Lower doses are required in debilitated, geriatric, or
+                critically ill patients. Cardiovascular and respiratory
+                depression may be exaggerated. Combined with other CNS
+                depressants (acepromazine, opioids, benzodiazepines), reduce
+                the dose by 40–60% from the single-agent dose.
+            </p>
+
+            <h3 style="margin-top: 1.25rem;">Drug interactions</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>
+                    <strong>Epinephrine:</strong> propofol enhances
+                    epinephrine-induced arrhythmias in a dose-dependent
+                    manner, use caution if epinephrine is also indicated.
+                </li>
+                <li>
+                    <strong>α₂ agonists (dexmedetomidine, medetomidine):</strong>
+                    risk of hypoxemia; reduce propofol dose 30–60%.
+                </li>
+                <li>
+                    <strong>Opioids:</strong> reduce propofol requirements;
+                    serum concentrations of both drugs may be increased.
+                </li>
+                <li>
+                    <strong>Benzodiazepines:</strong> increased risk of
+                    hypothermia; midazolam plasma concentrations may
+                    increase up to 20%.
+                </li>
+                <li>
+                    <strong>Hepatic P-450 inhibitors (chloramphenicol,
+                    cimetidine, ketoconazole):</strong> may prolong recovery.
+                </li>
+            </ul>
+
+            <h3 style="margin-top: 1.25rem;">Propofol infusion syndrome</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Rare complication reported with prolonged human and (very
+                rarely) canine propofol CRIs. Clinical signs:
+                metabolic acidosis, rhabdomyolysis, hyperlipidemia, cardiac
+                arrhythmias, cardiac and renal failure. Risk increases with
+                duration. Plumb's recommends maximum status epilepticus
+                CRI duration of ≈48 hours. Discontinue and treat supportively
+                if syndrome is suspected.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Plumb's Veterinary Drugs, propofol monograph (current
+                edition). Sections used: Prescriber Highlights, Uses/
+                Indications, Pharmacology/Actions, Pharmacokinetics,
+                Contraindications/Precautions/Warnings, Adverse Effects,
+                Overdose/Acute Toxicity, Drug Interactions, Dosages
+                (label and extra-label, dogs and cats), Storage/Stability,
+                Compatibility/Compounding Considerations, Dosage Forms/
+                Regulatory Status.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

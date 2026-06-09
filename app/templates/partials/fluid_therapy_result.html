@@ -1,0 +1,117 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    {% if result.in_shock %}
+    <div style="margin-bottom: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--danger); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Phase 0 &mdash; Shock bolus (deliver FIRST)</div>
+        <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">
+            Give 10–30 mL/kg isotonic crystalloid IV, reassessing after each.
+            For a {{ "%.2f"|format(result.weight_kg) }} kg
+            {{ result.species.value }}:
+            <strong>{{ "%.0f"|format(result.shock_increment_low_ml) }} – {{ "%.0f"|format(result.shock_increment_high_ml) }} mL</strong>
+            per increment, up to a maximum of
+            <strong>{{ "%.0f"|format(result.shock_bolus_max_ml) }} mL total</strong>
+            ({{ "%.0f"|format(result.shock_bolus_max_ml / result.weight_kg) }} mL/kg,
+            {{ result.species.value }} ceiling).
+            Most patients respond well before the maximum.
+            Shock bolus is delivered BEFORE the rate below begins.
+        </p>
+    </div>
+    {% endif %}
+
+    <div class="result__headline">
+        {% if result.dehydration_percent > 0 %}
+        <div class="eyebrow">Phase 1 &mdash; Active rehydration rate</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.active_phase_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            = rehydration {{ "%g"|format(result.rehydration_rate_ml_per_hr) }} + maintenance {{ "%g"|format(result.maintenance_rate_ml_per_hr) }}
+            {% if result.ongoing_losses_ml_per_hr > 0 %}+ ongoing losses {{ "%g"|format(result.ongoing_losses_ml_per_hr) }}{% endif %}
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--ink-soft);">
+            Run for the full <strong>{{ result.rehydration_window_hr }}-hour</strong> rehydration window.
+        </div>
+        {% else %}
+        <div class="eyebrow">Maintenance rate</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.post_rehydration_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            = maintenance {{ "%g"|format(result.maintenance_rate_ml_per_hr) }}
+            {% if result.ongoing_losses_ml_per_hr > 0 %}+ ongoing losses {{ "%g"|format(result.ongoing_losses_ml_per_hr) }}{% endif %}
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--ink-soft);">
+            No rehydration deficit. Run the maintenance rate continuously and reassess.
+        </div>
+        {% endif %}
+    </div>
+
+    {% if result.dehydration_percent > 0 %}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Phase 2 &mdash; Post-rehydration rate</div>
+        <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">
+            After the {{ result.rehydration_window_hr }}-hour window, REDUCE to
+            <strong>{{ "%g"|format(result.post_rehydration_rate_ml_per_hr) }} mL/hr</strong>
+            (maintenance{% if result.ongoing_losses_ml_per_hr > 0 %} + ongoing losses{% endif %}).
+            Continue this until the patient is eating, drinking, hydrated,
+            and ketone-negative, typically another 24–48 hours.
+        </p>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Math</div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="color: var(--ink-soft);">Patient weight:</td>
+                <td style="text-align: right; font-weight: 600;">{{ "%.2f"|format(result.weight_kg) }} kg</td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Dehydration:</td>
+                <td style="text-align: right; font-weight: 600;">{{ "%g"|format(result.dehydration_percent) }}% ({{ result.band.label }})</td>
+            </tr>
+            {% if result.dehydration_percent > 0 %}
+            <tr>
+                <td style="color: var(--ink-soft);">Total deficit:</td>
+                <td style="text-align: right; font-weight: 600;">{{ "%g"|format(result.deficit_ml) }} mL</td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Rehydration window:</td>
+                <td style="text-align: right; font-weight: 600;">{{ result.rehydration_window_hr }} hours</td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Rehydration rate:</td>
+                <td style="text-align: right; font-weight: 600;">{{ "%g"|format(result.rehydration_rate_ml_per_hr) }} mL/hr</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td style="color: var(--ink-soft);">Maintenance:</td>
+                <td style="text-align: right; font-weight: 600;">{{ "%g"|format(result.maintenance_mlpkg_hr) }} mL/kg/hr × {{ "%.2f"|format(result.weight_kg) }} kg = {{ "%g"|format(result.maintenance_rate_ml_per_hr) }} mL/hr</td>
+            </tr>
+            {% if result.ongoing_losses_ml_per_hr > 0 %}
+            <tr>
+                <td style="color: var(--ink-soft);">Ongoing losses:</td>
+                <td style="text-align: right; font-weight: 600;">{{ "%g"|format(result.ongoing_losses_ml_per_hr) }} mL/hr</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>

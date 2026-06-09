@@ -1,0 +1,1055 @@
+{% extends "base.html" %}
+
+{% block title %}{{ drug.display_name }} CRI | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ drug.category }}</div>
+                <h1>{{ drug.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ drug.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Stock: {{ drug.stock_concentration_display }}</div>
+            {% if drug.supports_print %}
+            {# Print button for vasopressor / inotrope calculators. The
+               clinician wants a paper copy of the bag recipe, pump
+               rate, and titration ladder to keep at the pump. Matches
+               the anesthesia worksheet pattern: blue accent, white
+               text, no border, blue printer icon. Hidden during print
+               itself via .no-print so it doesn't appear on paper. #}
+            <button type="button"
+                class="calculator-print-btn no-print"
+                onclick="infusionfox_calculator_print()"
+                style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; font-size: 0.9rem; font-weight: 600; background: var(--accent); color: white; border: none; border-radius: var(--radius); cursor: pointer; font-family: inherit; height: fit-content; align-self: flex-start; white-space: nowrap;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Print
+            </button>
+            {% endif %}
+        </div>
+
+        {% if drug.slug == 'dopamine-cri' %}
+        {# Sibling cross-link: this is the standard CRI workflow for dopamine.
+           When a 100 mL bag IS available, the 6×kg method is simpler
+           (pump rate equals dose, no math). Point users at it. #}
+        <div class="admonition" style="margin-bottom: 1.5rem;">
+            <div class="admonition-title">Standard CRI workflow</div>
+            <p style="margin: 0;">
+                This is the standard CRI calculator for dopamine, works with
+                any bag size. If you have a <strong>100 mL bag</strong>
+                available, the <a href="/dopamine">6×kg method →</a>
+                is simpler (the pump rate equals the dose in µg/kg/min, no
+                further math at the bedside).
+            </p>
+        </div>
+        {% endif %}
+
+        {% if drug.how_it_works_paragraphs %}
+        {# Orientation disclosure for any drug that ships explainer text.
+           More involved UI patterns (norepi, dobutamine, …) earn a brief
+           expandable explainer; legacy calculators leave the tuple empty
+           and render nothing here. Collapsed by default — clinicians who
+           already know the flow lose no real estate. Content is config-
+           driven and may contain inline HTML (e.g. <strong> emphasis). #}
+        <details class="how-it-works">
+            <summary>How this calculator works</summary>
+            <div class="how-it-works__body">
+                {% for paragraph in drug.how_it_works_paragraphs %}
+                <p>{{ paragraph|safe }}</p>
+                {% endfor %}
+            </div>
+        </details>
+        {% endif %}
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            {% if drug.slug in available_articles %}
+            <a href="/learn/{{ drug.slug }}">Clinical background</a>
+            {% endif %}
+            <a href="#formula">Formula</a>
+            <a href="#dilutions" data-mode-section="standard_bag">Dilutions</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                id="calc-form"
+                hx-post="/{{ drug.slug }}/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+                data-standard-mode-default-dose="{{ drug.default_dose }}"
+                {% if drug.target_pump_rate_default_dose is not none %}
+                data-target-mode-default-dose="{{ drug.target_pump_rate_default_dose }}"
+                {% endif %}
+            >
+                {#
+                    Calculation mode toggle. Two mutually exclusive modes:
+                    STANDARD_BAG (default) accepts a bag concentration and
+                    returns a pump rate; TARGET_PUMP_RATE accepts a target
+                    pump rate and bag volume and returns the bag concentration
+                    + volume of stock to draw. The two modes produce
+                    different result panels; they are never shown side by
+                    side. This is a deliberate safety choice: two valid-
+                    looking outputs for the same patient is a medication-
+                    error hazard.
+
+                    Mode resets to STANDARD_BAG on every page load (no
+                    cross-calculator persistence) so a user landing on a
+                    new drug page is always in the historical/default
+                    workflow until they explicitly opt into the alternate.
+
+                    The toggle is rendered only when the drug's config
+                    sets supports_target_pump_rate_mode=True. Drugs whose
+                    clinical workflow doesn't fit target-pump-rate mode
+                    (analgesic CRIs like fentanyl) hide the toggle
+                    entirely; the form behaves as it did before the
+                    toggle was added.
+                #}
+                {% if drug.supports_target_pump_rate_mode %}
+                <div class="field cri-mode-toggle">
+                    <label>Calculation mode</label>
+                    <div class="cri-mode-radios">
+                        {% if drug.uses_combined_prep_section %}
+                        <label class="cri-mode-radios__option">
+                            <input type="radio" name="cri_mode" value="standard_bag" id="cri-mode-standard" checked>
+                            <span class="cri-mode-radios__label">Standard</span>
+                            <span class="cri-mode-radios__hint">Bag at a chosen concentration; calculator returns the pump rate.</span>
+                        </label>
+                        <label class="cri-mode-radios__option">
+                            <input type="radio" name="cri_mode" value="target_pump_rate" id="cri-mode-target">
+                            <span class="cri-mode-radios__label">Advanced: target pump rate</span>
+                            <span class="cri-mode-radios__hint">Pick the rate you want; calculator derives the bag concentration. Use when standard concentrations would deliver too much carrier fluid (small patients, fluid restriction).</span>
+                        </label>
+                        {% else %}
+                        <label class="cri-mode-radios__option">
+                            <input type="radio" name="cri_mode" value="standard_bag" id="cri-mode-standard" checked>
+                            <span class="cri-mode-radios__label">Standard bag &rarr; pump rate</span>
+                            <span class="cri-mode-radios__hint">Bag at a chosen concentration; calculator returns the pump rate to deliver the dose.</span>
+                        </label>
+                        <label class="cri-mode-radios__option">
+                            <input type="radio" name="cri_mode" value="target_pump_rate" id="cri-mode-target">
+                            <span class="cri-mode-radios__label">Target pump rate &rarr; bag concentration</span>
+                            <span class="cri-mode-radios__hint">Set the pump rate; calculator returns the bag concentration and volume of stock to draw.</span>
+                        </label>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="species-dog" checked>
+                        <label for="species-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="species-cat">
+                        <label for="species-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value" name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="dose">Dose ({{ drug.dose_unit.value }})</label>
+                    <input type="number" step="0.01" min="0" id="dose" name="dose" value="{{ inputs.dose }}" required>
+                    <div class="help">
+                        {#
+                            Dose-range help text. Honest about both species:
+                            if the dog and cat ranges are numerically the
+                            same, render one combined line; if they differ,
+                            render both. Handles single-species drugs by
+                            naming the species explicitly. The species
+                            buttons still drive which warning text appears
+                            in the result panel (the engine renders
+                            different `persistent_warning` per species).
+                        #}
+                        {% if dog_range and cat_range %}
+                            {% if dog_range.min == cat_range.min and dog_range.max == cat_range.max %}
+                                Typical range: {{ dog_range.min }}–{{ dog_range.max }} {{ drug.dose_unit.value }} (dogs and cats)
+                            {% else %}
+                                Dogs: {{ dog_range.min }}–{{ dog_range.max }} · Cats: {{ cat_range.min }}–{{ cat_range.max }} {{ drug.dose_unit.value }}
+                            {% endif %}
+                        {% elif dog_range %}
+                            Typical dog range: {{ dog_range.min }}–{{ dog_range.max }} {{ drug.dose_unit.value }}
+                        {% elif cat_range %}
+                            Typical cat range: {{ cat_range.min }}–{{ cat_range.max }} {{ drug.dose_unit.value }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {#
+                    STANDARD_BAG mode fields: bag concentration selection.
+                    Hidden by JS when target_pump_rate mode is active. When
+                    hidden, the concentration input is still POSTed; we
+                    keep it in the DOM so HTMX serialization is consistent
+                    across mode toggles. The result template ignores it
+                    in target_pump_rate mode.
+                #}
+                <div class="field" data-mode-section="standard_bag">
+                    {#
+                        Two patterns based on drug config:
+
+                        - Combined prep section
+                          (drug.uses_combined_prep_section=True): segmented
+                          concentration tabs + bag-size tabs + recipe card,
+                          with patient-aware auto-pick and sticky overrides.
+                          Originally prototyped for norepinephrine; the
+                          machinery is now config-driven (bag-size set,
+                          vial size, recommendation strategy all come from
+                          CalculatorConfig). Currently used by norepi and
+                          dobutamine.
+
+                        - Original prep-card + disclosure (default): the
+                          legacy prep-card with a "Use a different
+                          concentration" <details> disclosure. Still used
+                          by epi, dopamine-cri, fentanyl.
+
+                        The default + alts are resolved in the route handler
+                        (`_render_single_drug` in `app/routers/calculators.py`)
+                        based on `drug.default_concentration_ug_per_ml` and
+                        `preset.pump_safe`. Undiluted-vial warning presets
+                        (`pump_safe=False`) never appear here — they exist in
+                        the catalog as anchors for the reference table further
+                        down, but the user should never pick one.
+                    #}
+                    <label>Bag preparation</label>
+
+                    {% if drug.uses_combined_prep_section %}
+                    {# Combined section: concentration tabs + bag-size tabs +
+                       single recipe card showing the currently-selected
+                       (conc × bag) pair. All variants pre-rendered server-
+                       side; JS swaps .is-active based on checked radios.
+
+                       Data attributes on the .conc-tabs container drive the
+                       JS auto-pick logic:
+                       - data-pick-strategy: "pump-precision" or
+                         "weight-band"
+                       - data-vial-size-mg: for full-vial bag suggestion
+                       - data-min-pump-rate: floor used by pump-precision
+                         strategy (ignored for weight-band)
+                       Each .conc-tab additionally carries data-weight-min
+                       and data-weight-max for weight-band lookups. #}
+                    <div class="conc-tabs" role="radiogroup" aria-label="Bag concentration"
+                         data-combined-prep="1"
+                         data-pick-strategy="{{ drug.recommendation_strategy }}"
+                         data-vial-size-mg="{{ drug.vial_size_mg }}"
+                         data-min-pump-rate="{{ drug.min_pump_rate_ml_per_hr }}">
+                        <label class="conc-tab is-suggested"
+                               {% if default_preset.weight_min_kg is not none %}data-weight-min="{{ default_preset.weight_min_kg }}"{% endif %}
+                               {% if default_preset.weight_max_kg is not none %}data-weight-max="{{ default_preset.weight_max_kg }}"{% endif %}>
+                            <input type="radio" name="concentration_ug_per_ml"
+                                   value="{{ default_preset.concentration_ug_per_ml }}" checked>
+                            <span class="conc-tab__value">{{ default_preset.concentration_ug_per_ml|int }}</span>
+                            <span class="conc-tab__unit">{{ drug.concentration_unit_label }}</span>
+                            <span class="conc-tab__badge">suggested</span>
+                        </label>
+                        {% for preset in alt_presets %}
+                        <label class="conc-tab"
+                               {% if preset.weight_min_kg is not none %}data-weight-min="{{ preset.weight_min_kg }}"{% endif %}
+                               {% if preset.weight_max_kg is not none %}data-weight-max="{{ preset.weight_max_kg }}"{% endif %}>
+                            <input type="radio" name="concentration_ug_per_ml"
+                                   value="{{ preset.concentration_ug_per_ml }}">
+                            <span class="conc-tab__value">{{ preset.concentration_ug_per_ml|int }}</span>
+                            <span class="conc-tab__unit">{{ drug.concentration_unit_label }}</span>
+                            <span class="conc-tab__badge">suggested</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    {# Bag size tabs. Loop over drug.bag_size_options_ml so
+                       each drug can define its own set (norepi: 250/500/1000;
+                       dobutamine: 50/250; epi: 50 only). The radio name
+                       `combined_prep_bag_size_ml` is server-side only when
+                       a drug-specific notice (e.g. dobutamine_volumetric_below_floor)
+                       depends on the chosen bag; otherwise it just drives
+                       recipe-card visibility on the form. Initial
+                       .is-suggested goes on the bag matching the default
+                       concentration's full-vial.
+
+                       Single-bag-size drugs (epi: syringe-pump-only prep)
+                       skip the visible tab row entirely — a single tab is
+                       meaningless UI — and emit a hidden input instead so
+                       the form contract is preserved. #}
+                    {% if drug.bag_size_options_ml|length > 1 %}
+                    <div class="bag-size-tabs" role="radiogroup" aria-label="Bag size"
+                         data-bag-size-suggestion="{{ '1' if drug.show_bag_size_suggestion else '0' }}">
+                        {% set default_full_vial_bag = (drug.vial_size_mg * 1000 / default_preset.concentration_ug_per_ml)|round|int %}
+                        {% for bag_ml in drug.bag_size_options_ml %}
+                        <label class="bag-size-tab {% if drug.show_bag_size_suggestion and bag_ml == default_full_vial_bag %}is-suggested{% endif %}">
+                            <input type="radio" name="combined_prep_bag_size_ml"
+                                   value="{{ bag_ml }}"
+                                   {% if bag_ml == drug.bag_size_default_ml %}checked{% endif %}>
+                            <span>{% if bag_ml >= 1000 %}{{ (bag_ml / 1000)|int }} L{% else %}{{ bag_ml }} mL{% endif %}</span>
+                            {% if drug.show_bag_size_suggestion %}
+                            <span class="bag-size-tab__badge">suggested</span>
+                            {% endif %}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    {# Single bag-size: render a hidden-display radio (not a
+                       type=hidden input) so the :checked selector in
+                       updateRecipeCard() can still find it. The radio is
+                       visually invisible but participates in form state. #}
+                    <input type="radio" name="combined_prep_bag_size_ml"
+                           value="{{ drug.bag_size_default_ml }}" checked
+                           style="display: none;">
+                    {% endif %}
+
+                    {# Pre-rendered recipe cards, one per (conc × bag) pair.
+                       JS adds .is-active to the card matching both checked
+                       radios; the rest stay display:none via CSS. Recipe
+                       fields come from BagSizeVariant (computed in the
+                       router via bag_size_variants_for_drug). #}
+                    <div class="conc-bag-recipes">
+                        {% set stock_mg_per_ml = (drug.stock_concentration_ug_per_ml / 1000) %}
+                        {% set drug_short_name = drug.display_name.split(' · ')[0]|replace(' CRI', '')|lower %}
+                        {% for v in form_variants %}
+                        {% set is_initial = (v.concentration_ug_per_ml == default_preset.concentration_ug_per_ml and v.bag_volume_ml == drug.bag_size_default_ml) %}
+                        <div class="conc-bag-recipe {% if is_initial %}is-active{% endif %}"
+                             data-conc="{{ v.concentration_ug_per_ml|int }}"
+                             data-bag="{{ v.bag_volume_ml }}">
+                            <div class="conc-bag-recipe__headline">
+                                <span class="conc-bag-recipe__title">
+                                    {% if v.bag_volume_ml >= 1000 %}{{ (v.bag_volume_ml / 1000)|int }} L{% else %}{{ v.bag_volume_ml }} mL{% endif %} preparation
+                                </span>
+                                {% if v.is_suggested and drug.bag_size_options_ml|length > 1 %}
+                                <span class="conc-bag-recipe__badge">suggested · uses one full vial</span>
+                                {% endif %}
+                            </div>
+                            <div class="conc-bag-recipe__body">
+                                <div class="conc-bag-recipe__step">
+                                    <span class="conc-bag-recipe__label">Draw</span>
+                                    <span class="conc-bag-recipe__value">
+                                        {% if v.ml_stock_to_draw == v.ml_stock_to_draw|int %}{{ v.ml_stock_to_draw|int }}{% else %}{{ "%.2g"|format(v.ml_stock_to_draw) }}{% endif %} mL
+                                        of {% if stock_mg_per_ml == stock_mg_per_ml|int %}{{ stock_mg_per_ml|int }}{% else %}{{ "%g"|format(stock_mg_per_ml) }}{% endif %} mg/mL {{ drug_short_name }} stock
+                                        <span class="conc-bag-recipe__detail">({{ v.vial_note }} = {% if v.drug_amount_mg == v.drug_amount_mg|int %}{{ v.drug_amount_mg|int }}{% else %}{{ "%.2g"|format(v.drug_amount_mg) }}{% endif %} mg)</span>
+                                    </span>
+                                </div>
+                                <div class="conc-bag-recipe__step">
+                                    <span class="conc-bag-recipe__label">Add to</span>
+                                    <span class="conc-bag-recipe__value">
+                                        {% if v.bag_volume_ml >= 1000 %}{{ (v.bag_volume_ml / 1000)|int }} L{% else %}{{ v.bag_volume_ml }} mL{% endif %} bag of
+                                        {{ v.diluent_label }}
+                                    </span>
+                                </div>
+                                <div class="conc-bag-recipe__step conc-bag-recipe__final">
+                                    <span class="conc-bag-recipe__label">Final</span>
+                                    <span class="conc-bag-recipe__value">
+                                        {{ v.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }} {{ drug_short_name }}
+                                        in {% if v.bag_volume_ml >= 1000 %}{{ (v.bag_volume_ml / 1000)|int }} L{% else %}{{ v.bag_volume_ml }} mL{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    {# All other CRI drugs: original prep-card + disclosure pattern.
+                       Hidden `concentration_ug_per_ml` input carries the active
+                       value; the disclosure's `alt_concentration` radios update
+                       the hidden input and visible prep card via JS. #}
+                    <div class="prep-card" id="concentration-display">
+                        <div class="prep-card__concentration">
+                            <span class="prep-card__value">{{ default_preset.concentration_ug_per_ml|int }}</span>
+                            <span class="prep-card__unit">{{ drug.concentration_unit_label }}</span>
+                        </div>
+                        <div class="prep-card__recipe">{{ default_preset.recipe }}</div>
+                    </div>
+
+                    <input type="hidden" id="concentration_ug_per_ml" name="concentration_ug_per_ml"
+                           value="{{ default_preset.concentration_ug_per_ml }}">
+
+                    {% if alt_presets %}
+                    <details class="alt-concentration-panel">
+                        <summary>Use a different concentration</summary>
+                        <div class="alt-concentration-panel__body">
+                            <p class="alt-concentration-panel__intro">
+                                All preparations are pharmacologically equivalent.
+                                The default ({{ default_preset.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }})
+                                fits the most common clinical use case. The
+                                alternatives below cover situational needs.
+                            </p>
+                            <div class="alt-concentration-panel__options">
+                                <label class="alt-concentration-option">
+                                    <input type="radio" name="alt_concentration"
+                                           value="{{ default_preset.concentration_ug_per_ml }}" checked>
+                                    <div>
+                                        <strong>{{ default_preset.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }} (default)</strong>
+                                        <span class="alt-concentration-option__recipe">{{ default_preset.recipe }}</span>
+                                        <span class="alt-concentration-option__when">{{ default_preset.when_to_use }}</span>
+                                    </div>
+                                </label>
+
+                                {% for preset in alt_presets %}
+                                <label class="alt-concentration-option">
+                                    <input type="radio" name="alt_concentration"
+                                           value="{{ preset.concentration_ug_per_ml }}">
+                                    <div>
+                                        <strong>{{ preset.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }}</strong>
+                                        <span class="alt-concentration-option__recipe">{{ preset.recipe }}</span>
+                                        <span class="alt-concentration-option__when">{{ preset.when_to_use }}</span>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </details>
+                    {% endif %}
+                    {% endif %}
+                </div>
+
+                {#
+                    TARGET_PUMP_RATE mode fields. Hidden by JS when
+                    standard_bag mode is active. Default target pump
+                    rate is 3 mL/hr (a common low rate that minimizes
+                    carrier fluid load on a fluid-resuscitated patient).
+                    Default bag volume is 250 mL (standard NaCl bag).
+                #}
+                {% if drug.supports_target_pump_rate_mode %}
+                <div class="field" data-mode-section="target_pump_rate" style="display: none;">
+                    <label for="target_pump_rate_ml_per_hr">Target pump rate (mL/hr)</label>
+                    <input type="number" step="0.1" min="0.1"
+                           id="target_pump_rate_ml_per_hr"
+                           name="target_pump_rate_ml_per_hr"
+                           value="{{ drug.target_pump_rate_default_ml_per_hr }}">
+                    <div class="help">
+                        A low pump rate (1–3 mL/hr) is typical for
+                        vasopressor or inotrope infusions in a patient
+                        who has already been fluid-resuscitated. Higher
+                        rates dilute the bag and add carrier fluid.
+                    </div>
+                </div>
+
+                <div class="field" data-mode-section="target_pump_rate" style="display: none;">
+                    <label for="bag_volume_ml">Bag volume (mL)</label>
+                    <input type="number" step="1" min="1"
+                           id="bag_volume_ml"
+                           name="bag_volume_ml"
+                           value="250">
+                    <div class="help">
+                        Standard 250 mL or 500 mL of 0.9% NaCl is most
+                        common. Smaller (100 mL) for very small patients
+                        or short anticipated infusion duration.
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/result_panel.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+
+            {# Standard-bag mode explanation. The JS toggle on the form
+               also shows/hides these mode-section blocks down here, so
+               the formula narrative always matches the form fields and
+               result panel the user is currently looking at. #}
+            <div data-mode-section="standard_bag">
+                {% if drug.dose_unit.value == 'ug/kg/min' %}
+                    <p style="color: var(--ink-soft); line-height: 1.7;">
+                        {{ drug.display_name }} is dosed in µg/kg/min. To convert a per-minute
+                        dose into a per-hour CRI rate, multiply by 60. The full formula:
+                    </p>
+                    <div class="formula-display">
+                        $$\text{mL/hr} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{\mu g/kg/min} \times 60}{\text{concentration}_{\mu g/mL}}$$
+                    </div>
+                    <p style="color: var(--ink-soft); line-height: 1.7;">
+                        Why the 60? The patient's weight (kg) times the dose ({{ drug.dose_mass_unit }} per kg per minute)
+                        gives micrograms per minute. Multiplying by 60 converts to micrograms per hour.
+                        Dividing by the concentration ({{ drug.dose_mass_unit }} per mL of the prepared CRI) yields mL per hour.
+                    </p>
+                {% elif drug.dose_unit.value == 'mg/kg/hr' %}
+                    <p style="color: var(--ink-soft); line-height: 1.7;">
+                        {{ drug.display_name }} is dosed in mg/kg/hr. Because the prepared CRI
+                        concentration is expressed in {{ drug.concentration_unit_label }}, the formula needs a × 1000 to convert
+                        the mg dose into {{ drug.dose_mass_unit }} before dividing:
+                    </p>
+                    <div class="formula-display">
+                        $$\text{mL/hr} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{mg/kg/hr} \times 1000}{\text{concentration}_{\mu g/mL}}$$
+                    </div>
+                    <p style="color: var(--ink-soft); line-height: 1.7;">
+                        Patient weight (kg) times dose (mg per kg per hour) gives mg per hour.
+                        Multiplying by 1,000 converts mg to {{ drug.dose_mass_unit }} so the units match the bag
+                        concentration. Dividing by {{ drug.concentration_unit_label }} yields mL per hour.
+                    </p>
+                {% else %}
+                    <p style="color: var(--ink-soft); line-height: 1.7;">
+                        {{ drug.display_name }} is dosed in µg/kg/hr. The CRI rate calculation is:
+                    </p>
+                    <div class="formula-display">
+                        $$\text{mL/hr} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{\mu g/kg/hr}}{\text{concentration}_{\mu g/mL}}$$
+                    </div>
+                    <p style="color: var(--ink-soft); line-height: 1.7;">
+                        Patient weight (kg) times dose ({{ drug.dose_mass_unit }} per kg per hour) gives total {{ drug.dose_mass_unit }} per hour.
+                        Dividing by concentration ({{ drug.dose_mass_unit }} per mL) yields mL per hour. No unit-time
+                        conversion needed because dose and rate are both per-hour.
+                    </p>
+                {% endif %}
+            </div>
+
+            {# Target-pump-rate mode explanation. Three-step preparation
+               math: derive bag concentration from the fixed pump rate,
+               compute total drug for the chosen bag volume, then derive
+               volume of stock from the vial concentration. Only rendered
+               when the drug supports target-pump-rate mode. #}
+            {% if drug.supports_target_pump_rate_mode %}
+            <div data-mode-section="target_pump_rate" style="display: none;">
+                <p style="color: var(--ink-soft); line-height: 1.7;">
+                    In target-pump-rate mode the pump rate is fixed by the clinician
+                    and the bag concentration is the unknown. The preparation runs in
+                    three steps.
+                </p>
+
+                <h3 style="margin-top: 1.5rem;">Step 1: bag concentration</h3>
+                <p style="color: var(--ink-soft); line-height: 1.7;">
+                    Same numerator as standard-bag mode (the total drug delivered per hour
+                    for this patient), but divided by the chosen pump rate instead of by
+                    a chosen bag concentration:
+                </p>
+                <div class="formula-display">
+                    {% if drug.dose_unit.value == 'ug/kg/min' %}
+                        $$\text{bag concentration}_{\mu g/mL} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{\mu g/kg/min} \times 60}{\text{pump rate}_{\text{mL/hr}}}$$
+                    {% else %}
+                        $$\text{bag concentration}_{\mu g/mL} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{\mu g/kg/hr}}{\text{pump rate}_{\text{mL/hr}}}$$
+                    {% endif %}
+                </div>
+
+                <h3 style="margin-top: 1.5rem;">Step 2: total drug in the bag</h3>
+                <p style="color: var(--ink-soft); line-height: 1.7;">
+                    The bag concentration times the chosen bag volume gives the total
+                    micrograms of drug to add. Convert to milligrams (divide by 1,000) for
+                    the size of stock you'll actually be drawing:
+                </p>
+                <div class="formula-display">
+                    $$\text{total drug}_{\mu g} = \text{bag concentration}_{\mu g/mL} \times \text{bag volume}_{\text{mL}}$$
+                </div>
+                <div class="formula-display">
+                    $$\text{total drug}_{mg} = \frac{\text{total drug}_{\mu g}}{1{,}000}$$
+                </div>
+
+                <h3 style="margin-top: 1.5rem;">Step 3: volume of stock to draw</h3>
+                <p style="color: var(--ink-soft); line-height: 1.7;">
+                    Total drug divided by the stock vial concentration gives the volume
+                    of stock to draw and add to the bag:
+                </p>
+                <div class="formula-display">
+                    $$\text{stock volume}_{\text{mL}} = \frac{\text{total drug}_{mg}}{\text{stock}_{mg/mL}}$$
+                </div>
+                <p style="color: var(--ink-soft); line-height: 1.7;">
+                    Worked through together: divide the total drug in the bag by the
+                    stock vial's mg/mL to get the mL of stock that contains that much
+                    drug. That is the volume to pull into the syringe and add to the bag.
+                </p>
+            </div>
+            {% endif %}
+
+            <h3>Worked example with current inputs</h3>
+            {# Always render the #worked-example div, even before any result
+               exists. The HTMX result-panel partial fires a small inline
+               script that overwrites this div's content with the live
+               LaTeX. If we conditionally render the div, the script can't
+               find a target and silently no-ops, leaving the user with the
+               stale placeholder text. #}
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                    {% if drug.dose_unit.value == 'ug/kg/min' %}
+                        $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.dose }}_{\mu g/kg/min} \times 60 }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }}_{\mu g/mL} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$$
+                    {% elif drug.dose_unit.value == 'mg/kg/hr' %}
+                        $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.dose }}_{mg/kg/hr} \times 1000 }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }}_{\mu g/mL} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$$
+                    {% else %}
+                        $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.dose }}_{\mu g/kg/hr} }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }}_{\mu g/mL} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$$
+                    {% endif %}
+                {% else %}
+                    <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="dilutions" data-mode-section="standard_bag" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Recommended dilutions</h2>
+            <table class="ref-table">
+                <thead>
+                    <tr>
+                        <th>Target concentration</th>
+                        <th>Dilution</th>
+                        <th>When useful</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for preset in drug.concentration_presets %}
+                        <tr>
+                            <td>{{ preset.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }}</td>
+                            <td>{{ preset.recipe }}</td>
+                            <td>{{ preset.when_to_use }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if drug.dilution_note %}
+            <p style="margin-top: 1rem; color: var(--ink-soft); font-size: 0.9rem; line-height: 1.6;">
+                {{ drug.dilution_note }}
+            </p>
+            {% endif %}
+        </section>
+
+        <section data-mode-section="standard_bag" style="margin-top: 2rem;">
+            {% with dilution_open=true %}
+                {% include "partials/dilution_helper.html" %}
+            {% endwith %}
+        </section>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ---------- Concentration picker (two implementations) ----------
+
+    // Path A: original prep-card + alt-concentration disclosure pattern.
+    // Active for epi, dobut, dopamine-cri, fentanyl. Detected by the
+    // presence of `input[name="alt_concentration"]` elements.
+    const concField = document.getElementById('concentration_ug_per_ml');
+    const altRadios = document.querySelectorAll('input[name="alt_concentration"]');
+    const prepDisplay = document.getElementById('concentration-display');
+    if (altRadios.length && concField && prepDisplay) {
+        // Build a quick lookup of recipes by concentration so we can update
+        // the prep card without re-querying the radio every time.
+        const recipesByConc = {};
+        altRadios.forEach(function(radio) {
+            const recipeEl = radio.parentElement.querySelector('.alt-concentration-option__recipe');
+            if (recipeEl) recipesByConc[radio.value] = recipeEl.textContent.trim();
+        });
+
+        const valueEl = prepDisplay.querySelector('.prep-card__value');
+        const recipeEl = prepDisplay.querySelector('.prep-card__recipe');
+
+        altRadios.forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                if (!radio.checked) return;
+                const newValue = radio.value;
+                if (concField.value !== newValue) {
+                    concField.value = newValue;
+                    if (valueEl) valueEl.textContent = parseInt(newValue, 10);
+                    if (recipeEl && recipesByConc[newValue]) {
+                        recipeEl.textContent = recipesByConc[newValue];
+                    }
+                    // Fire change on the hidden input so HTMX picks it up.
+                    concField.dispatchEvent(new Event('change', {bubbles: true}));
+                }
+            });
+        });
+    }
+
+    // Path B: combined-prep-section pattern (norepi, dobutamine, …).
+    // Two tab rows feed one recipe card (N conc × M bag pre-rendered;
+    // JS swaps which has .is-active).
+    //
+    // Auto-select:
+    //   - Concentration auto-picks based on patient inputs, dispatched
+    //     by drug.recommendation_strategy (data-pick-strategy attr):
+    //       "pump-precision": highest pump-safe conc keeping
+    //         rate ≥ min_pump_rate_ml_per_hr (norepi).
+    //       "weight-band": preset whose [weight_min, weight_max] band
+    //         includes patient weight (dobutamine).
+    //   - Bag size auto-jumps to the full-vial match for the chosen
+    //     concentration (any drug with vial_size_mg).
+    //   - Both override flags are independent and sticky.
+    const concTabsContainer = document.querySelector('.conc-tabs[data-combined-prep]');
+    const concRadios = concTabsContainer
+        ? concTabsContainer.querySelectorAll('input[type="radio"]')
+        : [];
+    const bagSizeRadios = document.querySelectorAll('input[name="combined_prep_bag_size_ml"]');
+    const concBagRecipeCards = document.querySelectorAll('.conc-bag-recipe');
+    if (concRadios.length && bagSizeRadios.length && concBagRecipeCards.length) {
+        let userOverroddenConc = false;
+        let userOverroddenBag = false;
+        let suppressOverrideFlag = false;
+
+        // Drug-specific parameters from data attributes on the container.
+        const pickStrategy = concTabsContainer.dataset.pickStrategy || "";
+        const vialSizeMg = parseFloat(concTabsContainer.dataset.vialSizeMg) || 0;
+        const minPumpRate = parseFloat(concTabsContainer.dataset.minPumpRate) || 0;
+
+        // For each concentration tab, capture its (value, weight band).
+        // The weight band is only meaningful for the weight-band strategy
+        // but parsing it once up front simplifies the picker code.
+        const concEntries = Array.from(concRadios).map(function(radio) {
+            const tab = radio.closest('.conc-tab');
+            const wMin = tab && tab.dataset.weightMin
+                ? parseFloat(tab.dataset.weightMin) : 0;
+            const wMax = tab && tab.dataset.weightMax
+                ? parseFloat(tab.dataset.weightMax) : Infinity;
+            return {
+                radio: radio,
+                value: parseFloat(radio.value),
+                weightMin: wMin,
+                weightMax: wMax,
+            };
+        });
+
+        // The full-vial bag for a given concentration is the bag whose
+        // drug amount = vial size (vial_size_mg × 1000 µg/mL ÷ conc_µg/mL).
+        function fullVialBagFor(concentration) {
+            if (vialSizeMg <= 0 || concentration <= 0) return null;
+            return Math.round((vialSizeMg * 1000) / concentration);
+        }
+
+        function updateRecipeCard() {
+            const conc = document.querySelector('input[name="concentration_ug_per_ml"]:checked');
+            const bag = document.querySelector('input[name="combined_prep_bag_size_ml"]:checked');
+            if (!conc || !bag) return;
+            const concVal = String(parseInt(conc.value, 10));
+            const bagVal = bag.value;
+            concBagRecipeCards.forEach(function(card) {
+                const matches = card.dataset.conc === concVal && card.dataset.bag === bagVal;
+                card.classList.toggle('is-active', matches);
+            });
+        }
+
+        concRadios.forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                if (!radio.checked) return;
+                if (!suppressOverrideFlag) {
+                    userOverroddenConc = true;
+                }
+                if (!userOverroddenBag) {
+                    const targetBag = fullVialBagFor(parseFloat(radio.value));
+                    if (targetBag !== null) {
+                        const targetBagRadio = Array.from(bagSizeRadios).find(function(r) {
+                            return parseInt(r.value, 10) === targetBag;
+                        });
+                        if (targetBagRadio && !targetBagRadio.checked) {
+                            suppressOverrideFlag = true;
+                            targetBagRadio.checked = true;
+                            suppressOverrideFlag = false;
+                        }
+                    }
+                }
+                updateRecipeCard();
+                updateSuggestedBagBadge();
+            });
+        });
+
+        bagSizeRadios.forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                if (!radio.checked) return;
+                if (!suppressOverrideFlag) {
+                    userOverroddenBag = true;
+                }
+                updateRecipeCard();
+            });
+        });
+
+        // Dispatched patient-driven concentration picker.
+        function pickConcentrationForPatient(weightKg, doseUgKgMin) {
+            if (pickStrategy === 'pump-precision') {
+                // Highest conc keeping pump rate ≥ min_pump_rate.
+                const concsHighToLow = concEntries
+                    .map(function(e) { return e.value; })
+                    .sort(function(a, b) { return b - a; });
+                const ugPerHr = doseUgKgMin * weightKg * 60.0;
+                const floor = minPumpRate || 2.0;
+                for (let i = 0; i < concsHighToLow.length; i++) {
+                    if (ugPerHr / concsHighToLow[i] >= floor) return concsHighToLow[i];
+                }
+                return concsHighToLow[concsHighToLow.length - 1];
+            }
+            if (pickStrategy === 'weight-band') {
+                // Preset whose [weight_min, weight_max] band includes weight.
+                // Match the server-side logic exactly: half-open interval
+                // [lo, hi), with fallbacks for below-lowest / above-highest.
+                for (let i = 0; i < concEntries.length; i++) {
+                    const e = concEntries[i];
+                    if (weightKg >= e.weightMin && weightKg < e.weightMax) return e.value;
+                }
+                const sortedByLo = concEntries.slice().sort(function(a, b) {
+                    return a.weightMin - b.weightMin;
+                });
+                if (weightKg < sortedByLo[0].weightMin) return sortedByLo[0].value;
+                return sortedByLo[sortedByLo.length - 1].value;
+            }
+            // No strategy: leave selection alone.
+            return null;
+        }
+
+        function runAutoSelect() {
+            if (userOverroddenConc) return;
+            const weightInput = document.getElementById('weight_value');
+            const doseInput = document.getElementById('dose');
+            if (!weightInput || !doseInput) return;
+            const weightUnitEl = document.querySelector('input[name="weight_unit"]:checked');
+            const weightUnit = weightUnitEl ? weightUnitEl.value : 'kg';
+
+            const rawWeight = parseFloat(weightInput.value);
+            const dose = parseFloat(doseInput.value);
+            if (isNaN(rawWeight) || isNaN(dose) || rawWeight <= 0 || dose <= 0) return;
+            const weightKg = (weightUnit === 'lb') ? rawWeight / 2.20462 : rawWeight;
+
+            const targetConc = pickConcentrationForPatient(weightKg, dose);
+            if (targetConc === null) return;
+            const targetRadio = Array.from(concRadios).find(function(r) {
+                return parseFloat(r.value) === targetConc;
+            });
+            if (targetRadio && !targetRadio.checked) {
+                suppressOverrideFlag = true;
+                targetRadio.checked = true;
+                targetRadio.dispatchEvent(new Event('change', {bubbles: true}));
+                suppressOverrideFlag = false;
+            }
+        }
+
+        function updateSuggestedConcBadge() {
+            const weightInput = document.getElementById('weight_value');
+            const doseInput = document.getElementById('dose');
+            if (!weightInput || !doseInput) return;
+            const weightUnitEl = document.querySelector('input[name="weight_unit"]:checked');
+            const weightUnit = weightUnitEl ? weightUnitEl.value : 'kg';
+
+            const rawWeight = parseFloat(weightInput.value);
+            const dose = parseFloat(doseInput.value);
+            if (isNaN(rawWeight) || isNaN(dose) || rawWeight <= 0 || dose <= 0) return;
+            const weightKg = (weightUnit === 'lb') ? rawWeight / 2.20462 : rawWeight;
+
+            const suggestedConc = pickConcentrationForPatient(weightKg, dose);
+            if (suggestedConc === null) return;
+            concRadios.forEach(function(radio) {
+                const label = radio.closest('.conc-tab');
+                if (label) {
+                    label.classList.toggle(
+                        'is-suggested',
+                        parseFloat(radio.value) === suggestedConc
+                    );
+                }
+            });
+        }
+
+        function updateSuggestedBagBadge() {
+            // Drugs that opt out (show_bag_size_suggestion=False on the
+            // CalculatorConfig — currently dobutamine, whose bag size
+            // encodes pump type rather than dilution) skip this update
+            // entirely. The Jinja template also doesn't render the
+            // initial "suggested" class for these drugs, so there's
+            // nothing to update.
+            const tabsContainer = document.querySelector('.bag-size-tabs');
+            if (tabsContainer && tabsContainer.dataset.bagSizeSuggestion === '0') {
+                return;
+            }
+            const checkedConc = document.querySelector(
+                'input[name="concentration_ug_per_ml"]:checked'
+            );
+            if (!checkedConc) return;
+            const suggestedBag = fullVialBagFor(parseFloat(checkedConc.value));
+            if (suggestedBag === null) return;
+            bagSizeRadios.forEach(function(radio) {
+                const label = radio.closest('.bag-size-tab');
+                if (label) {
+                    label.classList.toggle(
+                        'is-suggested',
+                        parseInt(radio.value, 10) === suggestedBag
+                    );
+                }
+            });
+        }
+
+        function onPatientInputChange() {
+            updateSuggestedConcBadge();
+            runAutoSelect();
+        }
+
+        const weightInput = document.getElementById('weight_value');
+        const doseInput = document.getElementById('dose');
+        const weightUnitInputs = document.querySelectorAll('input[name="weight_unit"]');
+        if (weightInput) weightInput.addEventListener('input', onPatientInputChange);
+        if (doseInput) doseInput.addEventListener('input', onPatientInputChange);
+        weightUnitInputs.forEach(function(input) {
+            input.addEventListener('change', onPatientInputChange);
+        });
+    }
+
+    // Calculation-mode toggle. Show/hide the field groups marked
+    // data-mode-section="standard_bag" vs "target_pump_rate" based on
+    // which radio is selected. Fire an HTMX trigger on toggle so the
+    // result panel re-renders in the right mode immediately, instead
+    // of waiting for the next input change.
+    //
+    // Also resets the dose input to the mode-appropriate default when
+    // the toggle fires, but only if the drug has a different default
+    // configured for target-pump-rate mode (e.g. norepi anchors on
+    // 0.1 µg/kg/min in bag-prep workflow vs. 0.05 in standard mode).
+    // This is intentional: the user picks a mode before entering
+    // values, and the dose anchor that makes sense differs by mode.
+    (function setupModeToggle() {
+        var modeRadios = document.querySelectorAll('input[name="cri_mode"]');
+        if (!modeRadios.length) return;
+        var standardSections = document.querySelectorAll('[data-mode-section="standard_bag"]');
+        var targetSections = document.querySelectorAll('[data-mode-section="target_pump_rate"]');
+        var form = document.getElementById('calc-form');
+        var doseInput = document.getElementById('dose');
+        var standardDoseDefault = form ? form.getAttribute('data-standard-mode-default-dose') : null;
+        var targetDoseDefault = form ? form.getAttribute('data-target-mode-default-dose') : null;
+
+        function applyMode(mode) {
+            var showStandard = (mode === 'standard_bag');
+            standardSections.forEach(function (el) { el.style.display = showStandard ? '' : 'none'; });
+            targetSections.forEach(function (el) { el.style.display = showStandard ? 'none' : ''; });
+            // Set the dose to the mode-appropriate default IF a target-mode
+            // default is configured AND it differs from the standard-mode
+            // default. Drugs without a target_pump_rate_default_dose keep
+            // the same dose across both modes.
+            if (doseInput && targetDoseDefault && standardDoseDefault && targetDoseDefault !== standardDoseDefault) {
+                doseInput.value = showStandard ? standardDoseDefault : targetDoseDefault;
+            }
+        }
+
+        modeRadios.forEach(function (r) {
+            r.addEventListener('change', function () {
+                if (!r.checked) return;
+                applyMode(r.value);
+                // Fire HTMX so the result panel rerenders.
+                if (form && window.htmx) {
+                    window.htmx.trigger(form, 'change');
+                }
+            });
+        });
+
+        // Initial state. Default-checked radio is standard_bag.
+        var checked = document.querySelector('input[name="cri_mode"]:checked');
+        if (checked) applyMode(checked.value);
+    })();
+});
+</script>
+
+{% if drug.supports_print %}
+<style>
+    /* ---------- Print styles for vasopressor / inotrope calculators ----------
+       Goal: fit the result panel (bag recipe + pump rate + titration
+       ladder) on a single US-letter / A4 page. Strategy mirrors the
+       analgesia builder:
+         - Tight @page margins (12 mm)
+         - Compact base font (9 pt)
+         - Strip card backgrounds (no toner waste)
+         - Hide chrome (header, form, "how it works" disclosure)
+         - Hide the screen-only Formula expander (clinicians know the
+           math; the recipe + rate + ladder are the actual deliverable)
+         - page-break-inside: avoid on the result block so it doesn't
+           split across pages
+    */
+    .print-only { display: none; }
+
+    @page { margin: 12mm; }
+
+    @media print {
+        .no-print,
+        .site-header,
+        .site-footer,
+        .feedback-widget,
+        #fb-widget,
+        .calc-header,
+        .how-it-works,
+        .admonition,
+        #calc-form,
+        nav.calc-tabs,
+        /* Hide screen-only Formula and Titration-ladder expanders in
+           print; they're reference content that busts the one-page
+           budget. The same approach the analgesia builder uses. */
+        #result-panel details {
+            display: none !important;
+        }
+        .print-only { display: block !important; }
+        html, body {
+            background: white !important;
+            color: black !important;
+            font-size: 9pt !important;
+            line-height: 1.25 !important;
+        }
+        .container,
+        section.calc-page,
+        .calc-grid,
+        .calc-right-column {
+            display: block !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        /* Strip backgrounds + shadows from result cards; preserve thin
+           borders so the recipe stays visually grouped. */
+        #result-panel [class*="card"],
+        #result-panel .result__headline,
+        #result-panel .prep-card,
+        #result-panel .recipe-card {
+            background: white !important;
+            box-shadow: none !important;
+            page-break-inside: avoid;
+            margin: 0 0 0.3rem 0 !important;
+            padding: 0.4rem 0.5rem !important;
+            border: 1px solid #999 !important;
+        }
+        #result-panel [style*="background: var(--paper-warm)"],
+        #result-panel [style*="background:var(--paper-warm)"] {
+            background: white !important;
+            border-left-color: #000 !important;
+            padding: 0.25rem 0.4rem !important;
+        }
+        #result-panel h2 {
+            font-size: 11pt !important;
+            margin: 0 !important;
+        }
+        #result-panel .result__primary,
+        #result-panel [style*="font-size: 1.875rem"] {
+            font-size: 14pt !important;
+        }
+        #result-panel table {
+            font-size: 8pt !important;
+        }
+        #result-panel table th,
+        #result-panel table td {
+            padding: 0.15rem 0.3rem !important;
+        }
+    }
+</style>
+
+<script>
+    // Print helper for vasopressor / inotrope calculators. Stamps a
+    // current timestamp into the print-only header (#print-timestamp,
+    // rendered by result_panel.html) before opening the browser print
+    // dialog. The result panel is replaced by HTMX on every input
+    // change, so we look up the anchor fresh on each invocation.
+    function infusionfox_calculator_print() {
+        var ts = document.getElementById('print-timestamp');
+        if (ts) {
+            var now = new Date();
+            ts.textContent = 'Printed: ' + now.toLocaleString();
+        }
+        window.print();
+    }
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Lipid Emulsion (ILE) protocol | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">20% lipid emulsion · 200 mg/mL fat · standard bag</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>20% lipid emulsion ONLY.</strong> 10% emulsion
+                    delivers half the effective dose at double the carrier-
+                    fluid load and is not appropriate for toxicology
+                    reversal. Read the bag: Intralipid 20%, SMOFlipid 20%,
+                    Liposyn 20%, or veterinary-equivalent.
+                </li>
+                <li>
+                    <strong>Draw essential labs BEFORE starting.</strong>
+                    Lipemia interferes with most subsequent biochemistry
+                    panels (glucose, electrolytes, liver enzymes) for hours
+                    after the infusion. Baseline CBC, chemistry, and any
+                    indication-specific labs (cardiac troponin in CCB
+                    overdose, etc.) should be drawn first.
+                </li>
+                <li>
+                    <strong>Concurrent propofol confounds lipid status.</strong>
+                    Propofol vehicle is the same emulsion; calculating
+                    total lipid load on a propofol-sedated patient
+                    requires accounting for both sources.
+                </li>
+                <li>
+                    <strong>Dedicated IV line preferred.</strong> Lipid
+                    emulsion is incompatible with calcium-containing
+                    solutions and sodium bicarbonate (precipitation). If a
+                    Y-site is unavoidable, flush thoroughly before and
+                    after. Discard remaining bag after 24 hours (sterility).
+                </li>
+                <li>
+                    <strong>Fat overload syndrome</strong> at high
+                    cumulative doses or in pancreatitis-prone breeds
+                    (Miniature Schnauzers especially): hyperlipidemia,
+                    hepatosplenomegaly, coagulopathy, hemolysis. Limit
+                    total daily dose to 10 mL/kg/day where possible.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Protocol overview</div>
+            <p style="margin: 0;">
+                Standard sequence: <strong>loading bolus</strong> over 2–3
+                min → <strong>maintenance CRI</strong> at 0.25 mL/kg/min
+                × 30–60 min → reassess →
+                <strong>optional re-bolus</strong> if cardiovascular
+                response inadequate. Cumulative dose ceiling 10 mL/kg/day.
+                Continue supportive care (IV fluids, vasopressors,
+                antiarrhythmics as indicated) alongside ILE; the lipid
+                sink is supportive, not definitive.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/ile">Clinical background</a>
+            <a href="#protocol-detail">Protocol detail</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/ile/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else '' }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help" style="margin-top: 0.75rem;">
+                    Protocol dosing is volume-based and fixed by
+                    convention (1.5 mL/kg bolus, 0.25 mL/kg/min CRI).
+                    No dose-range entry; the calculator surfaces the
+                    full protocol for the entered weight.
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/ile_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="protocol-detail" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Protocol detail</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Standard ASRA-adapted veterinary protocol:
+            </p>
+            <ol style="color: var(--ink-soft); line-height: 1.8;">
+                <li>
+                    <strong>Loading bolus</strong> 1.5 mL/kg of 20% lipid
+                    emulsion IV over 2–3 minutes. Faster (1 min) is
+                    appropriate in cardiac arrest from LA toxicity; slower
+                    is preferred otherwise.
+                </li>
+                <li>
+                    <strong>Maintenance CRI</strong> 0.25 mL/kg/min for
+                    30–60 minutes. The 30-min duration is standard; extend
+                    to 60 min in refractory cases where cardiovascular
+                    function has not stabilized, subject to the daily-dose
+                    cap.
+                </li>
+                <li>
+                    <strong>Re-bolus</strong> 1.5 mL/kg may be repeated if
+                    cardiovascular response is inadequate at any point.
+                    Counts toward the daily cap.
+                </li>
+                <li>
+                    <strong>Total cumulative ceiling</strong> 10 mL/kg/day
+                    (vet conservative; human ASRA uses 12 mL/kg). The
+                    calculator flags when CRI duration or re-bolus would
+                    exceed this ceiling.
+                </li>
+            </ol>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                <strong>Mechanism — "lipid sink":</strong>
+                The 20% emulsion creates a lipophilic plasma compartment
+                that sequesters fat-soluble toxins, drawing them away
+                from cardiac sodium channels, CNS receptors, and other
+                sites of action. Onset within minutes of bolus; benefit
+                depends on the proportion of toxin that partitions into
+                the emulsion. ILE is supportive, not definitive. Pair
+                with standard toxicology measures (decontamination,
+                vasopressors, antiarrhythmics, intubation if needed).
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Plumb's Veterinary Drugs, Intravenous Lipid Emulsion
+                    monograph (current edition).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Fernandez AL, Lee JA, Rahilly L, et al. The use of
+                    intravenous lipid emulsion as an antidote in veterinary
+                    toxicology. <em>J Vet Emerg Crit Care.</em>
+                    2011;21(4):309–320.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Neal JM, Barrington MJ, Fettiplace MR, et al. The Third
+                    American Society of Regional Anesthesia and Pain Medicine
+                    Practice Advisory on Local Anesthetic Systemic Toxicity:
+                    Executive Summary 2017. <em>Reg Anesth Pain Med.</em>
+                    2018;43(2):113–123.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Hayes WK, Brown SR, Hodgson HA, et al. Intravenous lipid
+                    emulsion therapy for permethrin toxicosis in cats.
+                    <em>J Vet Emerg Crit Care.</em> 2020;30(5):608–614.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

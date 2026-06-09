@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Shock hub | InfusionFox{% endblock %}
+
+{% block content %}
+
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Emergency · Workflow hub</div>
+                <h1>Shock hub</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Decision support for the four shock categories. The differential matters because the treatments contradict each other; the wrong call can kill the patient.
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li><strong>Don't bolus a cardiogenic patient.</strong> Aggressive fluids cause acute pulmonary edema. Listen to the chest, look at the pulses and jugular before fluids.</li>
+                <li><strong>Don't start vasopressors before fluid resuscitation in distributive shock.</strong> Norepinephrine pushed into an empty tank causes ischemia without restoring perfusion.</li>
+                <li><strong>Obstructive shock needs the obstruction relieved.</strong> No amount of fluids or pressors fixes tamponade or GDV. Drain it, decompress it, refer it.</li>
+                <li><strong>Lactate trends matter more than single values.</strong> Persistent elevation despite resuscitation = inadequate response. Reassess.</li>
+            </ul>
+        </div>
+
+        <h2 style="margin-top: 2rem;">First 5 minutes — universal workup</h2>
+        <div style="padding: 1rem; background: var(--paper-warm); border-radius: var(--radius); margin-top: 1rem; font-size: 0.92rem; line-height: 1.65;">
+            Regardless of suspected shock type:
+            <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem;">
+                <li><strong>IV access</strong> (or IO). Two catheters in critical patients.</li>
+                <li><strong>Blood pressure</strong>: Doppler or oscillometric. Compensated shock can be normotensive.</li>
+                <li><strong>Lactate, glucose, PCV/TS, electrolytes, BUN/creatinine</strong>: point-of-care if possible.</li>
+                <li><strong>AFAST + TFAST</strong>: fastest way to differentiate. Free fluid, pericardial effusion, B-lines.</li>
+                <li><strong>Continuous ECG</strong>: arrhythmia source vs consequence?</li>
+                <li><strong>Focused history</strong>: trauma, cardiac disease, anaphylaxis trigger, GI losses, deep-chested breed.</li>
+                <li><strong>Cardiopulmonary exam</strong>: pulses, jugular fill, MM/CRT, heart sounds, lung sounds.</li>
+            </ul>
+            <p style="margin: 0.6rem 0 0;">
+                Point-of-care ultrasound + clinical exam usually identifies the shock category within minutes.
+            </p>
+        </div>
+
+        <h2 style="margin-top: 2rem;">The four shock categories</h2>
+
+        <div class="compare-cards">
+            <div class="compare-card compare-card--critical">
+                <div class="eyebrow">Hypovolemic</div>
+                <p><strong>Mechanism:</strong> Loss of intravascular volume.</p>
+                <p style="color: var(--ink-soft);">Hemorrhage (trauma, hemoabdomen, GI bleeding, coagulopathy), GI losses, severe dehydration, polyuric crisis.</p>
+                <dl class="signs">
+                    <dt>HR</dt><dd>↑↑</dd>
+                    <dt>Pulses</dt><dd>Weak, thready</dd>
+                    <dt>CRT</dt><dd>Prolonged (&gt;2 sec)</dd>
+                    <dt>MM</dt><dd>Pale; white if hemorrhage</dd>
+                    <dt>Extremities</dt><dd>Cool</dd>
+                    <dt>AFAST</dt><dd>May show free fluid</dd>
+                    <dt>PCV/TP</dt><dd>↓ if hemorrhage; ↑ if dehydration</dd>
+                </dl>
+            </div>
+
+            <div class="compare-card compare-card--high">
+                <div class="eyebrow">Distributive</div>
+                <p><strong>Mechanism:</strong> Loss of vasomotor tone → relative hypovolemia.</p>
+                <p style="color: var(--ink-soft);">Sepsis, SIRS (pancreatitis, parvo), anaphylaxis, neurogenic, drug-induced.</p>
+                <dl class="signs">
+                    <dt>HR</dt><dd>↑ (cats may not)</dd>
+                    <dt>Pulses</dt><dd>Bounding early, weak late</dd>
+                    <dt>CRT</dt><dd>Rapid early, prolonged late</dd>
+                    <dt>MM</dt><dd>Injected early, grey late</dd>
+                    <dt>Extremities</dt><dd>Warm early, cool late</dd>
+                    <dt>Temp</dt><dd>Fever or hypothermia</dd>
+                    <dt>Lactate</dt><dd>Often markedly elevated</dd>
+                </dl>
+            </div>
+
+            <div class="compare-card compare-card--info">
+                <div class="eyebrow">Cardiogenic</div>
+                <p><strong>Mechanism:</strong> Pump failure → inadequate cardiac output despite volume.</p>
+                <p style="color: var(--ink-soft);">DCM, advanced MMVD, HCM (cats), tachy- or bradyarrhythmias. Cardiomyopathy may be undiagnosed.</p>
+                <dl class="signs">
+                    <dt>HR</dt><dd>Variable</dd>
+                    <dt>Pulses</dt><dd>Weak; may be irregular</dd>
+                    <dt>Heart sounds</dt><dd>Murmur, gallop, arrhythmia</dd>
+                    <dt>Jugular</dt><dd>Often distended</dd>
+                    <dt>Lung sounds</dt><dd>Crackles (edema)</dd>
+                    <dt>TFAST</dt><dd>B-lines, pleural effusion</dd>
+                    <dt>CRT</dt><dd>Prolonged</dd>
+                </dl>
+            </div>
+
+            <div class="compare-card compare-card--special">
+                <div class="eyebrow">Obstructive</div>
+                <p><strong>Mechanism:</strong> Mechanical obstruction to flow.</p>
+                <p style="color: var(--ink-soft);">Pericardial tamponade, GDV, tension pneumothorax, PTE, caval syndrome, severe pleural effusion.</p>
+                <dl class="signs">
+                    <dt>HR</dt><dd>↑↑</dd>
+                    <dt>Pulses</dt><dd>Weak; pulsus paradoxus possible</dd>
+                    <dt>Heart sounds</dt><dd>Muffled (tamponade)</dd>
+                    <dt>Jugular</dt><dd>Markedly distended</dd>
+                    <dt>AFAST/TFAST</dt><dd>Pericardial effusion, GDV gas</dd>
+                    <dt>Abdomen</dt><dd>Distended, tympanic if GDV</dd>
+                </dl>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 3rem;">Type-specific treatment</h2>
+
+        <ol style="list-style: none; padding-left: 0; margin-top: 1.5rem;">
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 1rem; padding-top: 0.5rem; list-style: none;">
+                <div class="dka-step__number step-num--critical" style="display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">1</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Hypovolemic shock</h3>
+                    <p>Volume resuscitation is the answer. Dose-titrate; reassess after each bolus.</p>
+                    <div class="rx-table">
+                        <span class="label">Bolus (dog)</span><span class="value">15–30 mL/kg crystalloid IV over 15 min, reassess</span>
+                        <span class="label">Bolus (cat)</span><span class="value">10–15 mL/kg IV over 15 min, reassess</span>
+                        <span class="label">Crystalloid ceiling</span><span class="value">90 mL/kg dog · 60 mL/kg cat</span>
+                        <span class="label">If hemorrhagic</span><span class="value">pRBC if PCV &lt; 20% or active bleeding</span>
+                        <span class="label">If still hypotensive past ceiling</span><span class="value">Add norepinephrine</span>
+                    </div>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Hemorrhage control runs in parallel. Permissive hypotension (target MAP 60–65) may be appropriate if active surgical bleeding can't yet be controlled; discuss with surgeon.
+                    </p>
+                    <div class="button-row">
+                        <a href="/fluid-therapy" class="btn">Fluid therapy →</a>
+                        <a href="/transfusion" class="btn">Transfusion →</a>
+                    </div>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number step-num--high" style="display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">2</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Distributive shock</h3>
+                    <p>Fluids first, then vasopressors. Source control is parallel and equally important. Anaphylaxis has its own protocol.</p>
+                    <div class="rx-table">
+                        <span class="label">Initial bolus</span><span class="value">15–30 mL/kg dog · 10–15 mL/kg cat IV</span>
+                        <span class="label">Reassess</span><span class="value">BP, lactate, mentation, urine output</span>
+                        <span class="label">Fluid-refractory</span><span class="value">Norepinephrine 0.05–1 µg/kg/min</span>
+                        <span class="label">Target MAP</span><span class="value">≥ 65 mmHg</span>
+                        <span class="label">If septic</span><span class="value">Broad-spectrum antibiotics within 1 hr</span>
+                        <span class="label">Source control</span><span class="value">Drain abscess, remove infected tissue, debride</span>
+                    </div>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Caution: over-resuscitation in distributive shock causes pulmonary edema and worsens outcomes. Once perfusion improves, switch from volume to vasopressors.
+                    </p>
+                    <div class="button-row">
+                        <a href="/norepinephrine" class="btn">Norepinephrine →</a>
+                        <a href="/fluid-therapy" class="btn">Fluid therapy →</a>
+                        <a href="/anaphylaxis" class="btn">Anaphylaxis →</a>
+                    </div>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number step-num--info" style="display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">3</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Cardiogenic shock</h3>
+                    <p><strong>Fluids are not the answer here.</strong> The pump is failing; volume floods the lungs. Treatment is rate/rhythm control, positive inotropy, and afterload reduction.</p>
+                    <div class="rx-table">
+                        <span class="label">Oxygen</span><span class="value">Flow-by, mask, or oxygen cage</span>
+                        <span class="label">Pulmonary edema</span><span class="value">Furosemide 2 mg/kg IV, repeat q1h until improvement</span>
+                        <span class="label">Inotropy</span><span class="value">Dobutamine 1–10 µg/kg/min (cat: caution &gt; 5)</span>
+                        <span class="label">Arrhythmia</span><span class="value">Treat the rhythm (lidocaine for VT in dogs)</span>
+                        <span class="label">Cautious fluids only if</span><span class="value">Concurrent dehydration; 2–5 mL/kg increments</span>
+                        <span class="label">Refer</span><span class="value">Cardiology consult; many need echo</span>
+                    </div>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        If diagnosis is unclear (hypovolemic vs cardiogenic), a 5–10 mL/kg "fluid challenge" with continuous reassessment is safer than a 30 mL/kg bolus. Worsening tachypnea or crackles = stop fluids, treat as cardiogenic.
+                    </p>
+                    <div class="button-row">
+                        <a href="/dobutamine" class="btn">Dobutamine →</a>
+                        <a href="/lidocaine" class="btn">Lidocaine (VT, dogs) →</a>
+                    </div>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number step-num--special" style="display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">4</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Obstructive shock</h3>
+                    <p>The mechanical obstruction must be relieved. Drugs are temporary holding patterns at best.</p>
+                    <div class="rx-table">
+                        <span class="label">Pericardial tamponade</span><span class="value">Pericardiocentesis (right 4th–6th IC space)</span>
+                        <span class="label">GDV</span><span class="value">Trocarization or orogastric tube; emergent surgery</span>
+                        <span class="label">Tension pneumothorax</span><span class="value">Emergent thoracocentesis</span>
+                        <span class="label">Pleural effusion</span><span class="value">Therapeutic thoracocentesis</span>
+                        <span class="label">PTE</span><span class="value">Oxygen, anticoagulation, address cause</span>
+                        <span class="label">Caval syndrome</span><span class="value">Surgical heartworm extraction</span>
+                    </div>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Cautious volume support (5–10 mL/kg) often helps as a bridge to definitive intervention, particularly in tamponade. Do not delay the procedure to give fluids.
+                    </p>
+                </div>
+            </li>
+
+        </ol>
+
+        <h2 style="margin-top: 3rem;">Lactate as a guide</h2>
+        <div style="padding: 1rem; background: var(--paper-warm); border-radius: var(--radius); margin-top: 1rem; font-size: 0.92rem; line-height: 1.6;">
+            Single most useful biomarker in shock. Reflects tissue hypoperfusion. Trends matter more than single values.
+            <dl class="banded-list">
+                <dt>&lt; 2.5 mmol/L</dt><dd>Normal</dd>
+                <dt>2.5–5</dt><dd>Mild hyperlactatemia</dd>
+                <dt>5–8</dt><dd>Moderate, concerning</dd>
+                <dt>&gt; 8</dt><dd>Severe; high mortality association</dd>
+            </dl>
+            <p style="margin: 0.7rem 0 0;">
+                <strong>Lactate clearance &gt; 50% in 6 hr</strong> is associated with survival. Persistently elevated or rising lactate despite resuscitation = inadequate response. Reconsider the diagnosis (missed bleed, wrong shock category, GI translocation) and escalate.
+            </p>
+        </div>
+
+        <h2 style="margin-top: 3rem;">Endpoints of resuscitation</h2>
+        <div style="padding: 1rem; background: var(--paper-warm); border-radius: var(--radius); margin-top: 1rem; font-size: 0.92rem; line-height: 1.65;">
+            Stop bolusing fluids and reassess strategy when:
+            <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem;">
+                <li><strong>HR normalized</strong> for species</li>
+                <li><strong>MAP ≥ 65 mmHg</strong>, SBP ≥ 90, Doppler ≥ 90</li>
+                <li><strong>Lactate trending down</strong> &gt; 50% in 6 hr or normalized</li>
+                <li><strong>Mentation improved</strong></li>
+                <li><strong>CRT &lt; 2 sec</strong>, MM pink, extremities warm</li>
+                <li><strong>Urine output ≥ 1 mL/kg/hr</strong></li>
+            </ul>
+            <p style="margin: 0.7rem 0 0;">
+                If any of these is not improving despite reaching the volume ceiling, <strong>reconsider the diagnosis</strong> and escalate to vasopressor or other targeted therapy. Don't give a fifth and sixth bolus hoping it will work.
+            </p>
+        </div>
+
+        <h2 style="margin-top: 3rem;">Sources</h2>
+        <ul style="color: var(--ink-soft); line-height: 1.7;">
+            <li style="margin-bottom: 0.5rem;">Silverstein DC, Hopper K, eds. <em>Small Animal Critical Care Medicine</em>. 3rd ed. Elsevier; 2023. Chapters on Hypovolemic, Distributive, Cardiogenic, and Obstructive Shock.</li>
+            <li style="margin-bottom: 0.5rem;">Boller EM, Otto CM. Septic shock. In Silverstein & Hopper, 3rd ed.</li>
+            <li style="margin-bottom: 0.5rem;">Hayes G, Mathews K, Doig G, et al. The acute patient physiologic and laboratory evaluation (APPLE) score. <em>J Vet Intern Med</em> 2010;24:1034–1047.</li>
+            <li style="margin-bottom: 0.5rem;">Conti-Patara A, de Araújo Caldeira J, de Mattos-Junior E, et al. Changes in tissue perfusion parameters in dogs with severe sepsis/septic shock in response to goal-directed hemodynamic optimization. <em>J Vet Emerg Crit Care</em> 2012;22:409–418.</li>
+            <li style="margin-bottom: 0.5rem;">Boag AK, Hughes D. Assessment and treatment of perfusion abnormalities in the emergency patient. <em>Vet Clin North Am Small Anim Pract</em> 2005;35:319–342.</li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

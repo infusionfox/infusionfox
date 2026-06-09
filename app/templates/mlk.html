@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}MLK CRI (Morphine + Lidocaine + Ketamine) | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Step-by-step bag builder</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Dog-only.</strong> The published protocol does
+                    not include a feline lidocaine maintenance CRI.
+                    Lidocaine cardiotoxicity risk in cats is well-established
+                    at the MLK lidocaine dose. For feline analgesia, use a
+                    single-agent fentanyl, buprenorphine, or hydromorphone
+                    CRI.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">How this calculator works</div>
+            <p style="margin: 0;">
+                Pick the per-drug doses, pump rate, and bag size. The
+                calculator works out the recipe (the mg and mL of each drug
+                to add to the bag) so the bag, run at the chosen rate,
+                delivers the doses you selected. Defaults are mid-range
+                doses at 1 mL/kg/hr in a 500 mL bag.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/mlk">Clinical background</a>
+            <a href="#how-it-works">Formula</a>
+            <a href="#why-dog-only">Why dog-only</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/mlk/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:300ms, change, load"
+                hx-sync="this:replace"
+            >
+                {# ── Patient ─────────────────────────────────────── #}
+                <fieldset>
+                    <legend>Patient</legend>
+                    <div class="field">
+                        <label for="weight_value">Weight</label>
+                        <div class="field-group">
+                            <input type="number" step="any" min="0.1" id="weight_value"
+                                   name="weight_value" value="{{ weight_value }}" required autofocus>
+                            <div class="segmented">
+                                <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                                <label for="wu-lb">lb</label>
+                                <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                                <label for="wu-kg">kg</label>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                {# ── Bag and pump rate ──────────────────────────── #}
+                <fieldset style="margin-top: 1.25rem;">
+                    <legend>Bag and rate</legend>
+                    <div class="field">
+                        <label for="bag_volume_ml">Bag volume (mL)</label>
+                        <input type="number" step="any" min="50" id="bag_volume_ml"
+                               name="bag_volume_ml" value="{{ bag_volume_ml }}">
+                        <p class="field-hint">Typical: 250, 500, or 1000 mL.</p>
+                    </div>
+                    <div class="field">
+                        <label for="pump_rate_ml_per_kg_per_hr">Pump rate (mL/kg/hr)</label>
+                        <input type="number" step="any" min="0.5" id="pump_rate_ml_per_kg_per_hr"
+                               name="pump_rate_ml_per_kg_per_hr" value="{{ pump_rate_ml_per_kg_per_hr }}">
+                        <p class="field-hint">Common: 1–2 mL/kg/hr as a dedicated analgesic CRI.</p>
+                    </div>
+                </fieldset>
+
+                {# ── Per-drug target doses ──────────────────────── #}
+                <fieldset style="margin-top: 1.25rem;">
+                    <legend>Target doses</legend>
+                    <div class="field">
+                        <label for="morphine_dose">Morphine (mg/kg/hr)</label>
+                        <input type="number" step="0.01" min="0" id="morphine_dose"
+                               name="morphine_dose" value="{{ morphine_dose }}">
+                        <p class="field-hint">Published range: {{ dose_range_morphine[0] }}–{{ dose_range_morphine[1] }}.</p>
+                    </div>
+                    <div class="field">
+                        <label for="lidocaine_dose">Lidocaine (mg/kg/hr)</label>
+                        <input type="number" step="0.01" min="0" id="lidocaine_dose"
+                               name="lidocaine_dose" value="{{ lidocaine_dose }}">
+                        <p class="field-hint">Published range: {{ dose_range_lidocaine[0] }}–{{ dose_range_lidocaine[1] }} (dogs only).</p>
+                    </div>
+                    <div class="field">
+                        <label for="ketamine_dose">Ketamine (mg/kg/hr)</label>
+                        <input type="number" step="0.01" min="0" id="ketamine_dose"
+                               name="ketamine_dose" value="{{ ketamine_dose }}">
+                        <p class="field-hint">Published range: {{ dose_range_ketamine[0] }}–{{ dose_range_ketamine[1] }}.</p>
+                    </div>
+                </fieldset>
+
+                {# ── Stock concentrations ───────────────────────── #}
+                <fieldset style="margin-top: 1.25rem;">
+                    <legend>Stock concentrations</legend>
+                    <div class="field">
+                        <label for="morphine_stock">Morphine (mg/mL)</label>
+                        <input type="number" step="0.1" min="0" id="morphine_stock"
+                               name="morphine_stock" value="{{ morphine_stock }}">
+                        <p class="field-hint">Common: 5 or 15 mg/mL.</p>
+                    </div>
+                    <div class="field">
+                        <label for="lidocaine_stock">Lidocaine (mg/mL)</label>
+                        <input type="number" step="0.1" min="0" id="lidocaine_stock"
+                               name="lidocaine_stock" value="{{ lidocaine_stock }}">
+                        <p class="field-hint">2 % = 20 mg/mL (the surgical/CRI stock, not 1 % or 4 %).</p>
+                    </div>
+                    <div class="field">
+                        <label for="ketamine_stock">Ketamine (mg/mL)</label>
+                        <input type="number" step="0.1" min="0" id="ketamine_stock"
+                               name="ketamine_stock" value="{{ ketamine_stock }}">
+                        <p class="field-hint">Standard veterinary stock: 100 mg/mL.</p>
+                    </div>
+                </fieldset>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/mlk_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Pick per-drug doses, a pump rate, and a bag size, then compute
+                the drug amounts so the bag delivers those doses for the
+                entire time it runs.
+            </p>
+            <ol style="color: var(--ink-soft); line-height: 1.8;">
+                <li>
+                    <strong>Pump rate (mL/hr)</strong> = weight (kg) × rate per kg.
+                </li>
+                <li>
+                    <strong>Bag duration (hr)</strong> = bag mL ÷ pump mL/hr.
+                </li>
+                <li>
+                    For each drug: <strong>total mg in bag</strong> = dose (mg/kg/hr) × weight × bag duration.
+                </li>
+                <li>
+                    <strong>Volume of stock to draw</strong> = total mg ÷ stock concentration (mg/mL).
+                </li>
+                <li>
+                    Remove a saline volume equal to the sum of the drug volumes, then add the drugs.
+                </li>
+            </ol>
+        </section>
+
+        <section id="why-dog-only" style="margin-top: 3rem;">
+            <div class="eyebrow">Rationale</div>
+            <h2>Why this calculator is dog-only</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Cats are more susceptible to lidocaine cardiotoxicity than
+                dogs (depression of myocardial contractility and cardiac
+                output, arrhythmias, and CNS effects can occur at doses
+                below the MLK lidocaine target of 1.5 mg/kg/hr). The
+                published MLK protocol does not include a feline lidocaine
+                maintenance CRI, and InfusionFox locks the species selector
+                to dog. For feline multimodal analgesia, consider fentanyl,
+                buprenorphine, or hydromorphone as single-agent CRIs.
+            </p>
+
+            <h3>Monitoring during MLK CRI</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Pain score, respiratory rate and effort, heart rate and
+                rhythm (ECG), blood pressure, mentation, and body
+                temperature. MLK CRIs have been associated with hypothermia
+                in dogs (Wang et al. 2020), so check temperature during and
+                after the infusion and provide active warming if needed.
+                Lidocaine toxicity in dogs presents as muscle twitching,
+                ataxia, seizures, and cardiac depression. If toxicity is
+                suspected, discontinue and treat supportively.
+            </p>
+
+            <h3>Stepping down</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Discontinue lidocaine and ketamine first when clinical
+                signs allow. Morphine can be continued separately if longer
+                analgesia is needed; the MLK morphine dose lands in the
+                mid-range of Plumb's 0.1–1 mg/kg/hr maintenance range. For
+                ketamine post-surgical maintenance, 2 µg/kg/min (≈ 0.12
+                mg/kg/hr) for 24 hr is a published transition dose.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Lukasik V. <em>Constant Rate Infusions in Small Animal
+                    Anesthesia: A Guide to the Practitioner</em>. World
+                    Small Animal Veterinary Association World Congress
+                    Proceedings, 2015.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Muir WW, Wiese AJ, March PA. Effects of morphine,
+                    lidocaine, ketamine, and morphine-lidocaine-ketamine
+                    drug combination on minimum alveolar concentration in
+                    dogs anesthetized with isoflurane. <em>Am J Vet Res</em>
+                    2003;64:1155–1160.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Wang HC, Lin YL, et al. Comparison of the effects of
+                    morphine-lidocaine-ketamine and
+                    fentanyl-lidocaine-ketamine combinations administered as
+                    constant rate infusions on postprocedure rectal
+                    temperature in dogs. <em>Am J Vet Res</em>
+                    2020;81:58–65. MLK was associated with more frequent
+                    hypothermia than FLK; monitor temperature during and
+                    after the infusion.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Merck/MSD Veterinary Manual. <em>Canine
+                    Morphine-Lidocaine-Ketamine (MLK) CRI Dose</em> clinical
+                    calculator.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Plumb DC. <em>Plumb's Veterinary Drugs</em>. Morphine,
+                    lidocaine, and ketamine monographs, including the
+                    species-specific avoidance of IV lidocaine in cats.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

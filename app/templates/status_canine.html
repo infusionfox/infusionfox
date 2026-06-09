@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Status epilepticus (canine) | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Emergency · Workflow hub · Canine</div>
+                <h1>Status epilepticus hub — canine</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Stepwise protocol for canine status epilepticus.
+                    Enter patient weight to generate a dose sheet for
+                    each step of the escalation pathway. <a href="/status-feline" style="color: var(--ink-soft); text-decoration: underline;">Feline version →</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li><strong>Check blood glucose first.</strong> Hypoglycemic seizures look identical to status. If BG &lt; 60 mg/dL, give dextrose before benzodiazepines.</li>
+                <li><strong>Treat the temperature.</strong> Hyperthermia from prolonged seizures kills neurons. Active cooling (alcohol on paws, fan, IV fluids at room temp) to 39.4°C / 103°F target. Stop cooling at 39.4 to avoid overshoot.</li>
+                <li><strong>Phenobarbital is slow IV, not bolus.</strong> Rapid administration causes hypotension and respiratory depression. Give over 5–10 minutes.</li>
+            </ul>
+        </div>
+
+        <div class="calc-grid">
+            <div class="calc-form-col">
+                <form
+                    hx-post="/status-canine/compute"
+                    hx-target="#result-panel"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:250ms, change, load"
+                >
+                    <fieldset>
+                        <legend>Patient weight</legend>
+                        <div class="field field--inline">
+                            <label for="weight_value">Weight</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input
+                                    type="number"
+                                    id="weight_value"
+                                    name="weight_value"
+                                    value="{{ weight_value }}"
+                                    min="0.5"
+                                    max="120"
+                                    step="any"
+                                    required
+                                    style="width: 8rem;"
+                                >
+                                <div class="segmented">
+                                    <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                                    <label for="wu-lb">lb</label>
+                                    <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                                    <label for="wu-kg">kg</label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+
+                <div style="margin-top: 2rem; padding: 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft); line-height: 1.6;">
+                    <div class="eyebrow" style="margin-bottom: 0.5rem;">Stepwise escalation</div>
+                    <p style="margin: 0 0 0.5rem;"><strong>Step 1.</strong> Benzodiazepine bolus. Repeat up to 3 times, 5 min apart.</p>
+                    <p style="margin: 0 0 0.5rem;"><strong>Step 2.</strong> If still seizing after 2–3 benzo doses: AED loading (levetiracetam preferred).</p>
+                    <p style="margin: 0 0 0.5rem;"><strong>Step 3.</strong> Refractory status: anesthetic CRI (midazolam or propofol). Intubate.</p>
+                    <p style="margin: 0;"><strong>Throughout.</strong> Glucose, temperature, IV access, electrolytes, airway.</p>
+                </div>
+            </div>
+
+            <div class="calc-result-col">
+                {% if result %}
+                    {% include "partials/status_canine_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 3rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="#algorithm">Algorithm overview</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <section id="algorithm" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Status epilepticus escalation</h2>
+
+            <h3>Initial assessment (parallel to step 1)</h3>
+            <ol style="color: var(--ink-soft); line-height: 1.8; padding-left: 1.5rem;">
+                <li>Establish IV access (or IO if unable).</li>
+                <li>Check blood glucose. If &lt; 60 mg/dL, treat hypoglycemia first.</li>
+                <li>Check temperature. Begin active cooling if &gt; 40.5°C / 105°F.</li>
+                <li>Note seizure type and duration. Status = continuous seizure activity &gt; 5 min OR ≥ 2 seizures without full recovery between.</li>
+                <li>If known epileptic on chronic AEDs, get serum levels but do not delay treatment.</li>
+            </ol>
+
+            <h3>Step 1 — first-line benzodiazepine</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Diazepam 0.5 mg/kg IV is the standard. Midazolam 0.2 mg/kg IV/IM/IN is increasingly preferred and is excellent intranasally when no IV access. Diazepam 1–2 mg/kg PR is the alternative when no IV. Repeat up to 3 doses 5 minutes apart. If still seizing after 2–3 benzo doses, escalate.
+            </p>
+
+            <h3>Step 2 — AED loading</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Levetiracetam 60 mg/kg IV slow bolus is the preferred loading dose; reduce to 30 mg/kg if there is significant cardiovascular concern. The Hardy 2012 RCT showed levetiracetam IV controlled status in 56% of dogs that had failed diazepam, with rapid onset and minimal cardiovascular effect. Begin maintenance at 20 mg/kg q8h IV/PO.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Phenobarbital 4–6 mg/kg IV slow bolus over 5–10 minutes is the alternative. Repeat every 20 minutes to a total maximum of 16–24 mg/kg in the first 24 hours. The maintenance dose follows at 2.5–3 mg/kg PO q12h once stabilized.
+            </p>
+
+            <h3>Step 3 — refractory / anesthetic CRI</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                If seizures continue despite step 1 and 2, the patient needs general anesthesia. Intubate. Midazolam CRI 0.1–0.5 mg/kg/hr is first choice in most patients; propofol CRI 0.1–0.25 mg/kg/min is the alternative or adjunct, with the caveat that propofol CRI duration should be limited to roughly 48 hours.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Ketamine bolus 2 mg/kg IV (followed by CRI 2–10 µg/kg/min) is a last-resort option supported by emerging evidence in human refractory status. Inhalant anesthesia is the final fallback.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Wean CRIs gradually after 24 hours seizure-free. Sudden discontinuation precipitates withdrawal seizures.
+            </p>
+
+            <h3>Throughout — supportive care</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.8; padding-left: 1.5rem;">
+                <li>Maintenance IV crystalloids at 2–4 mL/kg/hr unless contraindicated.</li>
+                <li>Treat hyperthermia. Stop active cooling at 39.4°C / 103°F to avoid overshoot.</li>
+                <li>Monitor BP, ECG, SpO₂. Hypotension is common with anesthetic CRIs.</li>
+                <li>Recheck glucose, electrolytes, lactate every 2–4 hours.</li>
+                <li>Assess for and treat the underlying cause: toxin exposure, hepatic encephalopathy, intracranial disease, hypoglycemia, hypocalcemia.</li>
+            </ul>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                {% if result %}
+                {% for s in result.sources %}
+                <li style="margin-bottom: 0.5rem;">{{ s.citation }}</li>
+                {% endfor %}
+                {% endif %}
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,172 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    {#
+        Mode banner. Makes it unambiguous which calculation mode produced
+        this result. The result panel uses different primary numbers than
+        the standard-bag panel; the banner is the visual cue that prevents
+        a misread by a clinician who is used to seeing pump rate as the
+        headline output.
+    #}
+    <div class="result__mode-banner">
+        <div class="eyebrow">Mode</div>
+        <div class="result__mode-label">Target pump rate &rarr; bag concentration</div>
+    </div>
+
+    <div class="result__headline">
+        <div class="eyebrow">Bag concentration</div>
+        <div class="result__primary">
+            {{ "%.1f"|format(result.bag_concentration_ug_per_ml) }}<span class="unit">µg/mL</span>
+        </div>
+        <div class="result__secondary">
+            Run at {{ "%.1f"|format(result.target_pump_rate_ml_per_hr) }} mL/hr to deliver {{ result.dose }} {{ result.dose_unit.value }}
+        </div>
+    </div>
+
+    {#
+        Bag-prep card: the concrete preparation instructions. This is
+        the actionable output the clinician acts on at the bench. Kept
+        as a separate block from the headline so it reads like a
+        recipe, not a list of derived numbers.
+    #}
+    <div class="bag-prep-card">
+        <div class="eyebrow">Bag preparation</div>
+        <ol class="bag-prep-card__steps">
+            <li>
+                Draw <strong>{{ "%.2f"|format(result.stock_volume_to_add_ml) }} mL</strong>
+                of {{ drug.display_name }} stock
+                ({{ drug.stock_concentration_display if drug.stock_concentration_display else (drug.stock_concentration_ug_per_ml ~ ' µg/mL') }}).
+            </li>
+            <li>
+                Add it to a <strong>{{ result.bag_volume_ml|int }} mL</strong> bag of 0.9% NaCl
+                (or compatible diluent per drug compatibility).
+            </li>
+            <li>
+                The bag now contains <strong>{{ "%.2f"|format(result.total_drug_in_bag_mg) }} mg</strong>
+                of {{ drug.display_name }} at <strong>{{ "%.1f"|format(result.bag_concentration_ug_per_ml) }} µg/mL</strong>.
+            </li>
+            <li>
+                Run the pump at <strong>{{ "%.1f"|format(result.target_pump_rate_ml_per_hr) }} mL/hr</strong>
+                to deliver {{ result.dose }} {{ result.dose_unit.value }} to this {{ "%.2f"|format(result.weight_kg) }} kg patient.
+            </li>
+        </ol>
+    </div>
+
+    {#
+        Titration guidance callout. The most common source of confusion
+        in target-pump-rate mode is users re-entering the dose field
+        when they want to titrate, which causes the calculator to
+        recompute a new (more concentrated) bag — implying they should
+        prepare a new bag. They shouldn't. The bag is prepped once;
+        titration happens at the pump.
+    #}
+    <div class="titration-callout">
+        <div class="titration-callout__title">To titrate later, change the pump rate, not the dose here.</div>
+        <p class="titration-callout__body">
+            This bag is prepared once. To raise or lower the patient's
+            dose, change the pump rate using the titration ladder below.
+            Re-entering a new dose in this calculator will recompute a
+            different bag, not tell you how to titrate the bag you just
+            prepared.
+        </p>
+    </div>
+
+    {#
+        Titration ladder. The same ladder used in STANDARD_BAG mode,
+        built against the bag concentration we just calculated. Tells
+        the clinician: "given this bag, here is what the pump rate
+        would be at other doses on the titration ladder." Useful for
+        in-case titration without changing the bag.
+    #}
+    {% if result.titration_steps %}
+    <div class="titration-ladder__note">
+        With this bag at {{ "%.1f"|format(result.bag_concentration_ug_per_ml) }} µg/mL,
+        here is the pump rate at each dose on the titration ladder.
+        To titrate, change the pump rate to the row matching the new
+        dose. Do not re-prepare the bag.
+    </div>
+    {% include "partials/_titration_ladder.html" %}
+    {% endif %}
+
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Weight</dt>
+            <dd>{{ "%.2f"|format(result.weight_kg) }} kg</dd>
+        </div>
+        {% if result.total_dose_ug_per_min is not none %}
+        <div class="result__detail">
+            <dt>Total dose</dt>
+            <dd>{{ "%.2f"|format(result.total_dose_ug_per_min) }} µg/min</dd>
+        </div>
+        {% endif %}
+        <div class="result__detail">
+            <dt>Total dose</dt>
+            <dd>{{ "%.1f"|format(result.total_dose_ug_per_hr) }} µg/hr</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Target pump rate</dt>
+            <dd>{{ "%.1f"|format(result.target_pump_rate_ml_per_hr) }} mL/hr</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Bag volume</dt>
+            <dd>{{ result.bag_volume_ml|int }} mL</dd>
+        </div>
+    </dl>
+
+    {% if result.warnings %}
+        {% set ns = namespace(danger=false) %}
+        {% for w in result.warnings %}
+            {% if 'CAUTION' in w or 'exceeds' in w %}{% set ns.danger = true %}{% endif %}
+        {% endfor %}
+        <div class="warnings {% if ns.danger %}danger{% endif %}">
+            <ul>
+                {% for w in result.warnings %}
+                    <li>{{ w }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {#
+        Update the worked-example block on the parent page when this
+        partial swaps in via HTMX. Target-pump-rate mode shows the full
+        four-step preparation math: dose-to-per-hour, per-hour to bag
+        concentration, bag concentration to total drug, total drug to
+        volume of stock to draw. Each step is its own formula-display
+        block with a heading and brief explanation, matching the
+        article's worked example. The shim uses innerHTML (not
+        textContent) so the heading and prose markup renders, and
+        removes the formula-display class from #worked-example so the
+        nested formula-display children aren't double-boxed.
+    #}
+    {% if is_htmx_response %}
+    {# Pre-format numbers as Jinja variables for readability. #}
+    {% set w = "%.2f"|format(result.weight_kg) %}
+    {% set d = result.dose %}
+    {% set total_hr = "%.1f"|format(result.total_dose_ug_per_hr) %}
+    {% set target_rate = "%.1f"|format(result.target_pump_rate_ml_per_hr) %}
+    {% set bag_conc = "%.1f"|format(result.bag_concentration_ug_per_ml) %}
+    {% set bag_vol = result.bag_volume_ml|int %}
+    {% set total_drug_ug = "%.0f"|format(result.bag_concentration_ug_per_ml * result.bag_volume_ml) %}
+    {% set total_drug_mg = "%.2f"|format(result.total_drug_in_bag_mg) %}
+    {% set stock_mg_per_ml = "%.0f"|format(drug.stock_concentration_ug_per_ml / 1000) if drug.stock_concentration_ug_per_ml >= 1000 else "%.2f"|format(drug.stock_concentration_ug_per_ml / 1000) %}
+    {% set stock_ml = "%.2f"|format(result.stock_volume_to_add_ml) %}
+    <template id="worked-example-source"><h4 style="margin: 0 0 0.5rem; font-size: 1rem;">Step 1: dose per hour</h4>
+{% if drug.dose_unit.value == 'ug/kg/min' %}
+<div class="formula-display">$$\frac{ {{ d }}\,\mu g}{\cancel{kg}\cdot\cancel{min}} \times {{ w }}\,\cancel{kg} \times \frac{60\,\cancel{min}}{hr} = \frac{ {{ total_hr }}\,\mu g}{hr}$$</div>
+{% else %}
+<div class="formula-display">$$\frac{ {{ d }}\,\mu g}{\cancel{kg}\cdot hr} \times {{ w }}\,\cancel{kg} = \frac{ {{ total_hr }}\,\mu g}{hr}$$</div>
+{% endif %}
+<h4 style="margin: 1.25rem 0 0.5rem; font-size: 1rem;">Step 2: bag concentration</h4>
+<div class="formula-display">$$\frac{ {{ total_hr }}\,\mu g}{\cancel{hr}} \times \frac{1\,\cancel{hr}}{ {{ target_rate }}\,mL} = \frac{ {{ bag_conc }}\,\mu g}{mL}$$</div>
+<h4 style="margin: 1.25rem 0 0.5rem; font-size: 1rem;">Step 3: total drug in the bag</h4>
+<div class="formula-display">$$\frac{ {{ bag_conc }}\,\mu g}{\cancel{mL}} \times {{ bag_vol }}\,\cancel{mL} = {{ total_drug_ug }}\,\mu g = {{ total_drug_mg }}\,mg$$</div>
+<h4 style="margin: 1.25rem 0 0.5rem; font-size: 1rem;">Step 4: volume of stock to draw</h4>
+<div class="formula-display">$$\frac{ {{ total_drug_mg }}\,\cancel{mg}}{1} \times \frac{1\,mL}{ {{ stock_mg_per_ml }}\,\cancel{mg}} = {{ stock_ml }}\,mL$$</div></template>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>

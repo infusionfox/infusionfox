@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Admin · Feedback #{{ row.id }} · InfusionFox{% endblock %}
+
+{% block content %}
+<section class="admin-page">
+    <div class="container">
+        <header class="admin-header">
+            <div class="eyebrow">Admin · signed in as {{ admin_email }}</div>
+            <h1>Feedback #{{ row.id }}</h1>
+            <nav class="admin-nav">
+                <a href="/admin/">Overview</a>
+                <a href="/admin/disclaimer-acceptances">Disclaimer acceptances</a>
+                <a href="/admin/feedback" class="active">Feedback</a>
+            </nav>
+        </header>
+
+        <div class="admin-detail">
+            <dl>
+                <dt>Created</dt>
+                <dd>{{ row.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if row.created_at else "—" }}</dd>
+
+                <dt>Kind</dt>
+                <dd>
+                    {% if row.kind.value == "dose_concern" %}
+                    <strong style="color: var(--sev-critical, #b8131b);">{{ row.kind.value }}</strong>
+                    {% else %}
+                    {{ row.kind.value }}
+                    {% endif %}
+                </dd>
+
+                <dt>Status</dt>
+                <dd>{{ row.status.value }}</dd>
+
+                <dt>Page URL</dt>
+                <dd>{{ row.page_url or "—" }}</dd>
+
+                <dt>Contact email</dt>
+                <dd>{{ row.contact_email or "(none provided)" }}</dd>
+
+                <dt>IP</dt>
+                <dd>{{ row.ip_address or "—" }}</dd>
+
+                <dt>User agent</dt>
+                <dd>{{ row.user_agent or "—" }}</dd>
+
+                {% if row.resolved_at %}
+                <dt>Resolved at</dt>
+                <dd>{{ row.resolved_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</dd>
+                {% endif %}
+
+                <dt>Message</dt>
+                <dd class="admin-detail__message">{{ row.message or "(empty)" }}</dd>
+
+                {% if row.admin_note %}
+                <dt>Admin notes</dt>
+                <dd class="admin-detail__message">{{ row.admin_note }}</dd>
+                {% endif %}
+            </dl>
+        </div>
+
+        <form method="post" action="/admin/feedback/{{ row.id }}/status" class="admin-status-form">
+            <textarea
+                name="admin_note"
+                placeholder="Optional note. Appended with your email + timestamp."
+            ></textarea>
+            <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
+                <label style="font-size: 0.85rem; color: var(--ink-mute, #5c5c5c);">
+                    Change status to:
+                </label>
+                <select name="status">
+                    {% for s in all_statuses %}
+                    <option value="{{ s }}" {% if row.status.value == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Update</button>
+            </div>
+        </form>
+
+        <p style="margin-top: 1rem;">
+            <a href="/admin/feedback">← Back to feedback list</a>
+        </p>
+    </div>
+</section>
+
+{% include "admin/_admin_styles.html" %}
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}APPLE-full illness severity score | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">ICU severity score · Dogs</div>
+                <h1>APPLE-full illness severity</h1>
+                <p style="color: var(--ink-soft); max-width: 64ch; margin: 0.25rem 0 0;">
+                    10-variable Acute Patient Physiologic and Laboratory
+                    Evaluation score for hospitalized dogs (Hayes 2010).
+                    Creatinine, WBC, albumin, SpO₂, total bilirubin,
+                    mentation, respiratory rate, age, fluid score
+                    (FAST/TFAST), and lactate produce a 0–80 score that
+                    maps to predicted hospital mortality. Cutoff &gt;30/80:
+                    specificity 89%, sensitivity 81%. AUROC 0.93/0.91
+                    (construction/validation).
+                </p>
+                <p style="color: var(--ink-mute); max-width: 64ch; margin: 0.75rem 0 0; font-size: 0.88rem;">
+                    Just need a quick stratification on glucose, albumin,
+                    lactate, platelets, and mentation? Use the 5-variable
+                    <a href="/apple-fast">APPLE-fast</a> score instead.
+                </p>
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 1.5rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/apple-full">Clinical background</a>
+        </nav>
+
+        <div class="calc-grid" style="margin-top: 1.5rem;">
+            <form
+                hx-post="/apple-full/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:200ms, change"
+            >
+                <div class="field">
+                    <label>Units</label>
+                    <div class="segmented">
+                        <input type="radio" name="units" value="si" id="u-si" {% if inputs.units == "si" %}checked{% endif %}>
+                        <label for="u-si">SI (umol/L, g/L, mmol/L)</label>
+                        <input type="radio" name="units" value="us" id="u-us" {% if inputs.units == "us" %}checked{% endif %}>
+                        <label for="u-us">US (mg/dL, g/dL)</label>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Chemistry</h3>
+                <p style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0;">
+                    Use the <strong>most abnormal</strong> value in the first
+                    24 h after admission.
+                </p>
+
+                <div class="field">
+                    <label for="creatinine">
+                        Creatinine ({% if inputs.units == "si" %}umol/L{% else %}mg/dL{% endif %})
+                    </label>
+                    <input type="number" step="any" min="0" id="creatinine" name="creatinine" value="{% if inputs.creatinine %}{{ inputs.creatinine }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="albumin">
+                        Albumin ({% if inputs.units == "si" %}g/L{% else %}g/dL{% endif %})
+                    </label>
+                    <input type="number" step="any" min="0" id="albumin" name="albumin" value="{% if inputs.albumin %}{{ inputs.albumin }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="bilirubin">
+                        Total bilirubin ({% if inputs.units == "si" %}umol/L{% else %}mg/dL{% endif %})
+                    </label>
+                    <input type="number" step="any" min="0" id="bilirubin" name="bilirubin" value="{% if inputs.bilirubin %}{{ inputs.bilirubin }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="lactate">
+                        Lactate ({% if inputs.units == "si" %}mmol/L{% else %}mg/dL{% endif %})
+                    </label>
+                    <input type="number" step="any" min="0" id="lactate" name="lactate" value="{% if inputs.lactate %}{{ inputs.lactate }}{% endif %}">
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Hematology</h3>
+
+                <div class="field">
+                    <label for="wbc">WBC count (×10⁹/L or K/µL)</label>
+                    <input type="number" step="any" min="0" id="wbc" name="wbc" value="{% if inputs.wbc %}{{ inputs.wbc }}{% endif %}">
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Vitals &amp; physical</h3>
+
+                <div class="field">
+                    <label for="spo2">SpO₂ (%)</label>
+                    <input type="number" step="any" min="0" max="100" id="spo2" name="spo2" value="{% if inputs.spo2 %}{{ inputs.spo2 }}{% endif %}">
+                    <div class="help">
+                        If pulse oximetry wasn't performed and physical exam
+                        didn't prompt assessment, the original paper allows
+                        assigning zero points (i.e. enter a value in the
+                        98–100 referent range).
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="resp_rate">Respiratory rate (bpm)</label>
+                    <input type="number" step="any" min="0" id="resp_rate" name="resp_rate" value="{% if inputs.resp_rate %}{{ inputs.resp_rate }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="age">Age (years)</label>
+                    <input type="number" step="any" min="0" id="age" name="age" value="{% if inputs.age and inputs.age >= 0 %}{{ inputs.age }}{% endif %}">
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Mentation</h3>
+                <p style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0;">
+                    Assessed at admission, <strong>before</strong> sedation or analgesia.
+                </p>
+
+                <div class="field">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        {% for m in [0, 1, 2, 3, 4] %}
+                        <label style="display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer; padding: 0.4rem 0.5rem; border: 1px solid var(--line); border-radius: var(--radius); {% if inputs.mentation == m %}background: var(--paper-warm); border-color: var(--ink-soft);{% endif %}">
+                            <input type="radio" name="mentation" value="{{ m }}" {% if inputs.mentation == m %}checked{% endif %} style="margin-top: 0.2rem;">
+                            <span>
+                                <strong style="font-variant-numeric: tabular-nums;">{{ m }}.</strong>
+                                {% if m == 0 %}Normal
+                                {% elif m == 1 %}Able to stand unassisted, responsive but dull
+                                {% elif m == 2 %}Can stand only when assisted, responsive but dull
+                                {% elif m == 3 %}Unable to stand, responsive
+                                {% else %}Unable to stand, unresponsive
+                                {% endif %}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Fluid score (FAST / TFAST)</h3>
+                <p style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0;">
+                    Per Boysen et al. JAVMA 2004. If FAST/TFAST wasn't
+                    performed and physical exam didn't prompt it, the
+                    original paper allows assigning zero.
+                </p>
+
+                <div class="field">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        {% for f in [0, 1, 2] %}
+                        <label style="display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer; padding: 0.4rem 0.5rem; border: 1px solid var(--line); border-radius: var(--radius); {% if inputs.fluid_score == f %}background: var(--paper-warm); border-color: var(--ink-soft);{% endif %}">
+                            <input type="radio" name="fluid_score" value="{{ f }}" {% if inputs.fluid_score == f %}checked{% endif %} style="margin-top: 0.2rem;">
+                            <span>
+                                <strong style="font-variant-numeric: tabular-nums;">{{ f }}.</strong>
+                                {% if f == 0 %}No abdominal, thoracic, or pericardial free fluid
+                                {% elif f == 1 %}Free fluid in ONE cavity (abdominal OR thoracic OR pericardial)
+                                {% else %}Free fluid in TWO OR MORE cavities
+                                {% endif %}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <details style="margin-top: 1.75rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--ink-soft); border-radius: var(--radius); font-size: 0.88rem; line-height: 1.55;">
+                    <summary style="cursor: pointer; font-weight: 600; color: var(--ink-soft);">Scoring notes — counterintuitive items</summary>
+                    <div style="margin-top: 0.75rem; color: var(--ink-soft);">
+                        <p style="margin: 0 0 0.5rem;">
+                            Five items in the APPLE-full rubric are clinically
+                            counterintuitive. They are preserved exactly as
+                            Hayes 2010 published them, because the
+                            multivariable regression assigns coefficients
+                            reflecting mortality variance <em>not already
+                            explained</em> by the other nine variables, not
+                            the marginal univariable association. The paper
+                            discusses this on page 11.
+                        </p>
+                        <ul style="margin: 0; padding-left: 1.2rem;">
+                            <li><strong>Creatinine 0–0.62 mg/dL (0–55 umol/L) → 0 pts (referent).</strong>
+                                Lowest-risk band sits BELOW the normal canine
+                                creatinine range. The normal range (0.63–1.35
+                                mg/dL) scores 1.</li>
+                            <li><strong>WBC &lt;5.1 ×10⁹/L → 9 pts.</strong>
+                                Leukopenia is the highest-scoring WBC band.
+                                In an ICU dog this tracks with severe sepsis
+                                with consumption, immune-mediated processes,
+                                parvovirus, etc.</li>
+                            <li><strong>Albumin 31–32 g/L → 9 pts (higher than
+                                &lt;26 g/L which scores 6).</strong>
+                                Multivariable artifact specifically called
+                                out in the paper.</li>
+                            <li><strong>Total bilirubin non-monotonic:</strong>
+                                0.24–0.46 → 6, 0.47–0.93 → 4, &gt;0.93 → 3
+                                mg/dL. Mild bilirubinemia carries the most
+                                independent risk; severe bilirubinemia is
+                                largely captured by correlated variables.</li>
+                            <li><strong>Respiratory rate 49–60 bpm → 6 pts
+                                (higher than &gt;60 bpm → 5).</strong>
+                                Mild–moderate tachypnea outweighs frank
+                                tachypnea in the multivariable context.</li>
+                        </ul>
+                    </div>
+                </details>
+            </form>
+
+            {% if result %}
+                {% include "partials/apple_full_result.html" %}
+            {% else %}
+                {% with placeholder_message="Enter all 10 variables (creatinine, WBC, albumin, SpO₂, bilirubin, mentation, respiratory rate, age, fluid score, and lactate) to compute the APPLE-full score." %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

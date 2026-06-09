@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Install InfusionFox on your phone | InfusionFox{% endblock %}
+{% block description %}Save InfusionFox to your home screen on iPhone or Android. No app store, no install, no updates to manage.{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container" style="max-width: 720px;">
+        <img src="/static/brand/logos/mark.png" alt="" class="install__mark" aria-hidden="true">
+        <div class="eyebrow">Quick setup</div>
+        <h1>Install InfusionFox on your phone</h1>
+
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            InfusionFox is a website, not an app, but you can save it to
+            your home screen so it opens like one. No App Store, no
+            install, no updates to manage.
+        </p>
+
+        <h2 style="margin-top: 2.25rem;">Why bother</h2>
+        <ul style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            <li>One tap to open instead of typing the URL or hunting in your browser.</li>
+            <li>Opens full-screen without browser chrome; more room for the patient sheet.</li>
+            <li>Shows the InfusionFox icon in your app switcher.</li>
+            <li>Works offline for pages you've recently visited (most calculators and reference hubs).</li>
+            <li>Free, with no data collection or push notifications.</li>
+        </ul>
+
+        <h2 style="margin-top: 2.25rem;">On iPhone (Safari)</h2>
+        <ol style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            <li>Open <strong>infusionfox.com</strong> in <strong>Safari</strong>. Chrome and Firefox on iOS won't let you do this; Apple restricts the feature to Safari.</li>
+            <li>Tap the <strong>Share</strong> button (the square with the up arrow, usually at the bottom of the screen).</li>
+            <li>Scroll the share sheet down to find <strong>Add to Home Screen</strong>. Tap it.</li>
+            <li>Tap <strong>Add</strong> in the top-right corner of the screen that appears.</li>
+        </ol>
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            InfusionFox now lives on your home screen. Tap the icon to open it like any other app.
+        </p>
+
+        <h2 style="margin-top: 2.25rem;">On Android (Chrome)</h2>
+        <ol style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            <li>Open <strong>infusionfox.com</strong> in <strong>Chrome</strong>.</li>
+            <li>Tap the <strong>three-dot menu</strong> in the top-right corner of the browser.</li>
+            <li>Tap <strong>Add to Home Screen</strong> or <strong>Install app</strong>; the wording varies by Android and Chrome version.</li>
+            <li>Confirm by tapping <strong>Add</strong> or <strong>Install</strong>.</li>
+        </ol>
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            InfusionFox now lives in your app drawer and, depending on your launcher, on your home screen.
+        </p>
+
+        <h2 style="margin-top: 2.25rem;">On Android (Firefox or other browsers)</h2>
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            Other browsers may or may not support the install flow.
+            Chrome is the easiest path. If you prefer another browser,
+            look in the browser's menu for an <strong>Install</strong>
+            or <strong>Add to Home Screen</strong> option.
+        </p>
+
+        <h2 style="margin-top: 2.25rem;">On desktop (Chrome, Edge, Safari on Mac)</h2>
+        <ol style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            <li>Open <strong>infusionfox.com</strong> in your browser.</li>
+            <li>Look for an <strong>install icon</strong> in the address bar (a small computer-with-arrow or plus icon, usually on the right side of the URL).</li>
+            <li>Click it and confirm.</li>
+        </ol>
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            InfusionFox opens in its own window, like a native desktop app.
+        </p>
+
+        <h2 style="margin-top: 2.25rem;">Troubleshooting</h2>
+
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            <strong>The Add to Home Screen button is missing on iPhone.</strong>
+            You're not using Safari. Open the site in Safari specifically; Apple only allows this from their browser.
+        </p>
+
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            <strong>The icon shows a generic globe instead of the InfusionFox drop.</strong>
+            Your browser cached an old version. Delete the home-screen icon, close and reopen Safari, then add it again.
+        </p>
+
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7;">
+            <strong>It won't work offline.</strong>
+            Visit the pages you want to use offline at least once while connected. They'll be cached and available later.
+        </p>
+
+        <p style="color: var(--ink-soft); font-size: 1.02rem; line-height: 1.7; margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1.25rem;">
+            Stuck on a step or seeing something this page doesn't cover? Email <a href="mailto:support@infusionfox.com">support@infusionfox.com</a>.
+        </p>
+    </div>
+</section>
+{% endblock %}

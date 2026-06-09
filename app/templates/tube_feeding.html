@@ -1,0 +1,634 @@
+{% extends "base.html" %}
+
+{% block title %}Tube feeding | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Bolus per-feeding volume</div>
+            <p style="margin: 0;">
+                Computes per-feeding volume in mL for NG, NE, and E-tubes,
+                ramped over 3 or 4 days from <code>RER = 70 × BW<sup>0.75</sup></code>.
+                Default per-feeding cap is 10 mL/kg; volumes above the cap
+                are flagged with a clear percent-of-cap indicator so you can
+                adjust feeding frequency.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/tube-feeding">Clinical background</a>
+            <a href="#protein-targets">Protein targets</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                id="tube-feeding-form"
+                hx-post="/tube-feeding/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                {# Patient ID. Optional, free text — used only on the
+                   printable schedule's header. Has no effect on
+                   calculation. Capped at 80 chars server-side; the
+                   maxlength here keeps casual typing in check. #}
+                <div class="field">
+                    <label for="patient_id">Patient name / ID
+                        <span style="color: var(--ink-mute); font-weight: 400;">(optional)</span>
+                    </label>
+                    <input type="text" id="patient_id" name="patient_id"
+                           maxlength="80"
+                           autocomplete="off"
+                           value="{{ inputs.patient_id }}"
+                           placeholder="e.g. Bailey / 12345">
+                    <div class="help">
+                        Appears on the printable schedule header. Leave
+                        blank for a write-in line.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog" {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat" {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Tube type</label>
+                    <div class="segmented">
+                        <input type="radio" name="tube_type" value="ng" id="tt-ng" {% if inputs.tube_type.value == 'ng' %}checked{% endif %}>
+                        <label for="tt-ng">NG / NE</label>
+                        <input type="radio" name="tube_type" value="e" id="tt-e" {% if inputs.tube_type.value == 'e' %}checked{% endif %}>
+                        <label for="tt-e">E-tube</label>
+                    </div>
+                    <div class="help">
+                        NG / NE tubes accept liquid diets only. E-tubes accept
+                        blenderized canned diets and liquids.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="current_weight_value">Current weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="current_weight_value"
+                               name="current_weight_value"
+                               value="{{ current_weight_value if current_weight_value is defined else inputs.current_weight_value }}" required>
+                        <div class="segmented">
+                            <input type="radio" name="current_weight_unit" value="lb" id="cu-lb" {% if inputs.current_weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="cu-lb">lb</label>
+                            <input type="radio" name="current_weight_unit" value="kg" id="cu-kg" {% if inputs.current_weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="cu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                {# BCS + IBW override. Optional. RER is computed on ideal weight
+                   when available; otherwise current weight. Pattern mirrors
+                   the energy calculator. #}
+                <div class="field">
+                    <label for="bcs">BCS (1–9 scale)</label>
+                    <input type="number" min="1" max="9" step="1" id="bcs" name="bcs"
+                           value="{{ inputs.bcs or '' }}" placeholder="e.g. 5">
+                    <div class="help">
+                        Optional. If above 5, the calculator estimates ideal weight
+                        and computes RER on the ideal rather than current weight.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="ideal_weight_value">Ideal body weight (override)</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="ideal_weight_value"
+                               name="ideal_weight_value" value="{{ inputs.ideal_weight_value or '' }}">
+                        <div class="segmented">
+                            <input type="radio" name="ideal_weight_unit" value="lb" id="iu-lb" {% if inputs.ideal_weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="iu-lb">lb</label>
+                            <input type="radio" name="ideal_weight_unit" value="kg" id="iu-kg" {% if inputs.ideal_weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="iu-kg">kg</label>
+                        </div>
+                    </div>
+                    <div class="help">
+                        Optional. If set, overrides the BCS estimate. Use this
+                        when you have the patient's documented lean weight.
+                    </div>
+                </div>
+
+                <div style="border-top: 1px dashed var(--line-strong); padding-top: 1.25rem; margin-top: 1.25rem;">
+                    <div class="eyebrow">Diet</div>
+                </div>
+
+                {# Diet form. The NG safety gate is enforced in the calculator
+                   (returns a not_indicated result); we still surface a hint
+                   at the UI layer so users understand why the gate exists. #}
+                <div class="field">
+                    <label>Diet form</label>
+                    <div class="segmented">
+                        <input type="radio" name="diet_form" value="liquid" id="df-liquid"
+                               {% if inputs.diet_form.value == 'liquid' %}checked{% endif %}>
+                        <label for="df-liquid">Liquid</label>
+                        <input type="radio" name="diet_form" value="canned" id="df-canned"
+                               {% if inputs.diet_form.value == 'canned' %}checked{% endif %}>
+                        <label for="df-canned">Canned (E-tube only)</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="diet_key">Diet</label>
+                    <select id="diet_key" name="diet_key">
+                        {% for d in diets %}
+                        <option value="{{ d.key }}" data-form="{{ d.form.value }}"
+                                {% if inputs.diet_key == d.key %}selected{% endif %}>
+                            {{ d.label }}
+                        </option>
+                        {% endfor %}
+                        <option value="{{ other_key }}" {% if inputs.diet_key == other_key %}selected{% endif %}>
+                            Other (enter manually)
+                        </option>
+                    </select>
+                    <div class="help">
+                        Catalog values populate the fields below when a named
+                        product is chosen. Pick &ldquo;Other&rdquo; to enter your own.
+                    </div>
+                </div>
+
+                {# Manual liquid entry. Shown when diet_form = liquid. #}
+                <div class="field" id="field-liquid-kcal">
+                    <label for="diet_kcal_per_ml">kcal/mL (liquid)</label>
+                    <input type="number" step="0.01" min="0.1" id="diet_kcal_per_ml"
+                           name="diet_kcal_per_ml" value="{{ inputs.diet_kcal_per_ml or '' }}"
+                           placeholder="e.g. 1.0">
+                </div>
+
+                {# Manual canned entry. Shown when diet_form = canned. #}
+                <div class="field" id="field-canned-size">
+                    <label for="diet_can_size_ml">Can size (mL)</label>
+                    <input type="number" step="any" min="1" id="diet_can_size_ml"
+                           name="diet_can_size_ml" value="{{ inputs.diet_can_size_ml or '' }}"
+                           placeholder="e.g. 156">
+                </div>
+
+                <div class="field" id="field-canned-kcal">
+                    <label for="diet_can_kcal">kcal per can</label>
+                    <input type="number" step="any" min="1" id="diet_can_kcal"
+                           name="diet_can_kcal" value="{{ inputs.diet_can_kcal or '' }}"
+                           placeholder="e.g. 183">
+                </div>
+
+                <div class="field" id="field-water">
+                    <label for="water_added_ml">Water added (mL)</label>
+                    <input type="number" step="any" min="0" id="water_added_ml"
+                           name="water_added_ml" value="{{ inputs.water_added_ml }}">
+                    <div class="help">
+                        Added to the can to make a blenderized slurry. Default
+                        50 mL; adjust to taste based on tube bore and slurry
+                        viscosity.
+                    </div>
+                </div>
+
+                <div style="border-top: 1px dashed var(--line-strong); padding-top: 1.25rem; margin-top: 1.25rem;">
+                    <div class="eyebrow">Schedule</div>
+                </div>
+
+                <div class="field">
+                    <label for="feedings_per_day">Feedings per day</label>
+                    <input type="number" min="3" max="6" step="1" id="feedings_per_day"
+                           name="feedings_per_day" value="{{ inputs.feedings_per_day }}">
+                    <div class="help">Range 3–6. Default 4 (every 6 hours).</div>
+                </div>
+
+                <div class="field">
+                    <label>Refeeding ramp</label>
+                    <div class="segmented">
+                        <input type="radio" name="ramp_length" value="3" id="rl-3"
+                               {% if inputs.ramp_length.value == 3 %}checked{% endif %}>
+                        <label for="rl-3">3 day</label>
+                        <input type="radio" name="ramp_length" value="4" id="rl-4"
+                               {% if inputs.ramp_length.value == 4 %}checked{% endif %}>
+                        <label for="rl-4">4 day</label>
+                    </div>
+                    <div class="help">
+                        3-day: 33% &rarr; 67% &rarr; 100% of RER. 4-day:
+                        25% &rarr; 50% &rarr; 75% &rarr; 100%. Use the 4-day
+                        ramp for severely malnourished patients.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/tube_feeding_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="protein-targets" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Protein targets</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Recommended protein density in tube-fed enteral diets per
+                Chan, Silverstein 4th ed Ch. 126:
+            </p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem; max-width: 600px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--line-strong); text-align: left;">
+                        <th style="padding: 0.5rem 0.5rem 0.5rem 0;">Patient</th>
+                        <th style="padding: 0.5rem;">Protein</th>
+                        <th style="padding: 0.5rem;">% of energy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">Dogs</td>
+                        <td style="padding: 0.5rem;">5–6 g / 100 kcal</td>
+                        <td style="padding: 0.5rem;">25–35%</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">Cats</td>
+                        <td style="padding: 0.5rem;">6–8 g / 100 kcal</td>
+                        <td style="padding: 0.5rem;">30–40%</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">Protein-intolerant (hepatic, severe azotemia)</td>
+                        <td style="padding: 0.5rem;">3–4 g / 100 kcal</td>
+                        <td style="padding: 0.5rem;">—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Formulas and ramp schedules</h2>
+
+            <h3>Resting Energy Requirement</h3>
+            <div class="formula-display">
+                $$\text{RER} = 70 \times \text{BW}^{0.75}\,\text{(kcal/day)}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                RER is the standard initial target for inappetent or refeeding
+                patients. When ideal body weight differs from current weight
+                (BCS &gt; 5/9 or explicit IBW provided), RER is computed on
+                the ideal weight to avoid feeding through adipose tissue.
+            </p>
+
+            <h4 style="margin-top: 1.25rem;">Worked example with current inputs</h4>
+            <div id="worked-example" class="formula-display">
+                {% if result and result.rer_kcal_per_day %}
+                $$70 \times {{ "%.2f"|format(result.rer_basis_weight_kg) }}^{0.75} = {{ "%.0f"|format(result.rer_kcal_per_day) }}\,\text{kcal/day}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+
+            <h3>Refeeding ramp</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Gradual reintroduction of calories over several days reduces
+                refeeding-syndrome risk and improves tolerance. Default is the
+                3-day ramp; pick 4 days for severely malnourished patients
+                (extended anorexia, hypophosphatemia on intake, marked weight
+                loss).
+            </p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem; max-width: 480px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--line-strong); text-align: left;">
+                        <th style="padding: 0.5rem 0.5rem 0.5rem 0;">Day</th>
+                        <th style="padding: 0.5rem;">3-day</th>
+                        <th style="padding: 0.5rem;">4-day</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">1</td>
+                        <td style="padding: 0.5rem;">33% RER</td>
+                        <td style="padding: 0.5rem;">25% RER</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">2</td>
+                        <td style="padding: 0.5rem;">67% RER</td>
+                        <td style="padding: 0.5rem;">50% RER</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">3</td>
+                        <td style="padding: 0.5rem;">100% RER</td>
+                        <td style="padding: 0.5rem;">75% RER</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 0;">4</td>
+                        <td style="padding: 0.5rem;">—</td>
+                        <td style="padding: 0.5rem;">100% RER</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Per-feeding bolus volume</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Default cap is 10 mL/kg per feeding. Some patients tolerate
+                up to 40 mL/kg, but volumes above the default trigger a
+                warning so you can choose to increase feeding frequency. A
+                bolus should be infused over 15–20 min and patients should
+                be monitored for 30 min after each feeding for regurgitation
+                or vomiting.
+            </p>
+
+            <h3>Tube selection</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                NG / NE tubes are typically 3.5–5 Fr in cats and 6–8 Fr in
+                dogs, narrow enough that canned diets occlude the lumen
+                regardless of blending. E-tubes are 12–14 Fr and accept
+                blenderized canned diets with adequate water. The calculator
+                hard-disables canned diets on NG / NE tubes.
+            </p>
+
+            <h3>Discontinuation</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Plan to remove the tube once voluntary intake reaches roughly
+                75% of RER on its own. Avoid offering food during the first
+                few days with the tube in place to reduce food-aversion risk,
+                especially in cats.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <div class="eyebrow">Sources</div>
+            <h2>References</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>
+                    Chan DL. Enteral nutrition. In: Silverstein DC, Hopper K,
+                    eds. Small Animal Critical Care Medicine. 4th ed. St.
+                    Louis, MO: Elsevier; 2023. Ch. 126.
+                </li>
+                <li>
+                    WSAVA Global Nutrition Committee. Feeding Guide for
+                    Hospitalized Dogs and Cats. World Small Animal Veterinary
+                    Association Global Nutrition Toolkit; 2013.
+                    <a href="https://wsava.org/wp-content/uploads/2020/08/Feeding-Guide-for-Hospitalized-Dogs-and-Cats.pdf">PDF</a>.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+
+<script>
+    // Show/hide diet detail fields based on diet_form and diet_key, and
+    // enforce the NG-tube safety gate at the UI level by disabling the
+    // "Canned" diet-form option when tube_type = NG. The server-side
+    // calculator is the authoritative gate; this is for UI clarity.
+    (function () {
+        const dietKey = document.getElementById('diet_key');
+        const tubeNg = document.getElementById('tt-ng');
+        const tubeE = document.getElementById('tt-e');
+        const dfLiquid = document.getElementById('df-liquid');
+        const dfCanned = document.getElementById('df-canned');
+        const fieldLiquid = document.getElementById('field-liquid-kcal');
+        const fieldCanSize = document.getElementById('field-canned-size');
+        const fieldCanKcal = document.getElementById('field-canned-kcal');
+        const fieldWater = document.getElementById('field-water');
+
+        function currentForm() {
+            return dfCanned && dfCanned.checked ? 'canned' : 'liquid';
+        }
+        function currentTube() {
+            return tubeNg && tubeNg.checked ? 'ng' : 'e';
+        }
+        function selectedDiet() {
+            if (!dietKey) return null;
+            const opt = dietKey.options[dietKey.selectedIndex];
+            return { key: opt.value, form: opt.dataset.form || null };
+        }
+
+        function syncFormFromDiet() {
+            // When a named diet is selected, force the diet_form radio to
+            // match the catalog (otherwise the form-form mismatch warning
+            // would fire on every load).
+            const sel = selectedDiet();
+            if (!sel || sel.key === '{{ other_key }}' || !sel.form) return;
+            if (sel.form === 'liquid' && dfLiquid && !dfLiquid.checked) {
+                dfLiquid.checked = true;
+            } else if (sel.form === 'canned' && dfCanned && !dfCanned.checked) {
+                dfCanned.checked = true;
+            }
+        }
+
+        function syncFieldVisibility() {
+            const form = currentForm();
+            if (fieldLiquid) fieldLiquid.style.display = (form === 'liquid') ? '' : 'none';
+            const isOther = dietKey && dietKey.value === '{{ other_key }}';
+            // Canned manual fields only matter for canned-form. Hide them
+            // when liquid is selected. For named canned diets, allow
+            // override (show but pre-filled).
+            const showCanned = (form === 'canned');
+            if (fieldCanSize) fieldCanSize.style.display = showCanned ? '' : 'none';
+            if (fieldCanKcal) fieldCanKcal.style.display = showCanned ? '' : 'none';
+            if (fieldWater) fieldWater.style.display = showCanned ? '' : 'none';
+            // For named canned diets, populate the size/kcal fields from
+            // the catalog values via data attributes if present.
+        }
+
+        function enforceTubeGate() {
+            // NG + canned is a hard refusal in the calculator. At the UI,
+            // disable the Canned radio so the user can't even pick it.
+            const ng = currentTube() === 'ng';
+            if (dfCanned) {
+                dfCanned.disabled = ng;
+                if (ng && dfCanned.checked) {
+                    // If the user just switched to NG with a canned diet
+                    // selected, snap diet_form back to liquid AND switch
+                    // the diet dropdown to a liquid option if available.
+                    if (dfLiquid) dfLiquid.checked = true;
+                    if (dietKey) {
+                        // Find first liquid-form option
+                        for (let i = 0; i < dietKey.options.length; i++) {
+                            const o = dietKey.options[i];
+                            if (o.dataset.form === 'liquid') {
+                                dietKey.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (dietKey) dietKey.addEventListener('change', () => {
+            syncFormFromDiet();
+            syncFieldVisibility();
+        });
+        if (dfLiquid) dfLiquid.addEventListener('change', syncFieldVisibility);
+        if (dfCanned) dfCanned.addEventListener('change', syncFieldVisibility);
+        if (tubeNg) tubeNg.addEventListener('change', () => { enforceTubeGate(); syncFieldVisibility(); });
+        if (tubeE) tubeE.addEventListener('change', enforceTubeGate);
+
+        // The Current ramp day radios live in the swapped result panel,
+        // not inside the <form> in the DOM. They're attached to the form
+        // via form="tube-feeding-form" for submission purposes, but
+        // HTMX's change-trigger only fires for elements inside the form
+        // element. So we delegate: when a current_day radio fires
+        // change, request HTMX to re-submit the form.
+        document.body.addEventListener('change', (e) => {
+            const t = e.target;
+            if (t && t.matches && t.matches('input[name="current_day"]')) {
+                const form = document.getElementById('tube-feeding-form');
+                if (form && window.htmx) {
+                    window.htmx.trigger(form, 'change');
+                }
+            }
+        });
+
+        // Initial sync on load.
+        enforceTubeGate();
+        syncFieldVisibility();
+    })();
+
+    // Trigger native browser print. Print stylesheet below handles
+    // hiding everything but the result panel and showing the printable
+    // header block.
+    function infusionfox_tube_feeding_print() {
+        window.print();
+    }
+</script>
+
+{# Print stylesheet, inline so it's scoped to this page only. The
+   pattern mirrors the anesthesia worksheet print rules: hide site
+   chrome and all the page sections except the result panel, reveal
+   the .print-only header inside it, strip padding so the schedule
+   fills the sheet. #}
+<style>
+@media print {
+    /* Site chrome — same as anesthesia. */
+    .site-header,
+    .site-footer,
+    .feedback-widget,
+    #fb-widget,
+    .no-print {
+        display: none !important;
+    }
+
+    /* Reveal the print-only header inside the result panel. */
+    .print-only {
+        display: block !important;
+    }
+
+    body {
+        background: white !important;
+        font-size: 10pt !important;
+    }
+
+    /* Strip container padding so the schedule uses the full sheet. */
+    .container, .container--wide, .site-frame {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    section.calc-page {
+        padding: 0 !important;
+    }
+
+    /* Hide everything in the page grid that isn't the result panel:
+       the form column, and the protein-targets / how-it-works /
+       sources sections below it. The calc-header (page title +
+       intro paragraph), the page-intro admonition callout, and the
+       tab nav are also hidden so the schedule is the only thing on
+       the printed page. */
+    .calc-header,
+    .calc-tabs,
+    .admonition,
+    section.calc-page > .container > section:not(.calc-grid):not(#calculator),
+    #protein-targets,
+    #how-it-works,
+    #sources,
+    .calc-grid > form,
+    .calc-grid > .calc-right-column > :not(#result-panel) {
+        display: none !important;
+    }
+
+    /* Collapse the calc-grid to a single column so the result panel
+       isn't sitting in a 2-col layout's right slot when printed. */
+    .calc-grid {
+        display: block !important;
+    }
+    .calc-right-column {
+        width: 100% !important;
+    }
+
+    /* Inside the result panel: drop screen-only visual treatments
+       that don't translate to paper. The day-selector segmented
+       control, the diet feedback's accent-soft background, and the
+       headline's giant "37 mL/feed" display. The ramp table is the
+       useful printable artifact. The result__details block below
+       the table duplicates the printable header (weight, species,
+       tube), so it's hidden too. */
+    #result-panel .tube-feeding-print-row,
+    #result-panel .result__headline,
+    #result-panel .result__details,
+    #result-panel .segmented,
+    #result-panel [class*="eyebrow"]:not(.tube-feeding-print-header__title) {
+        display: none !important;
+    }
+
+    /* The diet feedback line stays (it identifies the diet on the
+       printable) but loses its colored background. */
+    #result-panel [style*="accent-soft"] {
+        background: transparent !important;
+        border-left: 2px solid #000 !important;
+        padding-left: 0.5rem !important;
+    }
+
+    /* Tighten the ramp table for paper. */
+    #result-panel table {
+        margin-top: 0.5rem !important;
+    }
+
+    /* Stack the clinical background highlights for print (3 cols → 1).
+       On paper the reader takes them top to bottom, not side by side. */
+    .tube-feeding-highlights__grid {
+        display: block !important;
+    }
+    .tube-feeding-highlights__grid > div {
+        margin-bottom: 0.5rem !important;
+    }
+    .tube-feeding-highlights {
+        margin-top: 0.75rem !important;
+        /* If the highlights can't fit on the first page, move the
+           whole block to page 2 cleanly rather than breaking mid-
+           subsection. This is the safety net: the typical case fits
+           on one page; in the borderline case the schedule + numbers
+           print on page 1 and the highlights start fresh on page 2. */
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    /* Tighten the bullet lists for print: smaller font, less margin. */
+    .tube-feeding-highlights__list {
+        font-size: 9pt !important;
+        line-height: 1.35 !important;
+        margin-bottom: 0 !important;
+    }
+    .tube-feeding-highlights__list li {
+        margin-bottom: 0.1rem !important;
+    }
+    .tube-feeding-highlights__title {
+        font-size: 9.5pt !important;
+        margin-bottom: 0.15rem !important;
+    }
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Addison's pretest score | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+
+            <div>
+
+                <div class="eyebrow">Calculator</div>
+
+                <h1>Addison's pretest score</h1>
+
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Estimates the pretest probability of canine
+                    hypoadrenocorticism from signalment, clinical
+                    signs, and routine labs (including Na:K ratio and
+                    basal cortisol). Helps decide whether to pursue
+                    ACTH stimulation testing now, defer, or look
+                    elsewhere.
+                </p>
+
+            </div>
+
+        </div>
+        <div class="calc-grid" style="margin-top: 1.5rem;">
+            <form
+                hx-post="/addisons-score/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:200ms, change, load"
+            >
+                <div class="field">
+                    <label for="age">Age (years)</label>
+                    <input type="number" step="any" min="0" id="age" name="age" value="{{ inputs.age }}" required>
+                </div>
+
+        <nav class="calc-tabs" style="margin-top: 2.5rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/addisons-score">Clinical background</a>
+        </nav>
+
+                <div class="field">
+                    <label for="breed">Breed</label>
+                    <select id="breed" name="breed">
+                        <option value="standard_poodle" {% if inputs.breed == "standard_poodle" %}selected{% endif %}>Standard Poodle</option>
+                        <option value="portuguese_water" {% if inputs.breed == "portuguese_water" %}selected{% endif %}>Portuguese Water Dog</option>
+                        <option value="wheaten_terrier" {% if inputs.breed == "wheaten_terrier" %}selected{% endif %}>Soft-Coated Wheaten Terrier</option>
+                        <option value="nova_scotia" {% if inputs.breed == "nova_scotia" %}selected{% endif %}>Nova Scotia Duck Tolling Retriever</option>
+                        <option value="great_dane" {% if inputs.breed == "great_dane" %}selected{% endif %}>Great Dane</option>
+                        <option value="bearded_collie" {% if inputs.breed == "bearded_collie" %}selected{% endif %}>Bearded Collie</option>
+                        <option value="leonberger" {% if inputs.breed == "leonberger" %}selected{% endif %}>Leonberger</option>
+                        <option value="rottweiler" {% if inputs.breed == "rottweiler" %}selected{% endif %}>Rottweiler</option>
+                        <option value="other" {% if inputs.breed == "other" %}selected{% endif %}>Other / crossbreed</option>
+                    </select>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Laboratory values</h3>
+                <p style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0;">Leave blank (0) if not measured.</p>
+
+                <div class="field">
+                    <label for="na_k_ratio">Na:K ratio</label>
+                    <input type="number" step="any" min="0" id="na_k_ratio" name="na_k_ratio" value="{{ inputs.na_k_ratio }}">
+                </div>
+
+                <div class="field">
+                    <label for="lymphocytes_per_ul">Lymphocyte count (cells/µL)</label>
+                    <input type="number" step="100" min="0" id="lymphocytes_per_ul" name="lymphocytes_per_ul" value="{{ inputs.lymphocytes_per_ul }}">
+                </div>
+
+                <div class="field">
+                    <label for="eosinophils_per_ul">Eosinophil count (cells/µL)</label>
+                    <input type="number" step="50" min="0" id="eosinophils_per_ul" name="eosinophils_per_ul" value="{{ inputs.eosinophils_per_ul }}">
+                </div>
+
+                <div class="field">
+                    <label for="resting_cortisol_ug_dl">Resting cortisol (µg/dL)</label>
+                    <input type="number" step="any" min="0" id="resting_cortisol_ug_dl" name="resting_cortisol_ug_dl" value="{{ inputs.resting_cortisol_ug_dl }}">
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Clinical findings</h3>
+
+                <div class="field">
+                    <label>Lacks stress leukogram (no neutrophilia, no monocytosis)</label>
+                    <div class="segmented">
+                        <input type="radio" name="no_stress_leukogram" value="not_assessed" id="nsl-na" {% if inputs.no_stress_leukogram == "not_assessed" %}checked{% endif %}>
+                        <label for="nsl-na">Not assessed</label>
+                        <input type="radio" name="no_stress_leukogram" value="no" id="nsl-n" {% if inputs.no_stress_leukogram == "no" %}checked{% endif %}>
+                        <label for="nsl-n">Stress present</label>
+                        <input type="radio" name="no_stress_leukogram" value="yes" id="nsl-y" {% if inputs.no_stress_leukogram == "yes" %}checked{% endif %}>
+                        <label for="nsl-y">Stress absent</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Waxing-waning GI signs (vomiting, diarrhea, anorexia)</label>
+                    <div class="segmented">
+                        <input type="radio" name="gi_waxing_waning" value="no" id="gi-n" {% if inputs.gi_waxing_waning == "no" %}checked{% endif %}>
+                        <label for="gi-n">No</label>
+                        <input type="radio" name="gi_waxing_waning" value="yes" id="gi-y" {% if inputs.gi_waxing_waning == "yes" %}checked{% endif %}>
+                        <label for="gi-y">Yes</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Hypoglycemia</label>
+                    <div class="segmented">
+                        <input type="radio" name="hypoglycemia" value="not_recorded" id="hg-nr" {% if inputs.hypoglycemia == "not_recorded" %}checked{% endif %}>
+                        <label for="hg-nr">Not recorded</label>
+                        <input type="radio" name="hypoglycemia" value="no" id="hg-n" {% if inputs.hypoglycemia == "no" %}checked{% endif %}>
+                        <label for="hg-n">No</label>
+                        <input type="radio" name="hypoglycemia" value="yes" id="hg-y" {% if inputs.hypoglycemia == "yes" %}checked{% endif %}>
+                        <label for="hg-y">Yes</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Hypercalcemia</label>
+                    <div class="segmented">
+                        <input type="radio" name="hypercalcemia" value="not_recorded" id="hc-nr" {% if inputs.hypercalcemia == "not_recorded" %}checked{% endif %}>
+                        <label for="hc-nr">Not recorded</label>
+                        <input type="radio" name="hypercalcemia" value="no" id="hc-n" {% if inputs.hypercalcemia == "no" %}checked{% endif %}>
+                        <label for="hc-n">No</label>
+                        <input type="radio" name="hypercalcemia" value="yes" id="hc-y" {% if inputs.hypercalcemia == "yes" %}checked{% endif %}>
+                        <label for="hc-y">Yes</label>
+                    </div>
+                </div>
+            </form>
+
+            {% include "partials/addisons_score_result.html" %}
+        </div>
+    </div>
+</section>
+{% endblock %}

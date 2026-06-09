@@ -1,0 +1,61 @@
+<div id="result-panel">
+    {# Safety Rule #8 gate: only render the headline once the
+       clinician has entered clinical findings. The not-computed
+       branch shows a placeholder telling the user what to do. #}
+    {% if not result.computed %}
+        <div class="placeholder-panel" style="padding: 2rem; text-align: center; color: var(--ink-mute);">
+            <p style="margin: 0;">Enter clinical findings to compute pretest probability.</p>
+        </div>
+    {% else %}
+    {% set pct = result.likelihood_pct %}
+    {% if pct < 20 %}
+        {% set risk_color = "var(--signal)" %}
+    {% elif pct < 50 %}
+        {% set risk_color = "var(--sev-high)" %}
+    {% else %}
+        {% set risk_color = "var(--sev-critical)" %}
+    {% endif %}
+
+    <div class="result__headline">
+        <div class="eyebrow">Pretest likelihood</div>
+        <div class="result__primary" style="color: {{ risk_color }};">{{ pct }}%</div>
+        <div class="result__secondary">{{ result.band_label }} · Score {{ result.total_score }}</div>
+    </div>
+
+    <div style="margin: 1rem 0; background: var(--line); border-radius: 4px; height: 8px; overflow: hidden;">
+        <div style="height: 100%; width: {{ pct }}%; background: {{ risk_color }}; border-radius: 4px; transition: width 300ms ease;"></div>
+    </div>
+
+    <div style="margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid {{ risk_color }}; border-radius: var(--radius); font-size: 0.92rem; line-height: 1.55;">
+        {{ result.recommendation }}
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 1.5rem;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--line);">
+                <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Factor</th>
+                <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Value</th>
+                <th style="text-align: right; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in result.components %}
+            <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 0.5rem; color: var(--ink-soft);">{{ c.label }}</td>
+                <td style="padding: 0.5rem;">{{ c.value_str }}</td>
+                <td style="padding: 0.5rem; text-align: right; font-weight: 600;
+                    color: {% if c.points > 0 %}var(--success){% elif c.points < 0 %}var(--danger){% else %}var(--ink-mute){% endif %};">
+                    {% if c.points > 0 %}+{% endif %}{{ c.points }}
+                </td>
+            </tr>
+            {% endfor %}
+            <tr style="border-top: 2px solid var(--line); background: var(--paper-warm);">
+                <td colspan="2" style="padding: 0.6rem 0.5rem; font-weight: 600;">Total score</td>
+                <td style="padding: 0.6rem 0.5rem; text-align: right; font-weight: 700; font-size: 1.1rem;">{{ result.total_score }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+</div>

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Hypophosphatemia / KPhos CRI | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">KPhos: 4.4 mEq K + 3 mmol P / mL</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>K from KPhos counts toward the 0.5 mEq/kg/hr
+                    ceiling.</strong> Standard KPhos delivers 4.4 mEq of
+                    potassium per mL alongside the phosphate. If the
+                    patient is on a concurrent KCl CRI, the K contribution
+                    from KPhos must be subtracted from the planned KCl
+                    rate. The result panel surfaces total K delivery and
+                    the headroom remaining for KCl.
+                </li>
+                <li>
+                    <strong>Severe hypophosphatemia causes hemolysis.</strong>
+                    Acute intravascular hemolysis is the most life-
+                    threatening complication of severe hypophosphatemia.
+                    Respiratory muscle weakness, cardiac dysfunction, and
+                    CNS depression are also possible. Recheck serum P
+                    every 4–6 hours during active KPhos therapy.
+                </li>
+                <li>
+                    <strong>Dilute before infusion.</strong> Never give
+                    KPhos undiluted IV. Dilute into 0.9% NaCl, LRS, or
+                    Plasma-Lyte. Calcium-containing fluids will
+                    precipitate as calcium phosphate, verify line
+                    compatibility.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Using this in DKA?</div>
+            <p style="margin: 0;">
+                Hypophosphatemia affects ≈48% of dogs after starting DKA
+                therapy; insulin shifts P intracellularly. Check P every
+                4–12 hours during DKA management. The K-from-KPhos / KCl
+                interaction matters most in this setting because most DKA
+                patients are also on a KCl CRI per the hypokalemia sliding
+                scale. See the <a href="/dka">DKA management hub</a> for
+                the full workflow.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/hypophosphatemia">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#sliding-scale">Sliding scale</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/hypophosphatemia/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="serum_p_mg_per_dl">Serum phosphorus (mg/dL)</label>
+                    <input type="number" step="any" min="0" max="20" id="serum_p_mg_per_dl"
+                           name="serum_p_mg_per_dl" value="{{ inputs.serum_p_mg_per_dl }}" required>
+                    <div class="help">
+                        Reference range typically 2.5–6.0 mg/dL (adult dogs and cats).
+                        Bands: ≥2.0 not indicated · 1.5–2.0 mild · 1.0–1.5 moderate ·
+                        0.5–1.0 severe · &lt;0.5 critical.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="concurrent_kcl_meq_per_kg_per_hr">
+                        Concurrent KCl rate (mEq/kg/hr) &mdash; if patient is on KCl CRI
+                    </label>
+                    <input type="number" step="any" min="0" max="0.5"
+                           id="concurrent_kcl_meq_per_kg_per_hr"
+                           name="concurrent_kcl_meq_per_kg_per_hr"
+                           value="{{ inputs.concurrent_kcl_meq_per_kg_per_hr }}">
+                    <div class="help">
+                        If the patient is on a separate KCl CRI per the
+                        hypokalemia sliding scale, enter that rate here.
+                        The result panel will compute total K delivery
+                        (KPhos + KCl) and warn if it exceeds the
+                        0.5 mEq/kg/hr ceiling. Default 0 for patients
+                        not on KCl.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/hypophosphatemia_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The sliding scale gives a rate in mmol/kg/hr. KPhos stock provides 3 mmol P + 4.4 mEq K per mL. Pump rate and K delivery:
+            </p>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{\text{rate}_{\text{mmol/kg/hr}} \times \text{weight}_{\text{kg}}}{3\,\text{mmol/mL}}$$
+            </div>
+            <div class="formula-display">
+                $$\text{K from KPhos (mEq/kg/hr)} = \frac{\text{mL/hr} \times 4.4\,\text{mEq/mL}}{\text{weight}_{\text{kg}}}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result and not result.not_indicated and result.kphos_pump_rate_ml_per_hr is not none %}
+                $$\text{mL/hr} = \frac{ {{ result.target_rate_mmol_per_kg_per_hr }}_{\text{mmol/kg/hr}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{3} = {{ "%.3f"|format(result.kphos_pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div class="formula-display">
+                {% if result and not result.not_indicated and result.kphos_pump_rate_ml_per_hr is not none %}
+                $$\text{K from KPhos} = \frac{ {{ "%.3f"|format(result.kphos_pump_rate_ml_per_hr) }} \times 4.4 }{ {{ "%.2f"|format(result.weight_kg) }} } = {{ "%.3f"|format(result.k_delivered_meq_per_kg_per_hr) }}\,\text{mEq/kg/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="sliding-scale" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Hypophosphatemia sliding scale</h2>
+            <table style="width: 100%; margin-top: 1rem; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--rule);">
+                        <th style="text-align: left; padding: 0.5rem;">Serum P (mg/dL)</th>
+                        <th style="text-align: left; padding: 0.5rem;">Severity</th>
+                        <th style="text-align: left; padding: 0.5rem;">KPhos rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tier in tiers %}
+                    <tr style="border-bottom: 1px solid var(--rule);">
+                        <td style="padding: 0.5rem;"><strong>{{ tier.label }}</strong></td>
+                        <td style="padding: 0.5rem;">{{ tier.severity }}</td>
+                        <td style="padding: 0.5rem;">
+                            {% if tier.rate_mmol_per_kg_per_hr is none %}
+                                not indicated
+                            {% else %}
+                                {{ tier.rate_mmol_per_kg_per_hr }} mmol/kg/hr
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Sliding scale and dosing range:</strong> Hoehne SN.
+                Diabetic Ketoacidosis. In: Silverstein DC, Hopper K, eds.
+                <em>Small Animal Critical Care Medicine</em>. 3rd ed.
+                Elsevier; 2023. Chapter 73, Box 73.1 (KPhos rate range
+                0.03–0.12 mmol/kg/hr IV).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Phosphorus disorders overview:</strong> DiBartola SP.
+                <em>Fluid, Electrolyte, and Acid-Base Disorders in Small
+                Animal Practice</em>. 4th ed. Elsevier; 2012. Chapter 7
+                (Disorders of Phosphorus).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>KPhos preparation:</strong> Standard veterinary
+                stock, potassium phosphate injection, USP, provides
+                ≈4.4 mEq K + 3 mmol P per mL. Verify your hospital stock
+                matches before infusing.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Oncology KL · Cornell protocol | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">2% lidocaine + 100 mg/mL ketamine in 0.9% NaCl</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Adjunct, not monotherapy.</strong> All 114
+                    animals in the 2025 JAVMA cohort received concomitant
+                    oral analgesics (gabapentinoids 92%, NSAIDs 70%,
+                    opioids 68%, steroids 46%, amantadine 18%). Onco KL
+                    is added on top of that regimen for refractory pain
+                    that the oral protocol can't control on its own.
+                </li>
+                <li>
+                    <strong>Use 2% lidocaine WITHOUT epinephrine.</strong>
+                    Lidocaine-with-epinephrine is sold for dental and
+                    infiltration; mixing it into the bag would deliver
+                    an unintended epinephrine bolus. Read the vial.
+                </li>
+                <li>
+                    <strong>Premedicate vomit-prone patients.</strong> 2 of
+                    105 dogs in the cohort had infusion-associated
+                    vomiting; both were prevented on subsequent
+                    infusions by maropitant ± ondansetron premedication.
+                    Worth giving prophylactically in any patient with a
+                    history of nausea or motion sickness.
+                </li>
+                <li>
+                    <strong>Small patients (&lt; 15 kg), verify delivered
+                    rates.</strong> The bag-mixed protocol can underdose
+                    smaller patients who don't finish the bag during the
+                    4–6 hr infusion. Most osteosarcoma patients are
+                    medium-to-large breeds (Goldens, Labs, Rottweilers,
+                    Saint Bernards in the 2025 cohort) where this is not
+                    an issue, but for cats and small-breed dogs with
+                    other tumor types, the result panel verifies whether
+                    delivered rates meet the published efficacy thresholds,
+                    and recommends a smaller bag if not.
+                </li>
+            </ul>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/cornell-onco-kl">Clinical background</a>
+            <a href="#how-it-works">How the math works</a>
+            <a href="#formula">Formula</a>
+            <a href="#thresholds">Efficacy thresholds</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/cornell-onco-kl/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                    <div class="help">
+                        Cat target lidocaine rate is 1.5 mg/kg/hr (half
+                        the dog rate) per the 2025 paper, reflecting
+                        feline lidocaine sensitivity. Ketamine target
+                        is the same for both species (0.15 mg/kg/hr).
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Bag size</label>
+                    <div class="segmented">
+                        <input type="radio" name="bag_volume_ml" value="100" id="bag-100"
+                               {% if inputs.bag_volume_ml == 100 %}checked{% endif %}>
+                        <label for="bag-100">100 mL</label>
+                        <input type="radio" name="bag_volume_ml" value="250" id="bag-250"
+                               {% if inputs.bag_volume_ml == 250 %}checked{% endif %}>
+                        <label for="bag-250">250 mL</label>
+                        <input type="radio" name="bag_volume_ml" value="500" id="bag-500"
+                               {% if inputs.bag_volume_ml == 500 %}checked{% endif %}>
+                        <label for="bag-500">500 mL</label>
+                    </div>
+                    <div class="help">
+                        Original Looney protocol: 500 mL for dogs ≥15 kg,
+                        250 mL for cats and dogs &lt;15 kg. The 2025
+                        JAVMA paper recommends 100 mL for smaller patients
+                        to ensure target rates are met within the
+                        4–6 hour infusion duration.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Infusion duration</label>
+                    <div class="segmented">
+                        <input type="radio" name="duration_hr" value="4" id="dur-4"
+                               {% if inputs.duration_hr == 4 %}checked{% endif %}>
+                        <label for="dur-4">4 hr</label>
+                        <input type="radio" name="duration_hr" value="5" id="dur-5"
+                               {% if inputs.duration_hr == 5 %}checked{% endif %}>
+                        <label for="dur-5">5 hr</label>
+                        <input type="radio" name="duration_hr" value="6" id="dur-6"
+                               {% if inputs.duration_hr == 6 %}checked{% endif %}>
+                        <label for="dur-6">6 hr</label>
+                    </div>
+                    <div class="help">
+                        Cohort median was 5 hours. The original protocol
+                        sheet states: "Minimum 3–6 hrs Infusion necessary.
+                        Note: if patient is handling it well, it is safe
+                        to give the whole bag." For patients who finish
+                        the bag before the planned duration, see the
+                        result panel, a second bag may be needed.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/cornell_onco_kl_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Method</div>
+            <h2>How the math works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The protocol mixes ketamine and lidocaine into a single
+                0.9% NaCl bag, then runs the bag at the patient's
+                maintenance fluid rate (2.5 mL/kg/hr) for 4–6 hours.
+                Total drug added is calibrated so that the patient
+                receives the target hourly rate while infusing the bag.
+            </p>
+
+            <h3>Bag preparation</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                $$\text{lidocaine to add (mg)} = \text{target rate} \times \text{weight} \times \text{duration}$$
+                $$\text{ketamine to add (mg)} = 0.15 \times \text{weight} \times \text{duration}$$
+                Convert to mL of stock: lidocaine ÷ 20 mg/mL, ketamine
+                ÷ 100 mg/mL. Remove an equal total volume of saline
+                from the bag BEFORE adding drugs, so the final bag
+                volume is unchanged.
+            </p>
+
+            <h3>Delivered rates check</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The same drug load delivered through a smaller bag (and
+                therefore a higher concentration per mL) reaches the
+                patient faster, but the infusion rate is fixed at
+                2.5 mL/kg/hr. So if the patient is small, the volume
+                infused over 4–6 hours may not finish the bag, and the
+                drug remaining in the bag at the end of the infusion is
+                wasted. The result panel computes the delivered rate
+                given the patient's size, the chosen bag, and the
+                duration, and compares to the efficacy thresholds
+                published in the 2025 paper.
+            </p>
+        </section>
+
+        <section id="thresholds" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Efficacy thresholds (2025 JAVMA)</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The 2025 retrospective evaluation of 105 dogs and 9 cats
+                identified three published efficacy thresholds. Patients
+                whose delivered doses fell below these were significantly
+                less likely to have a clinical response and were grouped
+                as "ultralow dose" in the paper's analysis.
+            </p>
+            <table style="width: 100%; margin-top: 1rem; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--rule);">
+                        <th style="text-align: left; padding: 0.5rem;">Threshold</th>
+                        <th style="text-align: left; padding: 0.5rem;">Equivalent</th>
+                        <th style="text-align: left; padding: 0.5rem;">Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--rule);">
+                        <td style="padding: 0.5rem;"><strong>Lidocaine ≥ 25 µg/kg/min</strong></td>
+                        <td style="padding: 0.5rem;">= 1.5 mg/kg/hr</td>
+                        <td style="padding: 0.5rem; color: var(--ink-soft);">P = .0051 for clinical response</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--rule);">
+                        <td style="padding: 0.5rem;"><strong>Ketamine ≥ 2 µg/kg/min</strong></td>
+                        <td style="padding: 0.5rem;">= 0.12 mg/kg/hr</td>
+                        <td style="padding: 0.5rem; color: var(--ink-soft);">P = .0374 for clinical response</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem;"><strong>Total ketamine ≥ 0.5 mg/kg</strong></td>
+                        <td style="padding: 0.5rem;">across full infusion</td>
+                        <td style="padding: 0.5rem; color: var(--ink-soft);">P = .0343 for clinical response</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <h2>Formula</h2>
+            <p>Step 1, calculate how many mg of each drug are needed for the target dose over the infusion duration, then convert to mL of stock to draw up.</p>
+
+            <h3>Drug to add to bag</h3>
+            <div class="formula-display">
+                $$\text{mg to add} = \text{dose}_{\text{mg/kg/hr}} \times \text{weight}_{\text{kg}} \times \text{duration}_{\text{hr}}$$
+                $$\text{mL to draw} = \frac{\text{mg to add}}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            {% if result %}
+            <div id="worked-example" class="formula-display">
+                $$\text{lidocaine mg} = {{ "%.3f"|format(result.target_lidocaine_mg_per_kg_per_hr) }}_{\text{mg/kg/hr}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.duration_hr }}_{\text{hr}} = {{ "%.2f"|format(result.lidocaine_mg_to_add) }}\,\text{mg} \div 20_{\text{mg/mL}} = {{ "%.2f"|format(result.lidocaine_ml_to_draw) }}\,\text{mL}$$
+                $$\text{ketamine mg} = {{ "%.3f"|format(result.target_ketamine_mg_per_kg_per_hr) }}_{\text{mg/kg/hr}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.duration_hr }}_{\text{hr}} = {{ "%.2f"|format(result.ketamine_mg_to_add) }}\,\text{mg} \div 100_{\text{mg/mL}} = {{ "%.2f"|format(result.ketamine_ml_to_draw) }}\,\text{mL}$$
+            </div>
+
+            <h3>Infusion rate</h3>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{\text{bag volume}_{\text{mL}}}{\text{duration}_{\text{hr}}}$$
+            </div>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{ {{ result.bag_volume_ml|int }}_{\text{mL}} }{ {{ result.duration_hr }}_{\text{hr}} } = {{ "%.1f"|format(result.infusion_rate_ml_per_hr) }}\,\text{mL/hr}$$
+            </div>
+            {% endif %}
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Primary clinical evidence:</strong> Iocolano KE,
+                Looney A, Balkman CE, Hume KR, Boesch JM, Sylvester SR.
+                Retrospective evaluation of outpatient intravenous
+                ketamine-lidocaine infusions for the palliation of cancer
+                pain in dogs and cats. <em>J Am Vet Med Assoc</em>.
+                2025;263(4):499–506.
+                doi:10.2460/javma.24.09.0595
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Original protocol:</strong> Looney A. Cornell
+                University College of Veterinary Medicine
+                ketamine-lidocaine fluid infusion protocol (worksheet
+                dated 7/5/2012); used clinically at Cornell from 2008
+                onward and the basis for the 2025 retrospective.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Component pharmacology:</strong> Plumb's Veterinary
+                Drugs, lidocaine and ketamine monographs (current edition).
+                See also the InfusionFox <a href="/lidocaine">lidocaine</a>
+                and <a href="/ketamine">ketamine</a> CRI calculators
+                for the standard analgesic-CRI use cases.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

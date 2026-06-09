@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Learn | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Learn</div>
+                <h1>Learn</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Structured learning modules and the practice
+                    problem bank. Each module pairs a clinical-background
+                    article with related calculators, practice
+                    problems, and a post-test quiz.
+                </p>
+            </div>
+        </div>
+
+        {# Modules section. Each module renders as a card with title,
+           summary, estimated time, and a list of components inside. #}
+        <section style="margin-top: 2.5rem;">
+            <div class="eyebrow">Modules</div>
+            <h2 style="margin-top: 0.25rem;">Learning modules</h2>
+
+            {% if modules %}
+            <div class="learn-module-list">
+                {% for m in modules %}
+                <a href="/learn/{{ m.slug }}" class="learn-module-card">
+                    <div class="learn-module-card__meta">
+                        <span class="learn-module-card__time">{{ m.estimated_minutes_display }}</span>
+                    </div>
+                    <h3 class="learn-module-card__title">{{ m.title }}</h3>
+                    <p class="learn-module-card__summary">{{ m.summary }}</p>
+                    <div class="learn-module-card__components">
+                        {% if m.article_slug %}<span>Article</span>{% endif %}
+                        {% if m.video_url %}<span>Video</span>{% endif %}
+                        {% if m.related_calculators %}<span>{{ m.related_calculators|length }} calculator{{ 's' if m.related_calculators|length != 1 else '' }}</span>{% endif %}
+                        {% if m.practice_problem_slugs %}<span>{{ m.practice_problem_slugs|length }} practice problem{{ 's' if m.practice_problem_slugs|length != 1 else '' }}</span>{% endif %}
+                        {% if m.quiz_questions %}<span>{{ m.quiz_questions|length }}-question quiz</span>{% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: var(--ink-soft);">No modules registered yet.</p>
+            {% endif %}
+        </section>
+
+        {# Practice problems section. Sibling to modules — practice
+           problems are an independent learning resource that doesn't
+           require module structure. #}
+        <section style="margin-top: 3rem;">
+            <div class="eyebrow">Practice</div>
+            <h2 style="margin-top: 0.25rem;">Practice problem bank</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7; max-width: 60ch;">
+                {{ practice_count }} worked problems with step-by-step
+                solutions and unit cancellation. Aimed at students and
+                technicians who want to build fluency with the math
+                behind the calculators.
+            </p>
+            <p>
+                <a href="/learn/practice" class="btn">Open practice problems &rarr;</a>
+            </p>
+        </section>
+
+    </div>
+</section>
+{% endblock %}

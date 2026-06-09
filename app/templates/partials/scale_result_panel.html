@@ -1,0 +1,38 @@
+<div class="result" id="result-panel">
+    <div class="result__headline">
+        <div class="eyebrow">{{ drug.scale_input_label }}: {{ input_value }} {{ drug.scale_input_unit }}</div>
+        {% if result.matched_row %}
+            <div style="font-family: var(--font-display); font-size: 1.6rem; color: var(--ink); margin: 0.5rem 0;">
+                {{ result.matched_row.label }}
+            </div>
+        {% else %}
+            <div style="font-family: var(--font-display); font-size: 1.3rem; color: var(--ink-mute); margin: 0.5rem 0;">
+                No matching row. Check input range.
+            </div>
+        {% endif %}
+    </div>
+
+    {% if result.matched_row %}
+    <div style="border-top: 1px solid var(--line); padding-top: 1rem; color: var(--ink); line-height: 1.7;">
+        <p style="white-space: pre-line; margin: 0;">{{ result.matched_row.recommendation }}</p>
+    </div>
+
+    {% if result.matched_row.warning %}
+    <div class="warnings danger" style="margin-top: 1rem;">
+        <ul><li>{{ result.matched_row.warning }}</li></ul>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Notes</div>
+        <ul style="color: var(--ink-soft); font-size: 0.93rem; line-height: 1.6; margin: 0; padding-left: 1.2rem;">
+            {% for note in result.notes %}<li>{{ note }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+</div>

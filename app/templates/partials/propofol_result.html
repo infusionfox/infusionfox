@@ -1,0 +1,84 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">Pump rate</div>
+        <div class="result__primary">
+            {% if result.pump_rate_ml_per_hr > 0 %}
+            {{ "%g"|format(result.pump_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+            {% else %}
+           ,<span class="unit">mL/hr</span>
+            {% endif %}
+        </div>
+        <div class="result__secondary">
+            {% if result.pump_rate_ml_per_hr > 0 %}
+            = ({{ "%.2f"|format(result.weight_kg) }} kg ×
+            {{ "%g"|format(result.dose_mg_per_kg_per_min) }} mg/kg/min × 60)
+            ÷ {{ "%g"|format(result.stock_mg_per_ml) }} mg/mL
+            {% else %}
+            See warning below
+            {% endif %}
+        </div>
+    </div>
+
+    {% if result.pump_rate_ml_per_hr > 0 %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Equivalent expressions</div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="color: var(--ink-soft);">Dose rate (per minute):</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.dose_mg_per_kg_per_min) }} mg/kg/min
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Dose rate (per hour):</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.dose_mg_per_kg_per_hr) }} mg/kg/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Pump rate (per minute):</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.pump_rate_ml_per_min) }} mL/min
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if result.indication.value == 'status_epilepticus' and result.pump_rate_ml_per_hr > 0 %}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Loading bolus (precedes CRI)</div>
+        <p style="margin: 0; font-size: 0.95rem;">
+            Give a <strong>2–8 mg/kg IV bolus</strong> titrated to seizure
+            cessation, then start CRI at the calculated rate above. For a
+            {{ "%.2f"|format(result.weight_kg) }} kg patient, this is a
+            <strong>{{ "%.1f"|format(result.weight_kg * 2) }} – {{ "%.1f"|format(result.weight_kg * 8) }} mg</strong>
+            bolus dose range
+            (= {{ "%.2f"|format(result.weight_kg * 2 / result.stock_mg_per_ml) }} – {{ "%.2f"|format(result.weight_kg * 8 / result.stock_mg_per_ml) }} mL of 10 mg/mL stock).
+            Maintain CRI 6–12 hr then taper. Maximum duration ≈48 hr.
+        </p>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>
+{% if result.valid %}
+<template id="worked-example-source">$$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.dose_mg_per_kg_per_min }}_{\text{mg/kg/min}} \times 60 }{ 10_{\text{mg/mL}} } = {{ "%.2f"|format(result.pump_rate_ml_per_hr) }}\,\text{mL/hr}$$</template>
+{% endif %}

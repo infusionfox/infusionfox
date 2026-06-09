@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Mannitol osmotherapy | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Slow bolus, not a sustained CRI</div>
+            <p style="margin: 0;">
+                Mannitol is given as a 15–30 min infusion, repeated up to
+                q4–6h for cerebral edema or as a single response-test dose
+                for oliguric AKI. The pump rate computed here is for the
+                brief infusion window only, not for hours of sustained
+                delivery. Cumulative dosing above 2 g/kg/24h has been
+                associated with paradoxical worsening of cerebral edema
+                (reverse osmotic shift) and acute kidney injury (osmotic
+                nephrosis).
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            {% if "mannitol" in available_articles %}
+            <a href="/learn/mannitol">Clinical background</a>
+            {% endif %}
+            <a href="#formula">Formula</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                class="bg-form"
+                hx-post="/mannitol/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label for="mn-weight">Patient weight</label>
+                    <div class="weight-input">
+                        <input type="number" step="0.1" min="0.1" max="200"
+                               id="mn-weight" name="weight_value"
+                               value="{{ weight_value }}"
+                               placeholder="enter weight" required>
+                        <div class="segmented segmented--compact">
+                            <input type="radio" name="weight_unit" value="lb"
+                                   id="mn-unit-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="mn-unit-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg"
+                                   id="mn-unit-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="mn-unit-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Indication</label>
+                    <div class="segmented segmented--vertical">
+                        <input type="radio" name="indication" value="cerebral_edema"
+                               id="mn-ind-ce"
+                               {% if inputs.indication.value == 'cerebral_edema' %}checked{% endif %}>
+                        <label for="mn-ind-ce">Increased ICP / cerebral edema</label>
+                        <input type="radio" name="indication" value="oliguric_aki"
+                               id="mn-ind-aki"
+                               {% if inputs.indication.value == 'oliguric_aki' %}checked{% endif %}>
+                        <label for="mn-ind-aki">Oliguric AKI (with optional CRI)</label>
+                        <input type="radio" name="indication" value="acute_glaucoma"
+                               id="mn-ind-glaucoma"
+                               {% if inputs.indication.value == 'acute_glaucoma' %}checked{% endif %}>
+                        <label for="mn-ind-glaucoma">Acute glaucoma (IOP)</label>
+                        <input type="radio" name="indication" value="uroliths"
+                               id="mn-ind-uroliths"
+                               {% if inputs.indication.value == 'uroliths' %}checked{% endif %}>
+                        <label for="mn-ind-uroliths">Uroliths (bolus + 1 mg/kg/min CRI)</label>
+                        <input type="radio" name="indication" value="osmotic_diuresis"
+                               id="mn-ind-diuresis"
+                               {% if inputs.indication.value == 'osmotic_diuresis' %}checked{% endif %}>
+                        <label for="mn-ind-diuresis">Osmotic diuresis (label dose)</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="mn-dose">Dose (g/kg)</label>
+                    <input type="number" step="0.05" min="0.05" max="5"
+                           id="mn-dose" name="dose_g_per_kg"
+                           value="{{ dose_value }}"
+                           placeholder="enter dose" required>
+                    {% for ind, profile in indication_profiles.items() %}
+                    <div class="help mn-range" data-mn-context="{{ ind.value }}">
+                        Published range for {{ profile.label.split(' / ')[0]|lower }}:
+                        {{ "%g"|format(profile.dose_low_g_per_kg) }}–{{ "%g"|format(profile.dose_high_g_per_kg) }} g/kg
+                        (typical {{ "%g"|format(profile.dose_default_g_per_kg) }} g/kg).
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="field">
+                    <label>Concentration</label>
+                    <div class="segmented">
+                        <input type="radio" name="concentration_percent" value="20"
+                               id="mn-conc-20"
+                               {% if inputs.concentration_percent == 20 %}checked{% endif %}>
+                        <label for="mn-conc-20">20% (200 mg/mL)</label>
+                        <input type="radio" name="concentration_percent" value="25"
+                               id="mn-conc-25"
+                               {% if inputs.concentration_percent == 25 %}checked{% endif %}>
+                        <label for="mn-conc-25">25% (250 mg/mL)</label>
+                    </div>
+                    <div class="help">
+                        20% is the most common US veterinary stock concentration.
+                        Both crystallize at room temperature; warm to body temp
+                        and use a 0.22 µm in-line filter.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="mn-duration">Infusion duration (min)</label>
+                    <input type="number" step="1" min="5" max="120"
+                           id="mn-duration" name="duration_min"
+                           value="{{ duration_value }}"
+                           placeholder="enter duration" required>
+                    {% for ind, profile in indication_profiles.items() %}
+                    <div class="help mn-range" data-mn-context="{{ ind.value }}">
+                        Typical for {{ profile.label.split(' / ')[0]|lower }}:
+                        {{ profile.duration_low_min }}–{{ profile.duration_high_min }} min
+                        (default {{ profile.duration_default_min }}).
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <style>
+                    /* Show only the help line matching the selected indication. */
+                    .mn-range { display: none; }
+                    .bg-form:has(#mn-ind-ce:checked) .mn-range[data-mn-context="cerebral_edema"],
+                    .bg-form:has(#mn-ind-aki:checked) .mn-range[data-mn-context="oliguric_aki"],
+                    .bg-form:has(#mn-ind-glaucoma:checked) .mn-range[data-mn-context="acute_glaucoma"],
+                    .bg-form:has(#mn-ind-uroliths:checked) .mn-range[data-mn-context="uroliths"],
+                    .bg-form:has(#mn-ind-diuresis:checked) .mn-range[data-mn-context="osmotic_diuresis"] {
+                        display: block;
+                    }
+                </style>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/mannitol_result.html" %}
+                {% else %}
+                    {% with placeholder_message="Enter patient weight, dose, and infusion duration to see the result." %}
+                        {% include "partials/_invalid_input_placeholder.html" %}
+                    {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Formula</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Total mannitol dose is a simple weight-by-dose product. Volume
+                follows from the chosen stock concentration; pump rate divides
+                volume by the infusion window.
+            </p>
+            <div class="formula-display">
+                $$\text{Total dose (g)} = \text{dose (g/kg)} \times \text{weight (kg)}$$
+            </div>
+            <div class="formula-display">
+                $$\text{Volume (mL)} = \frac{\text{Total dose (g)}}{\text{concentration (g/mL)}}$$
+            </div>
+            <div class="formula-display">
+                $$\text{Pump rate (mL/hr)} = \frac{\text{Volume (mL)}}{\text{duration (min)}} \times 60$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7; margin-top: 1rem;">
+                Stock conversions: 20% mannitol = 0.20 g/mL; 25% mannitol =
+                0.25 g/mL.
+            </p>
+
+            <h3 style="margin-top: 2rem;">Dose ranges by indication (per Plumb's)</h3>
+            <table class="ref-table" style="margin-top: 1rem;">
+                <thead>
+                    <tr>
+                        <th>Indication</th>
+                        <th>Bolus dose</th>
+                        <th>Duration</th>
+                        <th>Repeat / CRI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Osmotic diuresis (label)</td>
+                        <td>1.5–2 g/kg</td>
+                        <td>30 min</td>
+                        <td>Single dose</td>
+                    </tr>
+                    <tr>
+                        <td>Oliguric AKI</td>
+                        <td>0.25–1 g/kg</td>
+                        <td>15–20 min</td>
+                        <td>q4–6h OR CRI 60–120 mg/kg/hr; cap 2 g/kg/day</td>
+                    </tr>
+                    <tr>
+                        <td>Acute glaucoma (IOP)</td>
+                        <td>1–2 g/kg</td>
+                        <td>10–20 min</td>
+                        <td>Single dose; limit water intake 1–4 hr post-dose</td>
+                    </tr>
+                    <tr>
+                        <td>Increased ICP / cerebral edema</td>
+                        <td>0.5–1 g/kg</td>
+                        <td>15–20 min</td>
+                        <td>q6–8h boluses; CRI NOT recommended</td>
+                    </tr>
+                    <tr>
+                        <td>Uroliths</td>
+                        <td>0.25–0.5 g/kg loading</td>
+                        <td>20 min</td>
+                        <td>Then CRI at 1 mg/kg/min (= 60 mg/kg/hr)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Cumulative-dose ceiling</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Sustained or high cumulative dosing produces two distinct
+                paradoxical effects. In the brain, prolonged exposure allows
+                mannitol to cross the disrupted blood-brain barrier; once
+                inside the brain, it draws water back across by reverse
+                osmotic shift, worsening cerebral edema. In the kidney,
+                accumulation of mannitol in the proximal tubule produces
+                osmotic nephrosis (vacuolation, swelling, tubular dysfunction)
+                that mimics or worsens existing AKI.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The conventional ceiling is 2 g/kg/24h, or sustained therapy
+                beyond 5–7 days. Serum osmolality monitoring (target
+                &lt;320 mOsm/kg) provides an empirical safety check that
+                supersedes the strict cumulative dose limit.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <div class="eyebrow">Sources</div>
+            <h2>Source citations</h2>
+            <ol style="color: var(--ink-soft); line-height: 1.7;">
+                <li>
+                    Plumb DC. <em>Plumb's Veterinary Drugs</em>. Mannitol
+                    monograph (current edition). Indication-specific dose
+                    ranges and the cumulative ceiling derive from this
+                    monograph.
+                </li>
+                <li>
+                    Silverstein DC, Hopper K, eds. <em>Small Animal Critical
+                    Care Medicine</em>. 4th ed. St. Louis, MO: Elsevier;
+                    2023. Ch. 88 (Traumatic Brain Injury); Ch. 117 (Acute
+                    Kidney Injury).
+                </li>
+                <li>
+                    DiBartola SP, ed. <em>Fluid, Electrolyte, and Acid-Base
+                    Disorders in Small Animal Practice</em>. 4th ed. St.
+                    Louis, MO: Elsevier Saunders; 2012. Ch. 26 (Acute Kidney
+                    Injury). Mechanism, osmotic nephrosis, and serum
+                    osmolality monitoring target.
+                </li>
+            </ol>
+        </section>
+    </div>
+</section>
+{% endblock %}

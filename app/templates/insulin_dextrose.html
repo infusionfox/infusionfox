@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Insulin + dextrose (hyperkalemia) | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Regular insulin U-100 + 50% dextrose</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Regular insulin only.</strong> Humulin R or
+                    Novolin R. NPH, lente, glargine, detemir, and
+                    degludec are NOT appropriate for this protocol;
+                    wrong pharmacokinetics. Use a U-100 insulin syringe
+                    for accuracy. Read the vial.
+                </li>
+                <li>
+                    <strong>Dilute D50 before IV bolus.</strong> Undiluted
+                    D50 (~2500 mOsm/L) causes phlebitis. Standard:
+                    dilute with equal volume of 0.9% NaCl to D25 for
+                    the bolus, or further into 50–100 mL saline (final
+                    D5–D10) given over 5–10 minutes.
+                </li>
+                <li>
+                    <strong>Insulin shifts K; it does not remove K.</strong>
+                    Total-body K is unchanged. Effect lasts only 4–6 hr.
+                    The K problem fundamentally resolves only when the
+                    underlying cause is addressed (deobstruction in UTO,
+                    mineralocorticoid replacement in Addisonian crisis,
+                    dialysis or diuresis in AKI). Do not delay
+                    definitive treatment.
+                </li>
+                <li>
+                    <strong>Rebound hypoglycemia for 4–6 hours.</strong>
+                    Monitor BG every 1 hour × 6 hours. Run 2.5–5%
+                    dextrose CRI in maintenance fluids during this
+                    window. Symptomatic hypoglycemia in cats can be
+                    subtle (weakness, lethargy, decreased mentation).
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Hyperkalemia emergency workflow</div>
+            <p style="margin: 0;">
+                Insulin/dextrose is one of three drug-therapy components
+                of life-threatening hyperkalemia management, alongside
+                calcium gluconate (membrane stabilization) and fluid
+                therapy. See the
+                <a href="/hyperkalemia-emergency">hyperkalemia emergency hub</a>
+                for the full workflow including ECG-finding criteria,
+                step ordering, deobstruction or mineralocorticoid
+                replacement as applicable, and monitoring.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/insulin-dextrose-hyperK">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/insulin-dextrose-hyperK/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="insulin_dose_u_per_kg">Insulin dose (U/kg)</label>
+                    <input type="number" step="any" min="0.25" max="0.5"
+                           id="insulin_dose_u_per_kg" name="insulin_dose_u_per_kg"
+                           value="{{ inputs.insulin_dose_u_per_kg }}" required>
+                    <div class="help">
+                        Range 0.25–0.5 U/kg. Default 0.25 (lower end).
+                        Higher doses do not reliably lower K further but
+                        increase hypoglycemia risk.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="dextrose_g_per_u">Dextrose ratio (g per U insulin)</label>
+                    <input type="number" step="any" min="1.0" max="2.0"
+                           id="dextrose_g_per_u" name="dextrose_g_per_u"
+                           value="{{ inputs.dextrose_g_per_u }}" required>
+                    <div class="help">
+                        Range 1–2 g per unit of insulin. Default 2 (the
+                        safer ratio for hypoglycemia prevention). Lower
+                        ratios (closer to 1) may be acceptable in
+                        diabetic patients with established hyperglycemia,
+                        but are NOT routine for blocked cats or
+                        Addisonian patients.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/insulin_dextrose_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Insulin dose × weight gives total units. Dextrose is paired at a fixed ratio of g per unit of insulin. D50 stock is 0.5 g/mL:
+            </p>
+            <div class="formula-display">
+                $$\text{total insulin (U)} = \text{dose}_{\text{U/kg}} \times \text{weight}_{\text{kg}}$$
+            </div>
+            <div class="formula-display">
+                $$\text{dextrose (g)} = \text{total insulin (U)} \times \text{ratio}_{\text{g/U}}$$
+            </div>
+            <div class="formula-display">
+                $$\text{D50 volume (mL)} = \frac{\text{dextrose (g)}}{0.5_{\text{g/mL}}}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{insulin} = {{ result.insulin_dose_u_per_kg }}_{\text{U/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.2f"|format(result.total_insulin_u) }}\,\text{U}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div id="worked-example-dextrose" class="formula-display">
+                {% if result %}
+                $$\text{dextrose} = {{ "%.2f"|format(result.total_insulin_u) }}_{\text{U}} \times {{ result.dextrose_g_per_u }}_{\text{g/U}} = {{ "%.2f"|format(result.dextrose_total_g) }}\,\text{g} = {{ "%.2f"|format(result.d50_volume_ml) }}\,\text{mL of D50}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Cooper ES. Urethral Obstruction. In: Silverstein DC,
+                Hopper K, eds. <em>Small Animal Critical Care Medicine</em>.
+                3rd ed. Elsevier; 2023. Chapter 122 (cites regular
+                insulin 0.25–0.5 U/kg IV with concurrent dextrose
+                1–2 g per unit insulin).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    DiBartola SP. Disorders of Potassium. In: <em>Fluid,
+                Electrolyte, and Acid-Base Disorders in Small Animal
+                Practice</em>. 4th ed. Elsevier; 2012. Chapter 5
+                (overview of hyperkalemia mechanisms and therapy).
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

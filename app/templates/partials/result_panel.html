@@ -1,0 +1,245 @@
+<div class="result" id="result-panel">
+    {% if drug.supports_print %}
+    {# Print-only header — hidden on screen via the .print-only rule in
+       calculator.html, revealed by @media print. Carries the patient
+       anchor (weight + species) that the printed page would otherwise
+       lack, since the form is hidden in print. Timestamp filled by JS
+       on print (see infusionfox_calculator_print). Mirrors the
+       analgesia builder header so the visual identity is consistent
+       across all InfusionFox printouts. #}
+    <div class="print-only print-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 0.3rem; margin-bottom: 0.5rem;">
+            <div>
+                <div style="font-weight: 700; font-size: 1rem; line-height: 1.1;">{{ drug.display_name }}</div>
+                <div style="font-size: 0.8rem; color: #444;">{{ "%.2f"|format(result.weight_kg) }} kg · {{ result.species.value }}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;">
+                <div style="display: flex; align-items: center; gap: 0.3rem;">
+                    <img src="/static/brand/logos/mark.png" alt="" aria-hidden="true" style="width: 16px; height: 16px;">
+                    <span style="font-size: 0.7rem; color: #444;">infusionfox.com</span>
+                </div>
+                <span id="print-timestamp" style="font-size: 0.7rem; color: #444;"></span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+
+    {# Concentration-mismatch notices for pump-precision drugs (currently
+       norepi). Surfaced above the headline so a clinician sees them
+       before reading the rate. The full bag-preparation section lives
+       on the FORM (calculator.html), not here — the result panel just
+       shows the calculation outputs.
+
+       Two flavors of "doesn't match recommendation" notice (mutually
+       exclusive):
+       - too_high: user's concentration is more concentrated than
+         recommended → pump rate falls below the 2 mL/hr precision floor.
+         Frame as a precision/accuracy issue.
+       - too_low: user's concentration is more dilute than recommended
+         → pump rate is fine, just unnecessarily high (extra carrier
+         fluid for the same drug delivery). Frame as a fluid-load issue.
+
+       Separate from those, below_precision_floor fires when EVEN the
+       most-dilute preset still gives a sub-floor rate (very small patient,
+       very low dose). This is a "you need a syringe pump, none of the
+       standard preparations work" situation. #}
+    {% if concentration_too_high %}
+    <div class="norepi-prep__notice" style="padding: 0.75rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; line-height: 1.55;">
+        <strong>More precise preparation available for this patient.</strong>
+        At {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }} {{ drug.concentration_unit_label }} the pump runs at {{ "%.2f"|format(result.ml_per_hr_pump) }} mL/hr, which is below the {{ drug.min_pump_rate_ml_per_hr|int if drug.min_pump_rate_ml_per_hr == drug.min_pump_rate_ml_per_hr|int else drug.min_pump_rate_ml_per_hr }} mL/hr precision floor of most volumetric pumps. A
+        <strong>{{ recommended_preset.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }}</strong>
+        preparation would keep this patient's pump rate in the accurate range. Change "Bag preparation" on the form, or switch to "Advanced: target pump rate" mode.
+    </div>
+    {% endif %}
+
+    {% if concentration_too_low %}
+    <div class="norepi-prep__notice" style="padding: 0.75rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; line-height: 1.55;">
+        <strong>A more concentrated preparation would reduce fluid load.</strong>
+        At {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }} {{ drug.concentration_unit_label }} the pump runs at {{ "%.2f"|format(result.ml_per_hr_pump) }} mL/hr (accurate, but delivers more carrier fluid per hour than needed). A
+        <strong>{{ recommended_preset.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }}</strong>
+        preparation gives the same dose at {{ "%.2f"|format(result.total_dose_ug_per_hr / recommended_preset.concentration_ug_per_ml) }} mL/hr.
+    </div>
+    {% endif %}
+
+    {% if below_precision_floor %}
+    {# Compute the most-dilute pump-safe concentration from drug config so the
+       warning labels it correctly across drugs (norepi: 4 µg/mL, future
+       pump-precision drugs: whatever their lowest tier is). #}
+    {% set pump_safe_concs = drug.concentration_presets|selectattr('pump_safe')|map(attribute='concentration_ug_per_ml')|list %}
+    {% set most_dilute = pump_safe_concs|min %}
+    <div class="norepi-prep__warning" style="padding: 0.75rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--danger); border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; line-height: 1.55;">
+        <strong>Pump rate below the precision floor.</strong>
+        Even the most dilute standard preparation ({{ most_dilute|int if most_dilute == most_dilute|int else most_dilute }} {{ drug.concentration_unit_label }}) gives a pump rate below {{ drug.min_pump_rate_ml_per_hr|int if drug.min_pump_rate_ml_per_hr == drug.min_pump_rate_ml_per_hr|int else drug.min_pump_rate_ml_per_hr }} mL/hr at this patient's weight and dose. Consider a syringe pump at a lower concentration, or a custom partial-vial bag.
+    </div>
+    {% endif %}
+
+    {# Dobutamine: 250 mL bag on a volumetric pump can fall below the
+       precision floor at small patients / low doses. Different
+       prescription from norepi's below-floor warning because the
+       dobutamine bag-size selector already exposes a syringe pump
+       option — so the fix is either to switch container (syringe pump)
+       or to switch concentration. Only fires when the user has the
+       250 mL bag selected; the 50 mL syringe option doesn't trigger it
+       (the assumption is that a syringe pump is already in use). #}
+    {% if dobutamine_volumetric_below_floor %}
+    <div class="norepi-prep__warning" style="padding: 0.75rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--danger); border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; line-height: 1.55;">
+        <strong>Pump rate below the precision floor.</strong>
+        At {{ result.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }} in a 250 mL bag, the pump runs at {{ "%.2f"|format(result.ml_per_hr_pump) }} mL/hr, which is below the 2 mL/hr precision floor of most volumetric pumps. Use a syringe pump, or select a different concentration.
+    </div>
+    {% endif %}
+
+    {# Dopamine: precision-floor notice. Both bag sizes (250 / 500 mL)
+       are volumetric for dopamine, so unlike dobutamine we don't gate
+       on bag size. The remedy is dilution (switch from the 250 mL bag
+       to the 500 mL bag for half the concentration → double the rate)
+       or a syringe pump. The 500 mL bag fix only applies when the
+       user isn't already on it. #}
+    {% if dopamine_below_floor %}
+    <div class="norepi-prep__warning" style="padding: 0.75rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--danger); border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; line-height: 1.55;">
+        <strong>Pump rate below the precision floor.</strong>
+        At {{ result.concentration_ug_per_ml|int }} {{ drug.concentration_unit_label }}, the pump runs at {{ "%.2f"|format(result.ml_per_hr_pump) }} mL/hr, which is below the 2 mL/hr precision floor of most volumetric pumps. Switch to the more dilute preparation (500 mL bag → halves the concentration → doubles the pump rate at the same dose), or use a syringe pump for accurate low-rate delivery.
+    </div>
+    {% endif %}
+
+    <div class="result__headline">
+        <div class="eyebrow">CRI rate</div>
+        <div class="result__primary">
+            {{ "%.2f"|format(result.ml_per_hr_pump) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            Display: {{ "%.1f"|format(result.ml_per_hr_display) }} mL/hr
+            · Exact: {{ "%.4f"|format(result.ml_per_hr_precise) }} mL/hr
+        </div>
+    </div>
+
+    {% if result.titration_steps %}
+    {% include "partials/_titration_ladder.html" %}
+    {% endif %}
+
+    {# Loading-dose panels — one per published scenario. Fentanyl
+       currently surfaces "Perioperative analgesia" (with matched value
+       to user's CRI dose) and "Emergent severe pain" (range only,
+       titrated separately). Generic mechanism: any drug whose
+       loading_doses config field is populated gets panels here.
+       Values display in the scenario's dose_unit_label (µg or mg). #}
+    {% if loading_dose_results %}
+    <section class="loading-doses" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--rule);">
+        <div class="eyebrow" style="margin-bottom: 0.5rem;">Loading dose</div>
+        {% for ld in loading_dose_results %}
+        <div class="loading-dose" style="padding: 0.875rem 1rem; background: var(--paper-warm); border-radius: var(--radius); margin-bottom: 0.75rem;">
+            <div class="loading-dose__label" style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.125rem;">
+                {{ ld.label }}
+            </div>
+            {% if ld.description %}
+            <div class="loading-dose__desc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                {{ ld.description }}
+            </div>
+            {% endif %}
+
+            {% if ld.matched_ml_stock is not none %}
+            <div class="loading-dose__matched" style="margin: 0.5rem 0;">
+                <div style="font-size: 1.5rem; font-weight: 600; line-height: 1.2;">
+                    {{ "%.2f"|format(ld.matched_ml_stock) }}<span style="font-size: 0.85rem; font-weight: 400; color: var(--text-muted); margin-left: 0.25rem;">mL IV bolus</span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.15rem;">
+                    {{ ld.matched_per_kg|int if ld.matched_per_kg == ld.matched_per_kg|int else ld.matched_per_kg }} {{ ld.dose_unit_label }}/kg × {{ "%.2f"|format(result.weight_kg) }} kg = {{ "%g"|format(ld.matched_total) }} {{ ld.dose_unit_label }} · matched to your {{ result.dose|int if result.dose == result.dose|int else result.dose }} {{ ld.dose_unit_label }}/kg/hr CRI rate
+                </div>
+                {% if ld.matched_outside_range %}
+                <div style="font-size: 0.85rem; color: var(--danger); margin-top: 0.35rem;">
+                    ⚠ Your CRI dose is outside the published loading range of {{ ld.min_per_kg|int if ld.min_per_kg == ld.min_per_kg|int else ld.min_per_kg }}–{{ ld.max_per_kg|int if ld.max_per_kg == ld.max_per_kg|int else ld.max_per_kg }} {{ ld.dose_unit_label }}/kg.
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="loading-dose__range" style="font-size: 0.85rem; margin-top: 0.5rem; padding-top: 0.5rem; {% if ld.matched_ml_stock is not none %}border-top: 1px dashed var(--rule);{% endif %}">
+                {% if ld.is_single_value %}
+                <span style="color: var(--text-muted);">Published dose:</span>
+                <strong>{{ ld.min_per_kg|int if ld.min_per_kg == ld.min_per_kg|int else ld.min_per_kg }} {{ ld.dose_unit_label }}/kg</strong>
+                = {{ "%g"|format(ld.min_total) }} {{ ld.dose_unit_label }} = {{ "%.2f"|format(ld.min_ml_stock) }} mL of stock
+                {% else %}
+                <span style="color: var(--text-muted);">Range:</span>
+                <strong>{{ ld.min_per_kg|int if ld.min_per_kg == ld.min_per_kg|int else ld.min_per_kg }}–{{ ld.max_per_kg|int if ld.max_per_kg == ld.max_per_kg|int else ld.max_per_kg }} {{ ld.dose_unit_label }}/kg</strong>
+                = {{ "%g"|format(ld.min_total) }}–{{ "%g"|format(ld.max_total) }} {{ ld.dose_unit_label }} = {{ "%.2f"|format(ld.min_ml_stock) }}–{{ "%.2f"|format(ld.max_ml_stock) }} mL of stock
+                {% endif %}
+            </div>
+
+            {% if ld.note %}
+            <div class="loading-dose__note" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; font-style: italic;">
+                {{ ld.note }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Weight</dt>
+            <dd>{{ "%.2f"|format(result.weight_kg) }} kg</dd>
+        </div>
+        {% if result.total_dose_ug_per_min is not none %}
+        <div class="result__detail">
+            <dt>Total dose</dt>
+            <dd>{{ "%.2f"|format(result.total_dose_ug_per_min) }} µg/min</dd>
+        </div>
+        {% endif %}
+        <div class="result__detail">
+            <dt>Total dose</dt>
+            <dd>{{ "%.1f"|format(result.total_dose_ug_per_hr) }} µg/hr</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Rate per kg</dt>
+            <dd>{{ "%.3f"|format(result.ml_per_kg_per_hr) }} mL/kg/hr</dd>
+        </div>
+    </dl>
+
+    <div class="formula-box">
+        <div class="eyebrow">Formula</div>
+        {% if result.dose_unit.value == 'ug/kg/min' %}
+            $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }} \times {{ result.dose }} \times 60 }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$$
+            <p class="formula-caption">weight (kg) × dose (µg/kg/min) × 60 ÷ concentration ({{ drug.concentration_unit_label }})</p>
+        {% elif result.dose_unit.value == 'mU/kg/min' %}
+            $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }} \times {{ result.dose }} \times 60 }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$$
+            <p class="formula-caption">weight (kg) × dose (mU/kg/min) × 60 ÷ concentration ({{ drug.concentration_unit_label }})</p>
+        {% elif result.dose_unit.value == 'mg/kg/hr' %}
+            $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }} \times {{ result.dose }} \times 1000 }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$$
+            <p class="formula-caption">weight (kg) × dose (mg/kg/hr) × 1000 ÷ concentration ({{ drug.concentration_unit_label }}); the ×1000 converts mg to {{ drug.dose_mass_unit }}</p>
+        {% else %}
+            $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }} \times {{ result.dose }} }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$$
+            <p class="formula-caption">weight (kg) × dose (µg/kg/hr) ÷ concentration ({{ drug.concentration_unit_label }})</p>
+        {% endif %}
+    </div>
+
+    {% if result.warnings %}
+        {% set ns = namespace(danger=false) %}
+        {% for w in result.warnings %}
+            {% if 'CAUTION' in w or 'exceeds' in w %}{% set ns.danger = true %}{% endif %}
+        {% endfor %}
+        <div class="warnings {% if ns.danger %}danger{% endif %}">
+            <ul>
+                {% for w in result.warnings %}
+                    <li>{{ w }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+
+    {# Update the "Worked example" div in calculator.html via a hidden
+       template element. JS reads the LaTeX and writes it into #worked-example,
+       then re-renders KaTeX on that target. We use a separate element with
+       the LaTeX in its textContent to avoid Jinja autoescape issues. #}
+    {% if is_htmx_response %}
+    <template id="worked-example-source">{% if result.dose_unit.value == 'ug/kg/min' %}$$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.dose }}_{\mu g/kg/min} \times 60 }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }}_{\mu g/mL} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$${% elif result.dose_unit.value == 'mg/kg/hr' %}$$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.dose }}_{mg/kg/hr} \times 1000 }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }}_{\mu g/mL} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$${% else %}$$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.dose }}_{\mu g/kg/hr} }{ {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }}_{\mu g/mL} } = {{ "%.2f"|format(result.ml_per_hr_pump) }}$${% endif %}</template>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>

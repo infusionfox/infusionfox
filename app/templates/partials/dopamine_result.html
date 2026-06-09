@@ -1,0 +1,99 @@
+<div class="result" id="result-panel">
+    {# Print-only header — mirrors the universal vasopressor result
+       header (which lives in result_panel.html). Hidden on screen,
+       revealed by @media print so the printout has a clear patient
+       anchor + InfusionFox brand mark. #}
+    <div class="print-only print-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 0.3rem; margin-bottom: 0.5rem;">
+            <div>
+                <div style="font-weight: 700; font-size: 1rem; line-height: 1.1;">Dopamine CRI · 6×kg method</div>
+                {% if result.valid %}
+                <div style="font-size: 0.8rem; color: #444;">{{ "%.2f"|format(result.weight_kg) }} kg</div>
+                {% endif %}
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;">
+                <div style="display: flex; align-items: center; gap: 0.3rem;">
+                    <img src="/static/brand/logos/mark.png" alt="" aria-hidden="true" style="width: 16px; height: 16px;">
+                    <span style="font-size: 0.7rem; color: #444;">infusionfox.com</span>
+                </div>
+                <span id="print-timestamp" style="font-size: 0.7rem; color: #444;"></span>
+            </div>
+        </div>
+    </div>
+
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">Pump rate</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.pump_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            = {{ "%g"|format(result.target_dose) }} µg/kg/min
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: var(--ink-mute); line-height: 1.6;">
+            {{ "%g"|format(result.final_concentration_ug_per_ml) }} µg/mL × {{ "%g"|format(result.pump_rate_ml_per_hr) }} mL/hr
+            ÷ 60 min/hr ÷ {{ "%.2f"|format(result.weight_kg) }} kg = {{ "%g"|format(result.target_dose) }} µg/kg/min.
+            Concentration is set to 60 × weight, so mL/hr matches µg/kg/min numerically.
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Preparation recipe</div>
+        <p style="margin: 0; color: var(--ink); font-size: 1rem; line-height: 1.6;">
+            <strong>1.</strong> Remove
+            <strong>{{ "%g"|format(result.ml_to_remove_from_bag) }} mL</strong>
+            from a {{ "%g"|format(result.bag_volume_ml) }} mL bag of compatible IV fluid.
+        </p>
+        <p style="margin: 0.4rem 0 0; color: var(--ink); font-size: 1rem; line-height: 1.6;">
+            <strong>2.</strong> Add
+            <strong>{{ "%g"|format(result.ml_stock_to_draw) }} mL</strong>
+            ({{ "%g"|format(result.mg_dopamine_to_add) }} mg) of 40 mg/mL dopamine
+            stock to the bag.
+        </p>
+        <p style="margin: 0.4rem 0 0; color: var(--ink); font-size: 1rem; line-height: 1.6;">
+            <strong>3.</strong> Final concentration:
+            <strong>{{ "%g"|format(result.final_concentration_ug_per_ml) }} µg/mL</strong>
+            ({{ "%.1f"|format(result.final_concentration_ug_per_ml / 1000) }} mg/mL).
+        </p>
+        <p style="margin: 0.6rem 0 0; color: var(--ink-mute); font-size: 0.85rem;">
+            Recipe is patient-specific. If weight changes meaningfully, remix.
+        </p>
+    </div>
+
+    <dl class="result__details" style="margin-top: 1.25rem;">
+        <div class="result__detail">
+            <dt>Patient weight</dt>
+            <dd>
+                {{ "%.2f"|format(result.weight_kg) }} kg
+                <br><span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.1f"|format(result.weight_kg * 2.2046) }} lb)</span>
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>Species</dt>
+            <dd>{{ result.species.value|capitalize }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Target dose</dt>
+            <dd>{{ "%g"|format(result.target_dose) }} µg/kg/min</dd>
+        </div>
+    </dl>
+
+    {% if result.warnings %}
+    <div class="warnings"><ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>
+{% if result.valid %}
+<template id="worked-example-source">$$\text{dopamine to add} = 6 \times {{ "%.1f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.1f"|format(result.mg_dopamine_to_add) }}\,\text{mg} = {{ "%.2f"|format(result.ml_stock_to_draw) }}\,\text{mL of stock} \quad \Rightarrow \quad \text{pump rate} = {{ "%.1f"|format(result.pump_rate_ml_per_hr) }}\,\text{mL/hr}$$</template>
+{% endif %}

@@ -1,0 +1,33 @@
+{% if dilution_result is defined %}
+<div class="dilution__result" id="dilution-result">
+    {% if dilution_result.warnings %}
+        <div class="warnings" style="margin-top: 0;">
+            <ul>
+                {% for w in dilution_result.warnings %}<li>{{ w }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="eyebrow">Draw up</div>
+        <p class="big">{{ "%.2f"|format(dilution_result.drug_volume_ml_rounded) }} mL stock drug</p>
+        <p class="big">+ {{ "%.2f"|format(dilution_result.diluent_volume_ml_rounded) }} mL diluent</p>
+        <p style="color: var(--ink-mute); font-size: 0.88rem; margin-top: 1rem;">
+            Combine to a final volume of {{ "%.1f"|format(dilution_inputs.final_volume_ml) }} mL.
+            Gives a concentration of {{ "%.1f"|format(dilution_inputs.desired_concentration_ug_per_ml) }} µg/mL.
+        </p>
+
+        {% if show_formula %}
+        <div class="formula-box">
+            <div class="eyebrow">Formula</div>
+            $$C_1 V_1 = C_2 V_2$$
+            <p class="formula-caption">Stock concentration × stock volume = final concentration × final volume</p>
+            $$V_1 = \frac{C_2 \times V_2}{C_1} = \frac{ {{ "%.1f"|format(dilution_inputs.desired_concentration_ug_per_ml) }} \times {{ "%.1f"|format(dilution_inputs.final_volume_ml) }} }{ {{ "%.1f"|format(dilution_inputs.stock_concentration_ug_per_ml) }} } = {{ "%.2f"|format(dilution_result.drug_volume_ml_rounded) }}\,\text{mL}$$
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% else %}
+<div class="dilution__result" id="dilution-result">
+    <div class="eyebrow">Draw up</div>
+    <p style="color: var(--ink-mute);">Enter stock, target concentration, and final volume.</p>
+</div>
+{% endif %}

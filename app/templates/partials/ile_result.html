@@ -1,0 +1,174 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+        <div class="warnings danger">
+            <ul>
+                {% for w in result.warnings %}
+                <li>{{ w }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        {# Warnings (in-protocol clinical alerts, distinct from informational notes) #}
+        {% if result.warnings %}
+        <div class="warnings danger" style="margin-bottom: 1rem;">
+            <ul>
+                {% for w in result.warnings %}
+                <li>{{ w }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {# Phase 1 — Loading bolus (shared between protocols) #}
+        <div class="result__headline" style="background: var(--paper-warm); padding: 1rem 1.25rem; border-radius: var(--radius); margin-bottom: 1rem;">
+            <div class="eyebrow">Phase 1 — Loading bolus</div>
+            <div class="result__primary" style="font-size: 1.875rem; font-weight: 700; margin: 0.25rem 0;">
+                {{ "%.1f"|format(result.bolus_volume_ml) }} mL
+            </div>
+            <div style="color: var(--ink-soft); font-size: 0.95rem;">
+                of 20% lipid emulsion IV over {{ result.bolus_duration_min_low }}–{{ result.bolus_duration_min_high }} minutes
+                <span style="color: var(--ink-mute); font-size: 0.85rem;">
+                    (= 1.5 mL/kg × {{ "%.2f"|format(result.weight_kg) }} kg)
+                </span>
+            </div>
+            <div style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0.4rem;">
+                The bolus is the same for both protocols below.
+            </div>
+        </div>
+
+        {# Phase 2 — Maintenance CRI (two protocols, three rows) #}
+        <div class="result__headline" style="padding: 1rem 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem;">
+            <div class="eyebrow">Phase 2 — Maintenance CRI · two practice protocols</div>
+
+            <table class="ile-protocols" style="width: 100%; margin-top: 0.75rem; font-size: 0.9rem; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <th style="text-align: left; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">Protocol</th>
+                        <th style="text-align: right; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">Rate</th>
+                        <th style="text-align: right; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">Duration</th>
+                        <th style="text-align: right; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">CRI vol</th>
+                        <th style="text-align: right; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">Bolus + CRI</th>
+                        <th style="text-align: left; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">Cumulative</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in [result.fast_standard, result.fast_extended, result.slow_conservative] %}
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td data-label="Protocol" style="padding: 0.5rem 0.4rem;">
+                            <strong>{{ p.short_label }}</strong>
+                            <div style="color: var(--ink-mute); font-size: 0.8rem;">{{ p.name }}</div>
+                        </td>
+                        <td data-label="Rate" style="text-align: right; padding: 0.5rem 0.4rem;">
+                            <strong>{{ "%.1f"|format(p.rate_ml_per_hr) }}</strong> mL/hr
+                            <div style="color: var(--ink-mute); font-size: 0.8rem;">
+                                {{ "%.3f"|format(p.rate_ml_per_kg_per_min) }} mL/kg/min
+                            </div>
+                        </td>
+                        <td data-label="Duration" style="text-align: right; padding: 0.5rem 0.4rem;">{{ p.duration_min }} min</td>
+                        <td data-label="CRI vol" style="text-align: right; padding: 0.5rem 0.4rem;">{{ "%.1f"|format(p.cri_volume_ml) }} mL</td>
+                        <td data-label="Bolus + CRI" style="text-align: right; padding: 0.5rem 0.4rem;"><strong>{{ "%.1f"|format(p.bolus_plus_cri_ml) }}</strong> mL</td>
+                        <td data-label="Cumulative" style="padding: 0.5rem 0.4rem;">
+                            <div style="font-weight: 600;">{{ "%.1f"|format(p.cumulative_per_kg) }} mL/kg</div>
+                            <div style="font-size: 0.8rem; color: {% if p.cumulative_tier == 'within' %}var(--success){% elif p.cumulative_tier == 'above' %}var(--warning, #b97300){% else %}var(--danger){% endif %};">
+                                {{ p.cumulative_label }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div style="color: var(--ink-soft); font-size: 0.85rem; margin-top: 0.75rem; line-height: 1.55;">
+                <strong>Fast protocol</strong> is preferred for acute cardiovascular collapse, larger patients, and rapid reversal (LAST, CCB or beta-blocker shock).
+                <strong>Slow protocol</strong> is preferred in smaller patients, cardiovascular instability where the fast protocol's volumetric load is poorly tolerated, and sustained toxicities (permethrin, ivermectin, baclofen) where lipid sink coverage outlasts a 30–60 min infusion.
+            </div>
+        </div>
+
+        {# Phase 3 — Optional re-bolus #}
+        <div class="result__headline" style="padding: 1rem 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem;">
+            <div class="eyebrow">Phase 3 — Optional re-bolus (if response inadequate)</div>
+            <div style="font-size: 1.25rem; font-weight: 700; margin: 0.25rem 0;">
+                {{ "%.1f"|format(result.rebolus_volume_ml) }} mL
+            </div>
+            <div style="color: var(--ink-soft); font-size: 0.9rem;">
+                Repeat the loading bolus dose IV over 2–3 min if cardiovascular
+                response remains inadequate. Each rebolus adds 1.5 mL/kg to the
+                cumulative dose.
+            </div>
+
+            <table class="ile-protocols" style="width: 100%; margin-top: 0.75rem; font-size: 0.85rem; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <th style="text-align: left; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">After protocol</th>
+                        <th style="text-align: right; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">Cumulative incl. 1 rebolus</th>
+                        <th style="text-align: left; padding: 0.4rem; color: var(--ink-mute); font-weight: 500;">Tier</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in [result.fast_standard, result.fast_extended, result.slow_conservative] %}
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td data-label="After protocol" style="padding: 0.4rem;">{{ p.short_label }}</td>
+                        <td data-label="Cumulative incl. 1 rebolus" style="text-align: right; padding: 0.4rem;">{{ "%.1f"|format(p.cumulative_after_rebolus_per_kg) }} mL/kg</td>
+                        <td data-label="Tier" style="padding: 0.4rem; color: {% if p.cumulative_after_rebolus_tier == 'within' %}var(--success){% elif p.cumulative_after_rebolus_tier == 'above' %}var(--warning, #b97300){% else %}var(--danger){% endif %};">
+                            {{ p.cumulative_after_rebolus_label }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Cumulative dose reference (replaces the old "Daily ceiling" section) #}
+        <div class="result__headline" style="padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--accent); border-radius: var(--radius); margin-bottom: 1rem;">
+            <div class="eyebrow">Cumulative dose reference</div>
+            <div style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.4rem; line-height: 1.55;">
+                <p style="margin: 0 0 0.5rem;">
+                    No validated maximum daily dose exists in veterinary patients. The tier flags above are checkpoints, not stop signs.
+                </p>
+                <ul style="margin: 0 0 0.5rem; padding-left: 1.25rem; line-height: 1.65;">
+                    <li><span style="color: var(--success); font-weight: 600;">Within conservative guideline:</span> ≤ {{ "%.0f"|format(result.cumulative_guideline_ml_per_kg) }} mL/kg (Fernandez 2011)</li>
+                    <li><span style="color: var(--warning, #b97300); font-weight: 600;">Above conservative guideline:</span> {{ "%.0f"|format(result.cumulative_guideline_ml_per_kg) }}–{{ "%.0f"|format(result.cumulative_high_ml_per_kg) }} mL/kg, routinely seen in practice, particularly the slow protocol</li>
+                    <li><span style="color: var(--danger); font-weight: 600;">High cumulative:</span> &gt; {{ "%.0f"|format(result.cumulative_high_ml_per_kg) }} mL/kg, approaches human ASRA upper bound; check lipemia and fat-overload markers</li>
+                </ul>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--ink-mute);">
+                    Fat overload syndrome is rate-driven (peak plasma triglyceride) rather than total-dose-driven, which is why the slow protocol tolerates a higher cumulative volume at ~25% the peak triglyceride load of the fast protocol.
+                </p>
+            </div>
+        </div>
+
+        {# Clinical stopping criteria (moved up; was inside Monitoring) #}
+        <div class="admonition" style="margin-bottom: 1rem;">
+            <div class="admonition-title">Clinical stopping criteria</div>
+            <ul style="margin: 0.4rem 0 0; padding-left: 1.25rem; line-height: 1.65;">
+                <li>Clinical response: improvement of the targeted toxicity signs (mental status, cardiovascular function, tremor activity)</li>
+                <li>Lipemia status: visible lipemia before any repeat dose suggests reduced clearance; defer the next dose or extend the interval</li>
+                <li>Fat-overload signs: rising triglycerides, hemolysis on CBC, transaminitis, jaundice, or coagulopathy</li>
+                <li>Lack of response after 12–24 hours of therapy: discontinue; further ILE is unlikely to help</li>
+            </ul>
+        </div>
+
+        {# Informational notes from compute_ile #}
+        {% if result.notes %}
+        <div class="admonition" style="margin-bottom: 1rem;">
+            <div class="admonition-title">Notes</div>
+            <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem; line-height: 1.65;">
+                {% for n in result.notes %}
+                <li>{{ n }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {# Monitoring + post-protocol guidance #}
+        <div style="padding: 1rem 1.25rem; border: 1px solid var(--border); border-radius: var(--radius);">
+            <div class="eyebrow">Monitoring</div>
+            <ul style="color: var(--ink-soft); margin: 0.5rem 0 0; padding-left: 1.25rem; line-height: 1.65;">
+                <li>Continuous ECG and BP during and for at least 30 min after the infusion</li>
+                <li>Repeat physical exam every 5–10 min during the active protocol</li>
+                <li>CBC, chemistry, and triglycerides 4–6 hours after the protocol; assess for fat overload (hyperlipidemia, hemolysis, transaminitis)</li>
+                <li>Pulse oximetry can be unreliable for hours after ILE because of lipemia interference at the sensor</li>
+                <li>For ongoing toxicity beyond the protocol: pair with supportive care (vasopressors, antiarrhythmics, decontamination, intubation if needed) and consult toxicology where available</li>
+            </ul>
+        </div>
+    {% endif %}
+</div>

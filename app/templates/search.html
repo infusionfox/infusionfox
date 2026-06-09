@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{% if query %}Search · {{ query }}{% else %}Search{% endif %} | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Search</div>
+                <h1>
+                    {% if query %}Results for "{{ query }}"{% else %}Search InfusionFox{% endif %}
+                </h1>
+                {% if query %}
+                <p style="color: var(--ink-soft); margin: 0.25rem 0 0;">
+                    {{ result_count }} result{% if result_count != 1 %}s{% endif %}
+                    across calculators, hubs, reference articles, and practice problems.
+                </p>
+                {% else %}
+                <p style="color: var(--ink-soft); margin: 0.25rem 0 0;">
+                    Full-text search across every calculator, hub, reference article,
+                    and practice problem. Indexed: drug names, conditions, mechanisms,
+                    article bodies, and worked examples.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <form action="/search" method="get" style="margin-top: 1.5rem;">
+            <div style="display: flex; gap: 0.5rem;">
+                <input
+                    type="search"
+                    name="q"
+                    value="{{ query }}"
+                    placeholder="e.g. hydromorphone, DKA, applefast, lactate"
+                    autofocus
+                    style="flex: 1; padding: 0.7rem 1rem; font-size: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); color: var(--ink);"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+                <button type="submit" class="btn" style="padding: 0 1.25rem;">Search</button>
+            </div>
+        </form>
+
+        {% if query and result_count == 0 %}
+            <div style="margin-top: 2rem; padding: 1.5rem; background: var(--paper-warm); border-left: 3px solid var(--ink-soft); border-radius: var(--radius);">
+                <p style="margin: 0; color: var(--ink-soft);">
+                    No matches for <strong>{{ query }}</strong>.
+                </p>
+                <p style="margin: 0.5rem 0 0; color: var(--ink-mute); font-size: 0.9rem;">
+                    Try a single keyword (drug name, condition, mechanism) or check spelling.
+                    The index includes prefix matching, so "hydro" finds "hydromorphone".
+                </p>
+            </div>
+        {% endif %}
+
+        {% if results %}
+            <div style="margin-top: 2rem;">
+                {% for cat, group in grouped.items() %}
+                    <section style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); margin: 0 0 0.75rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--line);">
+                            {{ cat }} <span style="color: var(--ink-mute); font-weight: normal;">· {{ group|length }}</span>
+                        </h2>
+
+                        {% for r in group %}
+                        <article style="padding: 0.85rem 0; border-bottom: 1px solid var(--line);">
+                            <div style="display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;">
+                                <a href="{{ r.url }}" style="font-size: 1.05rem; font-weight: 600; color: var(--ink); text-decoration: none;">{{ r.title_html|safe }}</a>
+                                <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.1rem 0.45rem; border-radius: 3px; background: var(--paper-warm); color: var(--ink-soft);">{{ r.type }}</span>
+                            </div>
+                            {% if r.blurb %}
+                            <p style="margin: 0.25rem 0 0.35rem; color: var(--ink-soft); font-size: 0.92rem; line-height: 1.5;">{{ r.blurb }}</p>
+                            {% endif %}
+                            {% if r.body_snippet %}
+                            <p style="margin: 0; color: var(--ink-mute); font-size: 0.85rem; line-height: 1.5;">{{ r.body_snippet|safe }}</p>
+                            {% endif %}
+                        </article>
+                        {% endfor %}
+                    </section>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if not query %}
+            <div style="margin-top: 2rem; padding: 1.25rem 1.5rem; background: var(--paper-warm); border-left: 3px solid var(--ink-soft); border-radius: var(--radius); font-size: 0.92rem; line-height: 1.6;">
+                <p style="margin: 0 0 0.4rem; font-weight: 600;">Search tips</p>
+                <ul style="margin: 0; padding-left: 1.25rem; color: var(--ink-soft);">
+                    <li>Type 2+ characters to start matching. "<code>hydro</code>" finds hydromorphone.</li>
+                    <li>Hyphens are ignored. "<code>applefast</code>" and "<code>apple-fast</code>" both work.</li>
+                    <li>Multiple words are AND-combined: "<code>insulin dka</code>" finds the regular insulin CRI.</li>
+                    <li>Press <kbd style="padding: 0.05rem 0.35rem; background: var(--paper); border: 1px solid var(--line); border-radius: 3px;">/</kbd> on any page to focus the header search box.</li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

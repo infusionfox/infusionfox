@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Transfusion calculator | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Calculator · Transfusion medicine</div>
+                <h1>Transfusion calculator</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Volume and rate planning for blood-product
+                    transfusion in dogs and cats. Handles packed red
+                    blood cells, whole blood, and fresh frozen plasma.
+                    Outputs the volume to deliver and the safe
+                    infusion rate, accounting for the slow
+                    reaction-monitoring window at the start.
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li>
+                    <strong>Cats: blood type and crossmatch before every transfusion.</strong> Cats have naturally occurring alloantibodies. A type B cat receiving type A blood can have a fatal reaction on first exposure with no prior sensitization.
+                </li>
+                <li>
+                    <strong>Dogs: blood type before first transfusion; crossmatch before any subsequent transfusion.</strong> Dogs do not have clinically significant naturally occurring alloantibodies, so first transfusion is generally safe even without crossmatching, but DEA 1.1 typing is still recommended.
+                </li>
+                <li>
+                    <strong>4-hour limit.</strong> Sterility window for blood products at room temperature. Transfusion not completed within 4 hours of starting must be discarded.
+                </li>
+                <li>
+                    <strong>Diphenhydramine doesn't prevent acute hemolytic reactions.</strong> It is given for prophylaxis of mild allergic / urticarial reactions only. Do not let premedication delay treatment.
+                </li>
+            </ul>
+        </div>
+
+        <div class="calc-grid">
+            <div class="calc-form-col">
+                <form
+                    hx-post="/transfusion/compute"
+                    hx-target="#result-panel"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:250ms, change, load"
+                >
+                    <fieldset>
+                        <legend>Patient</legend>
+                        <div class="field">
+                            <label>Species</label>
+                            <div class="segmented">
+                                <input type="radio" name="species" value="dog" id="tx-dog" {% if inputs.species == "dog" %}checked{% endif %}>
+                                <label for="tx-dog">Dog</label>
+                                <input type="radio" name="species" value="cat" id="tx-cat" {% if inputs.species == "cat" %}checked{% endif %}>
+                                <label for="tx-cat">Cat</label>
+                            </div>
+                        </div>
+
+                        <div class="field field--inline">
+                            <label for="weight_value">Weight</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="weight_value" name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" min="0.5" max="120" step="any" required style="width: 8rem;">
+                                <div class="segmented">
+                                    <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if inputs.weight_unit == "lb" %}checked{% endif %}>
+                                    <label for="wu-lb">lb</label>
+                                    <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if inputs.weight_unit == "kg" %}checked{% endif %}>
+                                    <label for="wu-kg">kg</label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Product</legend>
+                        <div class="field">
+                            <label>Blood product</label>
+                            <div class="segmented">
+                                <input type="radio" name="product" value="prbc" id="prod-prbc" {% if inputs.product == "prbc" %}checked{% endif %}>
+                                <label for="prod-prbc">pRBC</label>
+                                <input type="radio" name="product" value="whole_blood" id="prod-wb" {% if inputs.product == "whole_blood" %}checked{% endif %}>
+                                <label for="prod-wb">Whole blood</label>
+                                <input type="radio" name="product" value="ffp" id="prod-ffp" {% if inputs.product == "ffp" %}checked{% endif %}>
+                                <label for="prod-ffp">FFP</label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>PCV targets <span style="color: var(--ink-mute); font-weight: 400; font-size: 0.85rem;">(pRBC / whole blood)</span></legend>
+                        <div class="field">
+                            <label for="pcv_current">Current PCV (%)</label>
+                            <input type="number" id="pcv_current" name="pcv_current" value="{{ inputs.pcv_current }}" min="5" max="60" step="1">
+                        </div>
+                        <div class="field">
+                            <label for="pcv_target">Target PCV (%)</label>
+                            <input type="number" id="pcv_target" name="pcv_target" value="{{ inputs.pcv_target }}" min="10" max="50" step="1">
+                            <p style="font-size: 0.78rem; color: var(--ink-mute); margin-top: 0.4rem;">
+                                Aim for clinical stability rather than reference-range PCV. Target 25–30% is usually sufficient.
+                            </p>
+                        </div>
+                        <div class="field">
+                            <label for="pcv_donor">Donor PCV (%) <span style="color: var(--ink-mute); font-weight: 400;">— optional</span></label>
+                            <input type="number" id="pcv_donor" name="pcv_donor" value="{{ inputs.pcv_donor }}" min="0" max="90" step="1">
+                            <p style="font-size: 0.78rem; color: var(--ink-mute); margin-top: 0.4rem;">
+                                Leave 0 to use defaults: pRBC ~80%, whole blood ~60%.
+                            </p>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>FFP dose <span style="color: var(--ink-mute); font-weight: 400; font-size: 0.85rem;">(if FFP selected)</span></legend>
+                        <div class="field">
+                            <label for="ffp_dose_ml_kg">Dose (mL/kg)</label>
+                            <input type="number" id="ffp_dose_ml_kg" name="ffp_dose_ml_kg" value="{{ inputs.ffp_dose_ml_kg }}" min="5" max="30" step="1">
+                            <p style="font-size: 0.78rem; color: var(--ink-mute); margin-top: 0.4rem;">
+                                Standard 10–20 mL/kg. Use 10 for general factor replacement, 15–20 for active bleeding or DIC.
+                            </p>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="calc-result-col">
+                {% if result %}
+                    {% include "partials/transfusion_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 3rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/transfusion">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#monitoring">Monitoring</a>
+            <a href="#reactions">Reactions</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Formula</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                For pRBC and whole blood, the volume needed to raise PCV from
+                current to target is calculated from the patient's total blood
+                volume and the donor PCV:
+            </p>
+            <div class="formula-display">
+                $$V_{\text{transfuse}} = \frac{\text{PCV}_{\text{target}} - \text{PCV}_{\text{current}}}{\text{PCV}_{\text{donor}}} \times \text{BV}_{\text{recipient}}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7; margin-top: 1rem;">
+                Recipient blood volume is 90 mL/kg in dogs, 60 mL/kg in cats.
+                Default donor PCV is 80% for pRBC and 60% for whole blood
+                (overridable on the form). FFP uses a simpler weight-based
+                dose: 10-20 mL/kg.
+            </p>
+
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                {% if result.inputs.product == 'ffp' %}
+                $$V = {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ "%.1f"|format(result.inputs.ffp_dose_ml_kg) }}_{\text{mL/kg}} = {{ "%.0f"|format(result.total_volume_ml) }}\,\text{mL}$$
+                {% else %}
+                $$V = \frac{ {{ "%.0f"|format(result.inputs.pcv_target) }} - {{ "%.0f"|format(result.inputs.pcv_current) }} }{ {{ "%.0f"|format(result.inputs.pcv_donor if result.inputs.pcv_donor else (80 if result.inputs.product == 'prbc' else 60)) }} } \times {{ "%.0f"|format(result.blood_volume_ml) }}\,\text{mL} = {{ "%.0f"|format(result.total_volume_ml) }}\,\text{mL}$$
+                {% endif %}
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="monitoring" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Monitoring schedule</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Baseline TPR, mucous membrane color, PCV/TS recorded immediately before transfusion. Then:
+            </p>
+            <ul style="color: var(--ink-soft); line-height: 1.8; padding-left: 1.5rem;">
+                <li><strong>Every 5–15 min during the first 30 min</strong> (slow trial period). Watch for acute reactions: vomiting, urticaria, facial swelling, fever, tachycardia, dyspnea, weakness, hemoglobinemia/hemoglobinuria.</li>
+                <li><strong>Every 30 min thereafter</strong> until completion. Continue TPR.</li>
+                <li><strong>15 min, 1 hr, 12 hr, and 24 hr post-transfusion</strong>: TPR and PCV/TS for delayed reactions.</li>
+                <li><strong>Recheck PCV at 1 hr post-transfusion</strong> to confirm expected rise. Each unit of pRBC should raise PCV by ~5–10% in a typical 25-kg dog.</li>
+            </ul>
+        </section>
+
+        <section id="reactions" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Transfusion reactions</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Reactions are categorized by mechanism and timing. Stop the transfusion immediately for any reaction; many are reversible if caught early.
+            </p>
+            <h3 style="margin-top: 1rem;">Acute hemolytic (immediate, life-threatening)</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Fever, vomiting, collapse, hemoglobinemia, hemoglobinuria, DIC. Most often from blood-type incompatibility. STOP transfusion. IV crystalloids, supportive care. Diphenhydramine and steroids do not treat this.
+            </p>
+            <h3 style="margin-top: 1rem;">Allergic / urticarial (mild, common)</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Facial swelling, urticaria, pruritus, mild fever. Pause transfusion, give diphenhydramine 1–2 mg/kg IM, resume at slower rate once signs resolve. Premedication helps prevent recurrence in patients with prior reactions.
+            </p>
+            <h3 style="margin-top: 1rem;">Volume overload (TACO)</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Tachypnea, dyspnea, pulmonary crackles. More common in cats and patients with cardiac disease. Slow or stop transfusion, furosemide, oxygen.
+            </p>
+            <h3 style="margin-top: 1rem;">Delayed hemolytic (3–14 days post)</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Falling PCV without overt signs. Confirms anti-RBC antibody response. Future transfusions require crossmatching.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                {% for s in sources %}
+                <li style="margin-bottom: 0.5rem;">{{ s.citation }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

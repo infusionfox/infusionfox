@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Hyperkalemia | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Electrolytes &amp; Fluids · Workflow hub</div>
+                <h1>Hyperkalemia hub</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Workflow for life-threatening hyperkalemia in
+                    dogs and cats. Three drug interventions run in
+                    parallel: calcium gluconate to stabilize the
+                    cardiac membrane, insulin with dextrose to shift
+                    K intracellularly, and fluid therapy to dilute
+                    and excrete it. None treat the cause; address
+                    the underlying problem alongside.
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li>
+                    <strong>Drug therapy is bridging.</strong> Calcium
+                    gluconate (membrane stabilization, 30–60 min) and
+                    insulin/dextrose (K shifting, 4–6 hr) buy time;
+                    they do not remove K from the body. The K problem
+                    fundamentally resolves only when the underlying
+                    cause is addressed: deobstruction in UTO,
+                    mineralocorticoid replacement in Addisonian crisis,
+                    fluid therapy + restored renal perfusion in AKI.
+                    Pursue both in parallel.
+                </li>
+                <li>
+                    <strong>Indication: K + ECG findings, not K alone.</strong>
+                    Treat with the full bundle when K &gt; 7.0 mEq/L OR
+                    any K with concerning ECG changes (peaked T waves,
+                    prolonged PR interval, loss of P waves, widened QRS,
+                    sine-wave rhythm). A K of 6.5 in a stable patient
+                    about to be deobstructed in 5 minutes may need only
+                    the deobstruction; a K of 6.0 with peaked T waves
+                    needs the full bundle.
+                </li>
+                <li>
+                    <strong>Reassess every 30–60 min during active
+                    therapy.</strong> Recheck K at 30 min and 1 hr
+                    after insulin. Continuous ECG throughout. Monitor
+                    BG every 1 hr × 6 hr. Watch for rebound hyperkalemia
+                    once insulin's 4–6 hr effect wanes if the
+                    underlying cause hasn't resolved.
+                </li>
+            </ul>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Common scenarios</h2>
+        <div class="compare-cards">
+            <div class="compare-card">
+                <div class="eyebrow">Feline urethral obstruction</div>
+                <p style="margin: 0.4rem 0 0; line-height: 1.6; font-size: 0.9rem;">
+                    Young-to-middle-aged male DSH cat with stranguria,
+                    distended firm bladder, lethargy, vomiting. K
+                    elevation comes from urine retention plus acidosis-
+                    driven extracellular K shift. Definitive treatment
+                    is decompressive cystocentesis ± urinary catheter
+                    placement. Drug bundle bridges to deobstruction.
+                </p>
+            </div>
+            <div class="compare-card">
+                <div class="eyebrow">Hypoadrenocorticism (Addisonian crisis)</div>
+                <p style="margin: 0.4rem 0 0; line-height: 1.6; font-size: 0.9rem;">
+                    Dog (any breed but classically Standard Poodle, PWD,
+                    Bearded Collie, NSDTR) with vague chronic illness,
+                    waxing-waning lethargy/anorexia, and acute collapse.
+                    Classic lab pattern: hyperkalemia, hyponatremia,
+                    Na:K ratio &lt; 27, lack of stress leukogram.
+                    Definitive treatment: aggressive fluid resuscitation
+                    + glucocorticoid replacement (dexamethasone) + a
+                    confirmatory ACTH stim, then long-term mineralo-
+                    corticoid (DOCP or fludrocortisone). Drug bundle
+                    bridges while fluids and steroids do their work.
+                </p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Workflow checklist</h2>
+
+        <ol style="list-style: none; padding-left: 0; margin-top: 1.5rem;">
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 1rem; padding-top: 0.5rem; list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">1</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Confirm hyperkalemia and assess severity</h3>
+                    <p>
+                        Document serum K (point-of-care or lab) and
+                        obtain a continuous ECG. Severity grading:
+                    </p>
+                    <ul style="margin: 0.4rem 0 0.5rem; padding-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
+                        <li><strong>Mild (5.5–6.5 mEq/L):</strong> usually no
+                            ECG changes. Treat the underlying cause; drug
+                            bundle not always required.</li>
+                        <li><strong>Moderate (6.5–7.5 mEq/L):</strong> peaked
+                            T waves often present. Begin drug bundle if
+                            ECG changes are seen or rapid correction is
+                            not imminent.</li>
+                        <li><strong>Severe (&gt; 7.5 mEq/L):</strong> prolonged
+                            PR, loss of P waves, wide QRS likely. Begin
+                            full drug bundle immediately.</li>
+                        <li><strong>Critical (any K with sine-wave QRS or
+                            severe bradyarrhythmia):</strong> peri-arrest.
+                            Calcium gluconate FIRST while preparing
+                            insulin/dextrose and fluids.</li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">2</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Calcium gluconate, membrane stabilization</h3>
+                    <p>
+                        Onset 1–3 min, duration only 30–60 min. Does
+                        NOT lower K, raises the cardiac threshold
+                        potential to restore the gradient that
+                        hyperkalemia has narrowed. The "buy time" drug.
+                        ECG continuously throughout; STOP if bradycardia
+                        worsens.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        <strong>Use calcium GLUCONATE (10%), not
+                        chloride.</strong> Chloride is more potent and
+                        more cardiotoxic on a mL basis.
+                    </p>
+                    <a href="/ca-gluconate-hyperK" class="btn">Open calcium gluconate calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">3</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Insulin + dextrose. K shifting</h3>
+                    <p>
+                        Onset 15–30 min, duration 4–6 hr, typical K
+                        reduction 0.5–1.2 mEq/L. Insulin activates
+                        Na/K-ATPase, shifting K intracellularly.
+                        Concurrent dextrose prevents hypoglycemia.
+                        Followed by 2.5–5% dextrose CRI for 4–6 hr to
+                        prevent rebound.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        <strong>Regular crystalline insulin only.</strong>
+                        Monitor BG every 1 hr × 6 hr. Insulin shifts K
+                        but doesn't remove it, definitive treatment
+                        of the underlying cause is required.
+                    </p>
+                    <a href="/insulin-dextrose-hyperK" class="btn">Open insulin/dextrose calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">4</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Fluid therapy</h3>
+                    <p>
+                        Aggressive volume resuscitation if hypovolemic
+                        (especially Addisonian crisis), then continued
+                        rehydration + maintenance. Fluid therapy:
+                    </p>
+                    <ul style="margin: 0.4rem 0 0.5rem; padding-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
+                        <li>Restores intravascular volume (the
+                            hypovolemia worsens the K problem)</li>
+                        <li>Improves renal perfusion → restores urinary
+                            K excretion once obstruction is relieved</li>
+                        <li>Dilutes serum K modestly</li>
+                        <li>Corrects acidosis → reverses the
+                            extracellular K shift</li>
+                    </ul>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        <strong>Fluid choice:</strong> 0.9% NaCl was
+                        traditionally recommended (no K, low concern
+                        about adding Ca to a calcium-containing line).
+                        Buffered isotonic crystalloids (LRS, Plasma-Lyte)
+                        contain small amounts of K (4–5 mEq/L) but
+                        are NOT contraindicated, the K load is trivial
+                        compared to the patient's existing K excess,
+                        and the buffered solutions correct acidosis
+                        faster, which itself helps lower K. Either is
+                        acceptable.
+                    </p>
+                    <a href="/fluid-therapy" class="btn">Open fluid therapy calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">5</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Definitive treatment of the underlying cause</h3>
+                    <p>
+                        The drug bundle is bridging. The K problem
+                        resolves only when the underlying cause is
+                        corrected:
+                    </p>
+                    <ul style="margin: 0.4rem 0 0; padding-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
+                        <li>
+                            <strong>Feline UTO:</strong> decompressive
+                            cystocentesis (often done first, before or
+                            during drug bundle), then sedation +
+                            urethral catheter placement under sterile
+                            conditions, indwelling catheter for 24–48 hr.
+                        </li>
+                        <li>
+                            <strong>Hypoadrenocorticism:</strong>
+                            dexamethasone 0.1–0.2 mg/kg IV (does NOT
+                            interfere with cortisol assay), aggressive
+                            fluid resuscitation with 0.9% NaCl, ACTH
+                            stimulation test for confirmation, then
+                            long-term mineralocorticoid replacement
+                            (DOCP injection or oral fludrocortisone).
+                        </li>
+                        <li>
+                            <strong>AKI:</strong> address the inciting
+                            cause; consider mannitol or furosemide
+                            for fluid-refractory oliguria; dialysis
+                            if available for severe persistent AKI.
+                        </li>
+                        <li>
+                            <strong>Tumor lysis syndrome:</strong>
+                            aggressive fluid therapy, allopurinol,
+                            urinary alkalinization (controversial in
+                            vet medicine).
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">6</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Bicarbonate, rarely indicated</h3>
+                    <p>
+                        Sodium bicarbonate is NOT a routine part of
+                        veterinary hyperkalemia management. The acidosis
+                        usually corrects with fluid therapy and
+                        obstruction relief. Bicarbonate use is associated
+                        with:
+                    </p>
+                    <ul style="margin: 0.4rem 0 0.5rem; padding-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
+                        <li>Worsened hypokalemia after K shifts back
+                            intracellularly</li>
+                        <li>Hypocalcemia (alkalosis lowers ionized Ca)</li>
+                        <li>Paradoxical CSF acidosis</li>
+                        <li>Volume overload from the Na load</li>
+                    </ul>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        Reserve for severe acidemia (pH &lt; 7.0)
+                        unresponsive to fluid therapy and K reduction.
+                        If used: half-correction formula (NaHCO₃ mEq =
+                        0.3 × kg × base deficit × 0.5), give slowly,
+                        recheck pH every 1–4 hours. Never co-infuse with
+                        calcium-containing fluids; precipitation as
+                        calcium carbonate.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">7</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Beta-2 agonists, adjunctive option</h3>
+                    <p>
+                        Inhaled albuterol or terbutaline (IV/SQ) shifts
+                        K intracellularly via β₂-mediated Na/K-ATPase
+                        activation. Well-supported in human ICU
+                        literature; less commonly used in veterinary
+                        practice. Reasonable to consider as an adjunct
+                        when insulin/dextrose alone hasn't reduced K
+                        adequately and the underlying cause hasn't yet
+                        been corrected. Not first-line and not part of
+                        the standard veterinary hyperkalemia bundle.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">8</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Monitoring</h3>
+                    <ul style="margin: 0.4rem 0 0; padding-left: 1.25rem; line-height: 1.7;">
+                        <li>Continuous ECG throughout active therapy</li>
+                        <li>Serum K at 30 min and 1 hr after insulin,
+                            then every 2–4 hr until consistently &lt;
+                            5.5 mEq/L</li>
+                        <li>Blood glucose every 1 hr × 6 hr after
+                            insulin bolus (rebound hypoglycemia
+                            window)</li>
+                        <li>Blood pressure, mentation, perfusion
+                            parameters</li>
+                        <li>Urine output (target &gt; 1–2 mL/kg/hr
+                            once obstruction relieved or AKI improving)</li>
+                        <li>Serum Na, glucose, BUN, creatinine,
+                            venous blood gas every 4–6 hr initially</li>
+                        <li>Calcium and phosphorus once daily (post-
+                            obstruction diuresis can drop both)</li>
+                    </ul>
+                </div>
+            </li>
+
+        </ol>
+
+        <section style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Cooper ES. Urethral Obstruction. In: Silverstein DC,
+                Hopper K, eds. <em>Small Animal Critical Care Medicine</em>.
+                3rd ed. St. Louis, MO: Elsevier; 2023. Chapter 122
+                (primary source for the hyperkalemia drug bundle and
+                the UTO workflow).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    DiBartola SP. Disorders of Potassium. In: <em>Fluid,
+                Electrolyte, and Acid-Base Disorders in Small Animal
+                Practice</em>. 4th ed. Elsevier; 2012. Chapter 5
+                (overview of hyperkalemia mechanisms, severity
+                classification, and therapy).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Hypoadrenocorticism context: standard veterinary
+                internal medicine references, including ACVIM consensus
+                statements on canine hypoadrenocorticism diagnosis and
+                management.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+
+
+{% endblock %}

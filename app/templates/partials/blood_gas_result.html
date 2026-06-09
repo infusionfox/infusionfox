@@ -1,0 +1,175 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+        {% include "partials/_invalid_result.html" %}
+    {% else %}
+
+    {# Headline: the primary disturbance is the most important output.
+       For NORMAL or MIXED_NORMAL_PH the visual treatment differs so we
+       don't slap an "acidosis/alkalosis" badge on a normal-pH patient. #}
+    <div class="result__headline">
+        <div class="eyebrow">Primary disturbance</div>
+        <div class="result__primary" style="font-size: 1.5rem; line-height: 1.3;">
+            {{ result.primary_label }}
+        </div>
+        <div class="result__secondary">
+            {% if result.is_acidemic %}
+                Acidemia (pH {{ "%.3f"|format(result.inputs.pH) }} ·
+                reference {{ "%.3f"|format(result.ref_pH.lo) }}–{{ "%.3f"|format(result.ref_pH.hi) }})
+            {% elif result.is_alkalemic %}
+                Alkalemia (pH {{ "%.3f"|format(result.inputs.pH) }} ·
+                reference {{ "%.3f"|format(result.ref_pH.lo) }}–{{ "%.3f"|format(result.ref_pH.hi) }})
+            {% else %}
+                pH {{ "%.3f"|format(result.inputs.pH) }} (within reference
+                {{ "%.3f"|format(result.ref_pH.lo) }}–{{ "%.3f"|format(result.ref_pH.hi) }})
+            {% endif %}
+        </div>
+    </div>
+
+    {# Observed-vs-reference summary table. Helpful at a glance for the
+       user to see which values are out of range. #}
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>pH</dt>
+            <dd>
+                {{ "%.3f"|format(result.inputs.pH) }}
+                {% if result.inputs.pH < result.ref_pH.lo or result.inputs.pH > result.ref_pH.hi %}
+                    <span style="color: var(--ink-mute); font-size: 0.85em;">
+                        (ref {{ "%.2f"|format(result.ref_pH.lo) }}–{{ "%.2f"|format(result.ref_pH.hi) }})
+                    </span>
+                {% endif %}
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>PCO₂</dt>
+            <dd>
+                {{ "%.1f"|format(result.inputs.pco2_mm_hg) }} mm Hg
+                {% if result.inputs.pco2_mm_hg < result.ref_pco2.lo or result.inputs.pco2_mm_hg > result.ref_pco2.hi %}
+                    <span style="color: var(--ink-mute); font-size: 0.85em;">
+                        (ref {{ "%.0f"|format(result.ref_pco2.lo) }}–{{ "%.0f"|format(result.ref_pco2.hi) }})
+                    </span>
+                {% endif %}
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>HCO₃⁻</dt>
+            <dd>
+                {{ "%.1f"|format(result.inputs.hco3_meq_per_l) }} mEq/L
+                {% if result.inputs.hco3_meq_per_l < result.ref_hco3.lo or result.inputs.hco3_meq_per_l > result.ref_hco3.hi %}
+                    <span style="color: var(--ink-mute); font-size: 0.85em;">
+                        (ref {{ "%.0f"|format(result.ref_hco3.lo) }}–{{ "%.0f"|format(result.ref_hco3.hi) }})
+                    </span>
+                {% endif %}
+            </dd>
+        </div>
+        {% if result.anion_gap is not none %}
+        <div class="result__detail">
+            <dt>Anion gap</dt>
+            <dd>
+                {{ "%.1f"|format(result.anion_gap) }} mEq/L
+                <span style="color: var(--ink-mute); font-size: 0.85em;">
+                    (ref {{ "%.0f"|format(result.anion_gap_ref.lo) }}–{{ "%.0f"|format(result.anion_gap_ref.hi) }})
+                    {% if result.anion_gap_high %}· <strong>elevated</strong>{% endif %}
+                </span>
+            </dd>
+        </div>
+        {% endif %}
+    </dl>
+
+    {# Compensation assessment, when a primary disorder was identified
+       and a compensation rule is available. The "expected range" framing
+       is more honest than a single number because biology has variance
+       and the textbook formula is a point estimate. #}
+    {% if result.compensation %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Compensation</div>
+        {% if result.compensation.expected is not none %}
+            <p style="margin: 0.4rem 0 0.5rem; color: var(--ink); font-size: 0.92rem; line-height: 1.55;">
+                Rule: {{ result.compensation.rule_description }}.
+            </p>
+            <p style="margin: 0.4rem 0 0.5rem; color: var(--ink); font-size: 0.92rem; line-height: 1.55;">
+                Observed {{ result.compensation.observed_label }}:
+                <strong>{{ "%.1f"|format(result.compensation.observed) }}</strong>.
+                Expected:
+                <strong>{{ "%.1f"|format(result.compensation.expected_lo) }}–{{ "%.1f"|format(result.compensation.expected_hi) }}</strong>
+                (point estimate {{ "%.1f"|format(result.compensation.expected) }}, ±2 tolerance).
+            </p>
+            {% if result.compensation.worked_example_latex %}
+            <div class="formula-box" style="margin-top: 0.6rem;">
+                $${{ result.compensation.worked_example_latex }}$$
+                <p class="formula-caption">Baseline values are the species reference midpoints for {{ result.inputs.species.value }}s.</p>
+            </div>
+            {% endif %}
+            {% if result.compensation.is_simple %}
+                <p style="margin: 0.4rem 0 0; color: var(--ink); font-size: 0.92rem; line-height: 1.55;">
+                    <strong>Within expected range:</strong> consistent with a simple acid-base disorder.
+                </p>
+            {% else %}
+                <p style="margin: 0.4rem 0 0; color: var(--ink); font-size: 0.92rem; line-height: 1.55;">
+                    <strong>Outside expected range:</strong> suggests a mixed acid-base disorder.
+                </p>
+                {% if result.compensation.note %}
+                <p style="margin: 0.4rem 0 0; color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55;">
+                    {{ result.compensation.note }}
+                </p>
+                {% endif %}
+            {% endif %}
+        {% else %}
+            {# No rule available — cat metabolic acidosis or cat chronic respiratory. #}
+            <p style="margin: 0.4rem 0 0; color: var(--ink); font-size: 0.92rem; line-height: 1.55;">
+                <strong>{{ result.compensation.rule_description }}.</strong>
+            </p>
+            {% if result.compensation.note %}
+            <p style="margin: 0.4rem 0 0; color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55;">
+                {{ result.compensation.note }}
+            </p>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {# Anion gap interpretation, when computed. #}
+    {% if result.anion_gap is not none %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Anion gap</div>
+        <p style="margin: 0.4rem 0 0; color: var(--ink); font-size: 0.92rem; line-height: 1.55;">
+            <strong>{{ "%.1f"|format(result.anion_gap) }} mEq/L</strong>
+            (reference {{ "%.0f"|format(result.anion_gap_ref.lo) }}–{{ "%.0f"|format(result.anion_gap_ref.hi) }}).
+        </p>
+        <div class="formula-box" style="margin-top: 0.6rem;">
+            $$\text{AG} = \text{Na} - (\text{Cl} + \text{HCO}_3^-) = {{ "%.0f"|format(result.inputs.na_meq_per_l) }} - ({{ "%.0f"|format(result.inputs.cl_meq_per_l) }} + {{ "%.1f"|format(result.inputs.hco3_meq_per_l) }}) = {{ "%.1f"|format(result.anion_gap) }}\ \text{mEq/L}$$
+            {% if result.anion_gap_corrected is not none %}
+            $$\text{AG}_{\text{corrected}} = \text{AG} + 2.5 \times (4.0 - \text{albumin}) = {{ "%.1f"|format(result.anion_gap) }} + 2.5 \times (4.0 - {{ "%.1f"|format(result.inputs.albumin_g_per_dl) }}) = {{ "%.1f"|format(result.anion_gap_corrected) }}\ \text{mEq/L}$$
+            <p class="formula-caption">Figge correction back-fills the AG that hypoalbuminemia is masking (~2.5 mEq/L per 1 g/dL shortfall from 4.0).</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# Plain-English summary of the interpretation, one item per line. #}
+    {% if result.interpretation %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Interpretation</div>
+        <ul style="margin: 0.4rem 0 0; padding-left: 1.3rem; color: var(--ink); font-size: 0.92rem; line-height: 1.6;">
+            {% for line in result.interpretation %}<li style="margin-bottom: 0.4rem;">{{ line }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# Warnings — used for species-specific caveats. Visually distinct
+       to make sure they're not missed. The cat metabolic acidosis caveat
+       (DiBartola Ch. 12 p. 304) is the most safety-critical message in
+       this calculator, so it triggers the danger class. #}
+    {% if result.warnings %}
+        {% set ns = namespace(danger=false) %}
+        {% for w in result.warnings %}
+            {% if 'Cat-specific' in w or 'CAUTION' in w %}{% set ns.danger = true %}{% endif %}
+        {% endfor %}
+        <div class="warnings {% if ns.danger %}danger{% endif %}" style="margin-top: 1.25rem;">
+            <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+    {% endif %}
+</div>

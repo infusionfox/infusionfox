@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module.title }} | Learn | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Learn module · {{ module.estimated_minutes_display }}</div>
+                <h1>{{ module.title }}</h1>
+                <p style="color: var(--ink-soft); max-width: 65ch; margin: 0.5rem 0 0;">
+                    {{ module.summary }}
+                </p>
+                <div class="learn-module-meta">
+                    <div><span class="learn-module-meta__label">Estimated time:</span> {{ module.estimated_minutes_display }}</div>
+                    <div><span class="learn-module-meta__label">Instructor:</span> {{ module.instructor_name }}</div>
+                    <div><span class="learn-module-meta__label">Last reviewed:</span> {{ module.last_reviewed.strftime('%B %Y') }}</div>
+                </div>
+            </div>
+        </div>
+
+        {# Tab nav: jump-links to each module section. #}
+        <nav class="calc-tabs" style="margin-top: 2rem;">
+            <a href="#objectives" class="active">Objectives</a>
+            {% if module.video_url %}<a href="#video">Video</a>{% endif %}
+            {% if article_html %}<a href="#article">Background</a>{% endif %}
+            {% if module.quiz_questions %}<a href="#quiz">Quiz</a>{% endif %}
+            {% if module.related_calculators %}<a href="#calculators">Calculators</a>{% endif %}
+            {% if practice_problems %}<a href="#practice">Practice</a>{% endif %}
+        </nav>
+
+        {# Learning objectives — shown first as the orienting frame. #}
+        <section id="objectives" style="margin-top: 2.5rem;">
+            <div class="eyebrow">Learning objectives</div>
+            <h2 style="margin-top: 0.25rem;">By the end of this module, you should be able to</h2>
+            <ol class="learn-module-objectives">
+                {% for obj in module.objectives %}
+                <li>{{ obj }}</li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        {# Video — optional, only renders if URL is set. #}
+        {% if module.video_url %}
+        <section id="video" style="margin-top: 3rem;">
+            <div class="eyebrow">Video</div>
+            <h2 style="margin-top: 0.25rem;">Tutorial</h2>
+            <div class="learn-module-video">
+                <iframe
+                    src="{{ module.video_url }}"
+                    title="{{ module.title }} — video tutorial"
+                    frameborder="0"
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                ></iframe>
+            </div>
+            {% if module.video_duration_seconds %}
+            <p style="color: var(--ink-mute); font-size: 0.9rem; margin-top: 0.5rem;">
+                Length: {{ (module.video_duration_seconds // 60) }} min {{ (module.video_duration_seconds % 60) }} sec
+            </p>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {# Clinical-background article body, rendered inline. #}
+        {% if article_html %}
+        <section id="article" style="margin-top: 3rem;">
+            <div class="eyebrow">Background</div>
+            <div class="article-body">
+                {{ article_html|safe }}
+            </div>
+        </section>
+        {% endif %}
+
+        {# Post-test quiz. JS-driven; no scoring submitted server-side.
+           Placed immediately after the article so the reader is tested
+           on the material while it's still fresh, before moving on to
+           calculator practice and practice problems. #}
+        {% if module.quiz_questions %}
+        <section id="quiz" style="margin-top: 3rem;">
+            <div class="eyebrow">Quiz</div>
+            <h2 style="margin-top: 0.25rem;">Post-test ({{ module.quiz_questions|length }} questions)</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Multiple choice. Select an answer and the explanation
+                will reveal whether the choice is correct and why.
+            </p>
+
+            <ol class="learn-module-quiz">
+                {% for q in module.quiz_questions %}
+                <li class="learn-module-quiz__q" data-correct="{{ q.correct_index }}">
+                    <div class="learn-module-quiz__prompt">{{ q.prompt }}</div>
+                    <div class="learn-module-quiz__choices">
+                        {% for choice in q.choices %}
+                        <label class="learn-module-quiz__choice">
+                            <input type="radio" name="q-{{ loop.index0 }}-{{ loop.index }}" value="{{ loop.index0 }}">
+                            <span>{{ choice }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="learn-module-quiz__feedback" hidden>
+                        <div class="learn-module-quiz__verdict"></div>
+                        <div class="learn-module-quiz__explanation">{{ q.explanation }}</div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ol>
+        </section>
+        {% endif %}
+
+        {# Related calculators. #}
+        {% if module.related_calculators %}
+        <section id="calculators" style="margin-top: 3rem;">
+            <div class="eyebrow">Calculators</div>
+            <h2 style="margin-top: 0.25rem;">Apply the math</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Run the calculations for your actual patient using the
+                calculators below. Each one shows the worked formula
+                underneath so the math is auditable.
+            </p>
+            <div class="learn-module-calculators">
+                {% for c in module.related_calculators %}
+                <a href="{{ c.href }}" class="learn-module-calc-card">
+                    <h3>{{ c.title }} &rarr;</h3>
+                    <p>{{ c.note }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        {# Practice problems — links to /learn/practice/<slug> for each. #}
+        {% if practice_problems %}
+        <section id="practice" style="margin-top: 3rem;">
+            <div class="eyebrow">Practice</div>
+            <h2 style="margin-top: 0.25rem;">Practice problems</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Worked problems on this topic from the practice bank.
+                Each has a step-by-step solution with unit cancellation.
+            </p>
+            <ul class="learn-module-practice">
+                {% for p in practice_problems %}
+                <li>
+                    <a href="/learn/practice/{{ p.slug }}">{{ p.title }}</a>
+                    <span class="learn-module-practice__topic">{{ p.topic }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+        {# Footer with instructor + content review note. #}
+        <section style="margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--line);">
+            <p style="color: var(--ink-mute); font-size: 0.88rem; line-height: 1.65;">
+                <strong>Instructor:</strong> {{ module.instructor_name }} — {{ module.instructor_credentials }}<br>
+                <strong>Content last reviewed:</strong> {{ module.last_reviewed.strftime('%B %d, %Y') }}<br>
+                <strong>Estimated time to complete:</strong> {{ module.estimated_minutes_display }}
+            </p>
+        </section>
+
+    </div>
+</section>
+
+{# Quiz interaction JS — reveals correct/incorrect + explanation on selection. #}
+{% if module.quiz_questions %}
+<script>
+(function() {
+    document.querySelectorAll('.learn-module-quiz__q').forEach(function(q) {
+        var correct = parseInt(q.getAttribute('data-correct'), 10);
+        var feedback = q.querySelector('.learn-module-quiz__feedback');
+        var verdict = q.querySelector('.learn-module-quiz__verdict');
+        q.querySelectorAll('input[type=radio]').forEach(function(r) {
+            r.addEventListener('change', function() {
+                var picked = parseInt(r.value, 10);
+                if (picked === correct) {
+                    verdict.textContent = 'Correct.';
+                    verdict.className = 'learn-module-quiz__verdict is-correct';
+                } else {
+                    verdict.textContent = 'Not quite. The correct answer is option ' + (correct + 1) + '.';
+                    verdict.className = 'learn-module-quiz__verdict is-incorrect';
+                }
+                feedback.hidden = false;
+            });
+        });
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

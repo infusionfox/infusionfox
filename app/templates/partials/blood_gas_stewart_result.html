@@ -1,0 +1,158 @@
+<div id="result-panel">
+    {% set max_comp = (result.components|map(attribute='mEq_per_l')|map('abs')|max) %}
+    {% if max_comp < 5 %}{% set max_comp = 5 %}{% endif %}
+
+    <div class="result__headline">
+        <div class="eyebrow">Base excess decomposition</div>
+        <div class="result__primary">{{ "%.1f"|format(result.be_total) }}<span style="font-size: 0.5em; color: var(--ink-mute);"> mEq/L</span></div>
+        <div class="result__secondary">{{ result.headline }}</div>
+    </div>
+
+    {# BE decomposition: each component as a bar centered on zero,
+       extending right (alkalinizing) or left (acidifying) #}
+    <div style="margin-top: 1.5rem;">
+        {% for c in result.components %}
+        {% set pct = (c.mEq_per_l / max_comp * 50)|round(1) %}
+        {% set abs_pct = (c.mEq_per_l|abs / max_comp * 50)|round(1) %}
+        <div style="margin-bottom: 0.6rem;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.15rem;">
+                <span style="color: var(--ink-soft); font-weight: 500;">{{ c.label }}</span>
+                <span style="font-weight: 600; font-variant-numeric: tabular-nums;
+                    color: {% if c.mEq_per_l|abs >= 5 %}{% if c.mEq_per_l > 0 %}var(--ink){% else %}var(--sev-critical){% endif %}{% elif c.mEq_per_l|abs >= 2 %}var(--signal){% else %}var(--ink-mute){% endif %};">
+                    {{ "%+.1f"|format(c.mEq_per_l) }} mEq/L
+                </span>
+            </div>
+            {# Centered bar — left of midline = acidifying, right = alkalinizing #}
+            <div style="position: relative; height: 10px; background: var(--paper-warm); border-radius: 2px; overflow: hidden;">
+                <div style="position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--line-strong); z-index: 1;"></div>
+                {% if c.mEq_per_l < 0 %}
+                <div style="position: absolute; top: 0; bottom: 0; right: 50%; width: {{ abs_pct }}%; background: var(--sev-high); border-radius: 2px 0 0 2px;"></div>
+                {% elif c.mEq_per_l > 0 %}
+                <div style="position: absolute; top: 0; bottom: 0; left: 50%; width: {{ abs_pct }}%; background: var(--signal); border-radius: 0 2px 2px 0;"></div>
+                {% endif %}
+            </div>
+            <div style="font-size: 0.78rem; color: var(--ink-mute); margin-top: 0.15rem;">{{ c.explanation }}</div>
+        </div>
+        {% endfor %}
+        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--ink-mute); margin-top: 0.25rem;">
+            <span>Acidifying ←</span>
+            <span>0</span>
+            <span>→ Alkalinizing</span>
+        </div>
+    </div>
+
+    {# Worked examples for each BE component. Collapsed by default so it
+       doesn't compete visually with the bar chart, but expandable for
+       teaching, audit, or "show your work" at the cage. #}
+    {% set has_worked_examples = result.components|selectattr('worked_example_latex')|list|length > 0 %}
+    {% if has_worked_examples %}
+    <details style="margin-top: 1.25rem; padding: 0.7rem 1rem; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); font-size: 0.85rem;">
+        <summary style="cursor: pointer; font-weight: 600; color: var(--ink-soft);">Show formulas with values plugged in</summary>
+        <div style="margin-top: 0.75rem;">
+            {% for c in result.components %}
+                {% if c.worked_example_latex %}
+                <div class="formula-box" style="margin: 0.5rem 0;">
+                    <div class="eyebrow" style="margin: 0 0 0.3rem;">{{ c.label }}</div>
+                    $${{ c.worked_example_latex }}$$
+                </div>
+                {% endif %}
+            {% endfor %}
+            <p style="margin: 0.6rem 0 0; color: var(--ink-mute); font-size: 0.8rem; line-height: 1.55;">
+                Reference values are {{ result.inputs.species.value }}-specific midpoints from DiBartola Tables 9-1 / 12-1
+                (Na {{ result.reference.na_meq_per_l|int }}, Cl {{ result.reference.cl_meq_per_l|int }},
+                albumin {{ "%.1f"|format(result.reference.albumin_g_per_dl) }} g/dL,
+                phosphate {{ "%.1f"|format(result.reference.phosphate_mg_per_dl) }} mg/dL,
+                lactate {{ "%.1f"|format(result.reference.lactate_mmol_per_l) }} mmol/L).
+            </p>
+        </div>
+    </details>
+    {% endif %}
+
+    {# Strong-ion gap and anion gap views #}
+    {% if result.sig is not none or result.ag is not none %}
+    <div style="margin-top: 1.75rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div style="font-weight: 600; color: var(--ink-soft); margin-bottom: 0.5rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Alternative framings</div>
+        <table style="width: 100%; border-collapse: collapse;">
+            {% if result.sida is not none %}
+            <tr>
+                <td style="padding: 0.25rem 0; color: var(--ink-soft);">SID<sub>a</sub> (apparent)</td>
+                <td style="padding: 0.25rem 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;">{{ "%.1f"|format(result.sida) }} mEq/L</td>
+            </tr>
+            {% endif %}
+            {% if result.side is not none %}
+            <tr>
+                <td style="padding: 0.25rem 0; color: var(--ink-soft);">SID<sub>e</sub> (effective)</td>
+                <td style="padding: 0.25rem 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;">{{ "%.1f"|format(result.side) }} mEq/L</td>
+            </tr>
+            {% endif %}
+            {% if result.sig is not none %}
+            <tr style="border-top: 1px solid var(--line);">
+                <td style="padding: 0.35rem 0; color: var(--ink-soft);">SIG (strong ion gap)</td>
+                <td style="padding: 0.35rem 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700;
+                    color: {% if result.sig|abs > 5 %}var(--sev-critical){% elif result.sig|abs > 2 %}var(--signal){% else %}var(--ink){% endif %};">
+                    {{ "%+.1f"|format(result.sig) }} mEq/L
+                </td>
+            </tr>
+            {% endif %}
+            {% if result.ag is not none %}
+            <tr style="border-top: 1px solid var(--line);">
+                <td style="padding: 0.35rem 0; color: var(--ink-soft);">Anion gap (conventional)</td>
+                <td style="padding: 0.35rem 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;">{{ "%.1f"|format(result.ag) }} mEq/L</td>
+            </tr>
+            {% endif %}
+            {% if result.ag_corrected is not none %}
+            <tr>
+                <td style="padding: 0.25rem 0; color: var(--ink-soft);">
+                    Anion gap (albumin-corrected, Figge)
+                </td>
+                <td style="padding: 0.25rem 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700;
+                    color: {% if (result.ag_corrected - (result.ag or 0))|abs > 2 %}var(--signal){% else %}var(--ink){% endif %};">
+                    {{ "%.1f"|format(result.ag_corrected) }} mEq/L
+                </td>
+            </tr>
+            {% if result.ag is not none %}
+            <tr>
+                <td colspan="2" style="padding: 0.15rem 0 0; color: var(--ink-mute); font-size: 0.8rem;">
+                    {% set delta = result.ag_corrected - result.ag %}
+                    {% if delta|abs > 2 %}
+                        Hypoalbuminemia is hiding {{ "%.1f"|format(delta) }} mEq/L of anion gap.
+                    {% else %}
+                        Albumin correction is small (Δ {{ "%+.1f"|format(delta) }} mEq/L).
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+            {% endif %}
+        </table>
+    </div>
+    {% endif %}
+
+    {# Interpretation lines #}
+    {% if result.interpretation_lines %}
+    <div style="margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--ink-soft); border-radius: var(--radius); font-size: 0.9rem; line-height: 1.55;">
+        <div style="font-weight: 600; margin-bottom: 0.4rem;">Clinical reading</div>
+        <ul style="margin: 0; padding-left: 1.2rem; color: var(--ink-soft);">
+            {% for line in result.interpretation_lines %}
+            <li>{{ line }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# Caveats #}
+    {% if result.caveats %}
+    <details style="margin-top: 1.25rem; padding: 0.7rem 1rem; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); font-size: 0.82rem;">
+        <summary style="cursor: pointer; font-weight: 600; color: var(--ink-soft);">Method notes &amp; caveats</summary>
+        <ul style="margin: 0.6rem 0 0; padding-left: 1.2rem; color: var(--ink-mute); line-height: 1.55;">
+            {% for caveat in result.caveats %}
+            <li>{{ caveat }}</li>
+            {% endfor %}
+        </ul>
+    </details>
+    {% endif %}
+
+    <div style="margin-top: 1.25rem; padding: 0.7rem 1rem; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); font-size: 0.82rem; color: var(--ink-mute); line-height: 1.55;">
+        Need the Henderson / bicarbonate-rules view of this gas?
+        <a href="/blood-gas" style="color: var(--ink-soft); font-weight: 600;">Open the conventional blood gas calculator →</a>
+    </div>
+</div>

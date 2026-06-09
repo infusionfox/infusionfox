@@ -1,0 +1,134 @@
+<div id="result-panel">
+
+    {# ---------- Headline: CRI pump rate at species default ---------- #}
+    <div class="result__headline">
+        <div class="eyebrow">CRI pump rate · {{ result.default_dose_label }}</div>
+        <div class="result__primary">
+            {{ "%.3f"|format(result.default_pump_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            {{ result.default_dose_mg_per_kg_per_hr }} mg/kg/hr
+            × {{ "%.2f"|format(result.weight_kg) }} kg
+            ÷ {{ "%g"|format(result.stock_mg_per_ml) }} mg/mL
+        </div>
+        {#
+            Syringe-pump callout. Hydromorphone CRI rates are intentionally
+            low (0.1–1 mL/hr typical for opioids on a syringe pump) because
+            the drug is potent and delivered from the undiluted stock vial.
+            Without this label, a clinician on a fluid pump sees 0.3 mL/hr
+            and assumes the math is wrong; on a syringe pump these rates
+            are exactly right.
+        #}
+        <div style="margin-top: 0.6rem; padding: 0.35rem 0.7rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.82rem; color: var(--ink-soft); display: inline-block;">
+            <strong style="color: var(--ink);">Syringe pump</strong> · undiluted from {{ "%g"|format(result.stock_mg_per_ml) }} mg/mL vial. Low rates (0.1–1 mL/hr) are normal for opioid CRIs.
+        </div>
+    </div>
+
+    {# ---------- Loading dose (precedes the CRI) ---------- #}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">IV loading dose (precedes CRI)</div>
+        <table style="width: 100%; font-size: 0.93rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Dose range:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ result.loading_dose_low_mg_per_kg }}{% if result.loading_dose_low_mg_per_kg != result.loading_dose_high_mg_per_kg %}–{{ result.loading_dose_high_mg_per_kg }}{% endif %} mg/kg IV
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">For {{ "%.2f"|format(result.weight_kg) }} kg:</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.05rem;">
+                    {{ "%.3f"|format(result.loading_low_mg) }}{% if result.loading_low_mg != result.loading_high_mg %}–{{ "%.3f"|format(result.loading_high_mg) }}{% endif %} mg
+                    = {{ "%.3f"|format(result.loading_low_ml) }}{% if result.loading_low_ml != result.loading_high_ml %}–{{ "%.3f"|format(result.loading_high_ml) }}{% endif %} mL
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {# ---------- CRI titration ladder (directly follows the loading dose) ---------- #}
+    <div class="titration-card" style="margin-top: 1rem;">
+        <div class="titration-card__head">
+            <div class="eyebrow">
+                Titration ladder · {{ "%.2f"|format(result.weight_kg) }} kg on {{ "%g"|format(result.stock_mg_per_ml) }} mg/mL
+            </div>
+            <p class="titration-card__hint">
+                Syringe pump rate at each dose step. Start at the highlighted
+                row and titrate to effect. Higher doses are anesthesia-context
+                infusions.
+            </p>
+        </div>
+        <table class="titration-table">
+            <thead>
+                <tr>
+                    <th class="titration-table__dose" style="text-align: left;">Dose</th>
+                    <th class="titration-table__rate" style="text-align: right;">Pump rate</th>
+                    <th class="titration-table__flag-col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for step in result.titration_steps %}
+                <tr class="
+                    {%- if step.is_default %} is-current{% endif %}
+                    {%- if step.is_caution %} is-caution{% endif %}">
+                    <td class="titration-table__dose">
+                        {{ step.dose_mg_per_kg_per_hr }} mg/kg/hr
+                    </td>
+                    <td class="titration-table__rate">
+                        {{ "%.3f"|format(step.ml_per_hr) }} mL/hr
+                    </td>
+                    <td class="titration-table__flag">
+                        {% if step.annotation %}
+                            <span style="font-size: 0.78rem; color: var(--ink-soft); white-space: nowrap;">{{ step.annotation }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ---------- Visual separator before the alternative protocol ---------- #}
+    <hr style="margin: 1.75rem 0 1rem; border: 0; border-top: 1px solid var(--line); opacity: 0.6;">
+
+    {# ---------- Intermittent bolus (alternative protocol, clearly separated) ---------- #}
+    <div style="padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">
+            Intermittent bolus &mdash; alternative to CRI
+        </div>
+        <p style="margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--ink-soft);">
+            Use either the CRI protocol above <em>or</em> the intermittent bolus
+            schedule below &mdash; not both. The bolus schedule is the
+            alternative analgesia plan when a CRI isn't practical.
+        </p>
+        <table style="width: 100%; font-size: 0.93rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Dose range:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ result.bolus_dose_low_mg_per_kg }}–{{ result.bolus_dose_high_mg_per_kg }} mg/kg IV/IM/SC q {{ result.bolus_interval_hr }}
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">For {{ "%.2f"|format(result.weight_kg) }} kg:</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.05rem;">
+                    {{ "%.3f"|format(result.bolus_low_mg) }}–{{ "%.3f"|format(result.bolus_high_mg) }} mg
+                    = {{ "%.3f"|format(result.bolus_low_ml) }}–{{ "%.3f"|format(result.bolus_high_ml) }} mL
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {# ---------- Warnings and notes ---------- #}
+    {% if result.warnings %}
+    <div class="warnings danger" style="margin-top: 1rem;">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+</div>

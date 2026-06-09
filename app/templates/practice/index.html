@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Practice problems | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Learning</div>
+                <h1>Practice problems</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Worked examples of the math behind InfusionFox's calculators.
+                    Each problem shows the setup, the unit cancellation, and
+                    the arithmetic. Linked to the relevant calculator and
+                    clinical background. Answers collapsed by default.
+                </p>
+            </div>
+            <div class="stock">{{ total_count }} problems</div>
+        </div>
+
+        {% for topic, problems in problems_by_topic %}
+        <section class="practice-topic" style="margin-top: 2rem;">
+            <h2 style="margin-bottom: 1rem;">{{ topic }}</h2>
+            <div class="practice-list">
+                {% for problem in problems %}
+                {% include "practice/_problem_card.html" %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+</section>
+{% include "practice/_check_script.html" %}
+{% endblock %}

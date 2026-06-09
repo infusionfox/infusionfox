@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Blood gas · Basic | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Species and acuity matter</div>
+            <p style="margin: 0;">
+                Dog compensation formulas are well-established. Cats are
+                different: the feline kidney does not increase ammoniagenesis
+                in response to metabolic acidosis the way dogs and humans
+                do, and dog formulas should not be extrapolated to cats with
+                metabolic acidosis. The calculator surfaces this caveat
+                explicitly when relevant. Acute vs chronic only matters for
+                respiratory disorders (renal compensation takes 2–5 days).
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/blood-gas">Clinical background</a>
+            <a href="#formula">Formula &amp; rules</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                class="bg-form"
+                hx-post="/blood-gas/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="bg-species-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="bg-species-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="bg-species-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="bg-species-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Sample type</label>
+                    <div class="segmented">
+                        <input type="radio" name="sample" value="arterial" id="bg-sample-art"
+                               {% if inputs.sample.value == 'arterial' %}checked{% endif %}>
+                        <label for="bg-sample-art">Arterial</label>
+                        <input type="radio" name="sample" value="venous" id="bg-sample-ven"
+                               {% if inputs.sample.value == 'venous' %}checked{% endif %}>
+                        <label for="bg-sample-ven">Venous</label>
+                    </div>
+                    <div class="help">
+                        Arterial preferred when oxygenation matters or in shock states.
+                        Venous values are slightly lower pH and slightly higher PCO₂
+                        because of tissue metabolism; reference ranges differ.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Acuity</label>
+                    <div class="segmented">
+                        <input type="radio" name="acuity" value="acute" id="bg-acuity-acute"
+                               {% if inputs.acuity.value == 'acute' %}checked{% endif %}>
+                        <label for="bg-acuity-acute">Acute</label>
+                        <input type="radio" name="acuity" value="chronic" id="bg-acuity-chronic"
+                               {% if inputs.acuity.value == 'chronic' %}checked{% endif %}>
+                        <label for="bg-acuity-chronic">Chronic</label>
+                    </div>
+                    <div class="help">
+                        Only changes the expected compensation for respiratory disorders
+                        (renal adaptation takes 2–5 days to reach steady state). For
+                        metabolic disorders the same rule applies regardless.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="bg-ph">pH</label>
+                    <input type="number" step="0.01" min="6.5" max="7.9" id="bg-ph"
+                           name="pH" value="{{ pH_value }}" required>
+                    {% for ctx, r in ref_ranges.items() %}
+                    <div class="help bg-range" data-bg-context="{{ ctx }}">
+                        Normal: {{ "%.3f"|format(r.pH.lo) }}–{{ "%.3f"|format(r.pH.hi) }}
+                        <span class="bg-range__qual">({{ ctx|replace("-", ", ") }})</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="field">
+                    <label for="bg-pco2">PCO₂ (mm Hg)</label>
+                    <input type="number" step="0.1" min="10" max="120" id="bg-pco2"
+                           name="pco2_mm_hg" value="{{ pco2_value }}" required>
+                    {% for ctx, r in ref_ranges.items() %}
+                    <div class="help bg-range" data-bg-context="{{ ctx }}">
+                        Normal: {{ "%.1f"|format(r.PCO2.lo) }}–{{ "%.1f"|format(r.PCO2.hi) }} mm Hg
+                        <span class="bg-range__qual">({{ ctx|replace("-", ", ") }})</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="field">
+                    <label for="bg-hco3">HCO₃⁻ (mEq/L)</label>
+                    <input type="number" step="0.1" min="5" max="50" id="bg-hco3"
+                           name="hco3_meq_per_l" value="{{ hco3_value }}" required>
+                    {% for ctx, r in ref_ranges.items() %}
+                    <div class="help bg-range" data-bg-context="{{ ctx }}">
+                        Normal: {{ "%.1f"|format(r.HCO3.lo) }}–{{ "%.1f"|format(r.HCO3.hi) }} mEq/L
+                        <span class="bg-range__qual">({{ ctx|replace("-", ", ") }})</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="field">
+                    <label for="bg-na">
+                        Sodium (mEq/L)
+                        <span class="optional">(optional, for anion gap)</span>
+                    </label>
+                    <input type="number" step="0.1" min="100" max="200" id="bg-na"
+                           name="na_meq_per_l" value="{{ na_value }}">
+                </div>
+
+                <div class="field">
+                    <label for="bg-cl">
+                        Chloride (mEq/L)
+                        <span class="optional">(optional, for anion gap)</span>
+                    </label>
+                    <input type="number" step="0.1" min="60" max="160" id="bg-cl"
+                           name="cl_meq_per_l" value="{{ cl_value }}">
+                    <div class="help">
+                        Provide Na and Cl together to compute the anion gap.
+                        Calculated as Na − (Cl + HCO₃⁻); reference ranges
+                        are species-specific.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="bg-alb">
+                        Albumin (g/dL)
+                        <span class="optional">(optional, for Figge correction)</span>
+                    </label>
+                    <input type="number" step="0.1" min="0" max="6" id="bg-alb"
+                           name="albumin_g_per_dl" value="{{ alb_value }}">
+                    <div class="help">
+                        Surfaces albumin-corrected AG (Figge): hypoalbuminemia
+                        lowers conventional AG by ~2.5 mEq/L per g/dL drop,
+                        masking unmeasured-anion burden in sick patients.
+                        For the full strong-ion decomposition, see the
+                        <a href="/blood-gas-stewart">Stewart calculator</a>.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/blood_gas_result.html" %}
+                {% else %}
+                    {% with placeholder_message="Enter pH, PCO₂, and HCO₃⁻ to interpret the blood gas." %}
+                        {% include "partials/_invalid_input_placeholder.html" %}
+                    {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Formula &amp; compensation rules</h2>
+
+            <h3 style="margin-top: 1.5rem;">Henderson-Hasselbalch</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The foundation of acid-base interpretation. pH is determined by
+                the ratio of bicarbonate to dissolved CO₂. Blood gas analyzers
+                measure pH and PCO₂; HCO₃⁻ is calculated from those two using
+                the rearranged Henderson-Hasselbalch equation.
+            </p>
+            <div class="formula-display">
+                $$\text{pH} = 6.1 + \log_{10}\left( \frac{[\text{HCO}_3^-]}{0.0301 \times \text{PCO}_2} \right)$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The pKₐ of the bicarbonate buffer system is 6.1; the factor
+                0.0301 converts PCO₂ in mm Hg to dissolved CO₂ in mEq/L.
+                Doubling HCO₃⁻ at constant PCO₂ raises pH by ~0.3; halving
+                PCO₂ at constant HCO₃⁻ raises pH by ~0.3. The system
+                buffers acutely via this ratio.
+            </p>
+
+            <h3 style="margin-top: 2rem;">Anion gap</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The difference between measured cations and measured anions.
+                Useful in classifying metabolic acidosis as high-AG (organic
+                acidosis: lactate, ketones, toxin metabolites, uremic acids)
+                versus normal-AG / hyperchloremic (loss of HCO₃⁻ via GI or
+                renal routes, dilutional, RTA).
+            </p>
+            <div class="formula-display">
+                $$\text{AG} = [\text{Na}^+] - ([\text{Cl}^-] + [\text{HCO}_3^-])$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Species reference ranges (approximate, from multiple studies
+                cited in DiBartola Ch. 9):
+            </p>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li><strong>Dog:</strong> 13–25 mEq/L (mean ~19)</li>
+                <li><strong>Cat:</strong> 17–31 mEq/L (mean ~24, higher net protein charge)</li>
+            </ul>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The higher AG in cats reflects a higher net negative charge on
+                feline plasma proteins; it does not indicate an underlying
+                acid-base disorder. Hypoalbuminemia reduces the AG (each
+                1 g/dL drop in albumin lowers the AG by ~2 mEq/L in humans;
+                similar magnitude reported in dogs).
+            </p>
+
+            <h3 style="margin-top: 2rem;">Compensation rules of thumb</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Each primary disorder produces an expected secondary
+                (compensatory) change in the opposite component. Observed
+                values within the expected range are consistent with a simple
+                disorder; observed values outside the expected range suggest
+                a mixed acid-base disorder. The textbook gives point
+                estimates; this calculator uses a ±2 (mm Hg or mEq/L)
+                tolerance band around the point estimate.
+            </p>
+
+            <table class="ref-table" style="margin-top: 1rem;">
+                <thead>
+                    <tr>
+                        <th>Primary disorder</th>
+                        <th>Dog</th>
+                        <th>Cat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Metabolic acidosis</td>
+                        <td>↓ PCO₂ 0.7 mm Hg per 1 mEq/L ↓ HCO₃⁻</td>
+                        <td><em>Not established</em> (see caveat below)</td>
+                    </tr>
+                    <tr>
+                        <td>Metabolic alkalosis</td>
+                        <td>↑ PCO₂ 0.7 mm Hg per 1 mEq/L ↑ HCO₃⁻</td>
+                        <td>↑ PCO₂ 0.7 mm Hg per 1 mEq/L ↑ HCO₃⁻ (limited data)</td>
+                    </tr>
+                    <tr>
+                        <td>Respiratory acidosis (acute)</td>
+                        <td>↑ HCO₃⁻ 0.15 mEq/L per 1 mm Hg ↑ PCO₂</td>
+                        <td>↑ HCO₃⁻ 0.15 mEq/L per 1 mm Hg ↑ PCO₂ (limited data)</td>
+                    </tr>
+                    <tr>
+                        <td>Respiratory acidosis (chronic)</td>
+                        <td>↑ HCO₃⁻ 0.35 mEq/L per 1 mm Hg ↑ PCO₂</td>
+                        <td><em>Unknown</em></td>
+                    </tr>
+                    <tr>
+                        <td>Respiratory alkalosis (acute)</td>
+                        <td>↓ HCO₃⁻ 0.25 mEq/L per 1 mm Hg ↓ PCO₂</td>
+                        <td>↓ HCO₃⁻ 0.25 mEq/L per 1 mm Hg ↓ PCO₂ (anesthetized study)</td>
+                    </tr>
+                    <tr>
+                        <td>Respiratory alkalosis (chronic)</td>
+                        <td>↓ HCO₃⁻ 0.55 mEq/L per 1 mm Hg ↓ PCO₂</td>
+                        <td>Similar to dogs (pH normalizes; exact coefficient unknown)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="color: var(--ink-soft); line-height: 1.7; font-size: 0.92rem; margin-top: 0.75rem;">
+                Adapted from DiBartola Ch. 12, Table 12-2 (p. 304).
+                Original dog data from de Morais HSA, DiBartola SP,
+                <em>J Vet Emerg Crit Care</em> 1991;1:39–49.
+            </p>
+
+            <h3 style="margin-top: 2rem;">Cat metabolic acidosis caveat</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The feline kidney is reported to lack the adaptive increase
+                in ammoniagenesis that dogs and humans show in response to
+                metabolic acidosis. Cats fed an acid load do not respond
+                with the expected respiratory alkalosis to the same extent
+                (DiBartola Ch. 12, p. 304). Implications:
+            </p>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>
+                    A cat with metabolic acidosis and a normal PCO₂ may
+                    NOT have a mixed disorder. It may just be a cat.
+                </li>
+                <li>
+                    Do not apply the dog rule of thumb (0.7 mm Hg ↓ PCO₂
+                    per 1 mEq/L ↓ HCO₃⁻) when interpreting a cat blood gas.
+                </li>
+                <li>
+                    Clinical interpretation requires the patient's history,
+                    physical findings, and ancillary labs in cats with
+                    metabolic acidosis.
+                </li>
+            </ul>
+
+            <h3 style="margin-top: 2rem;">Worked example</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result and result.valid and result.compensation and result.compensation.expected is not none %}
+                <p style="color: var(--ink-soft); line-height: 1.7; margin-top: 0;">
+                    For the current inputs ({{ result.primary_label|lower }} in a
+                    {{ result.inputs.species.value }}):
+                </p>
+                $$\text{expected }
+                {% if result.compensation.observed_label == 'PCO2' %}\text{PCO}_2
+                {% else %}\text{HCO}_3^-
+                {% endif %}
+                = {{ "%.1f"|format(result.compensation.expected) }}$$
+                <p style="color: var(--ink-soft); line-height: 1.7; margin-bottom: 0;">
+                    Observed: {{ "%.1f"|format(result.compensation.observed) }} ·
+                    {% if result.compensation.is_simple %}within{% else %}outside{% endif %}
+                    the expected range of {{ "%.1f"|format(result.compensation.expected_lo) }}–{{ "%.1f"|format(result.compensation.expected_hi) }}.
+                </p>
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">
+                    Enter pH, PCO₂, and HCO₃⁻ values to see a worked example.
+                </p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.75rem;">
+                    DiBartola SP, ed. <em>Fluid, Electrolyte, and Acid-Base
+                    Disorders in Small Animal Practice.</em> 4th ed. St. Louis,
+                    MO: Elsevier Saunders; 2012.
+                    <ul>
+                        <li>Chapter 9 (Introduction to Acid-Base Disorders),
+                            pp. 231–252.</li>
+                        <li>Chapter 10 (Metabolic Acid-Base Disorders),
+                            pp. 253–285.</li>
+                        <li>Chapter 11 (Respiratory Acid-Base Disorders),
+                            pp. 286–301.</li>
+                        <li>Chapter 12 (Mixed Acid-Base Disorders),
+                            pp. 302–315.</li>
+                    </ul>
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    de Morais HSA, DiBartola SP. Ventilatory and metabolic
+                    compensation in dogs with acid-base disturbances.
+                    <em>J Vet Emerg Crit Care</em> 1991;1:39–49. Primary
+                    source for the dog compensation coefficients in Table 12-2.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Hopper K, Epstein SE. Incidence, nature, and etiology of
+                    metabolic acidosis in dogs and cats. <em>J Vet Intern Med</em>
+                    2012;26:1107–1114. Epidemiology of metabolic acidosis as
+                    the most common acid-base disturbance in small animal practice.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

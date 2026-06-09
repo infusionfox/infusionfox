@@ -1,0 +1,98 @@
+<div id="result-panel">
+
+    <div style="margin-bottom: 1rem; padding: 0.6rem 0.85rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft);">
+        <strong style="color: var(--ink);">{{ "%.2f"|format(result.weight_kg) }} kg</strong>
+        · {{ result.species.value | capitalize }}
+        · {{ "Premedicated" if result.premedicated.value == "premedicated" else "Unpremedicated" }}
+        · Stock {{ result.stock_mg_per_ml | int }} mg/mL
+    </div>
+
+    <!-- Induction -->
+    <div style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.5rem;">IV induction, titrate to effect over ~60 s</div>
+        <table style="width: 100%; font-size: 0.93rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Dose range:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ result.induction_low_mg_per_kg }}–{{ result.induction_high_mg_per_kg }} mg/kg IV
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">For {{ "%.2f"|format(result.weight_kg) }} kg:</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.05rem;">
+                    {{ "%.1f"|format(result.induction_low_mg) }}–{{ "%.1f"|format(result.induction_high_mg) }} mg
+                    = <strong>{{ "%.2f"|format(result.induction_low_ml) }}–{{ "%.2f"|format(result.induction_high_ml) }} mL</strong>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding: 0.15rem 0 0; font-size: 0.78rem; color: var(--ink-mute); text-align: right; line-height: 1.5;">
+                    {{ result.induction_low_mg_per_kg }}–{{ result.induction_high_mg_per_kg }} mg/kg × {{ "%.2f"|format(result.weight_kg) }} kg
+                    ÷ {{ "%g"|format(result.stock_mg_per_ml) }} mg/mL
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Maintenance bolus -->
+    <div style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.5rem;">Maintenance. IV bolus (per 10 min)</div>
+        <table style="width: 100%; font-size: 0.93rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Dose range:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ result.bolus_low_mg_per_kg }}–{{ result.bolus_high_mg_per_kg }} mg/kg IV
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">For {{ "%.2f"|format(result.weight_kg) }} kg:</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.05rem;">
+                    {{ "%.1f"|format(result.bolus_low_mg) }}–{{ "%.1f"|format(result.bolus_high_mg) }} mg
+                    = <strong>{{ "%.2f"|format(result.bolus_low_ml) }}–{{ "%.2f"|format(result.bolus_high_ml) }} mL</strong>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding: 0.15rem 0 0; font-size: 0.78rem; color: var(--ink-mute); text-align: right; line-height: 1.5;">
+                    {{ result.bolus_low_mg_per_kg }}–{{ result.bolus_high_mg_per_kg }} mg/kg × {{ "%.2f"|format(result.weight_kg) }} kg
+                    ÷ {{ "%g"|format(result.stock_mg_per_ml) }} mg/mL
+                </td>
+            </tr>
+        </table>
+        <p style="font-size: 0.82rem; color: var(--ink-mute); margin: 0.5rem 0 0;">~6–8 min additional anesthesia per bolus</p>
+    </div>
+
+    <!-- Maintenance CRI -->
+    <div style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.5rem;">Maintenance. IV CRI</div>
+        <table style="width: 100%; font-size: 0.93rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Published range:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ result.cri_range_low_mg_per_kg_per_hr }}–{{ result.cri_range_high_mg_per_kg_per_hr }} mg/kg/hr
+                    = {{ "%.2f"|format(result.cri_range_low_ml_per_hr) }}–{{ "%.2f"|format(result.cri_range_high_ml_per_hr) }} mL/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Selected rate ({{ result.cri_rate_mg_per_kg_per_hr }} mg/kg/hr):</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.1rem;">
+                    <strong>{{ "%.2f"|format(result.cri_pump_rate_ml_per_hr) }} mL/hr</strong>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+</div>

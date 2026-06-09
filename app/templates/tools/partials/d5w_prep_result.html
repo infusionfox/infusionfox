@@ -1,0 +1,47 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">Recipe</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.stock_volume_ml) }}<span class="unit">mL stock</span>
+        </div>
+        <div class="result__secondary">
+            of {{ "%g"|format(result.stock_percent) }}% solution
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Combine with</div>
+        <p style="margin: 0; color: var(--ink); font-size: 1.05rem;">
+            <strong>{{ "%g"|format(result.diluent_volume_ml) }} mL</strong>
+            of sterile water for injection (or 0.9% NaCl if appropriate)
+        </p>
+        <p style="margin: 0.4rem 0 0; color: var(--ink-mute); font-size: 0.85rem;">
+            Total: {{ "%g"|format(result.target_volume_ml) }} mL of
+            {{ "%g"|format(result.target_percent) }}% solution
+            ({{ "%g"|format(result.final_mg_per_ml) }} mg/mL)
+        </p>
+    </div>
+
+    <dl class="result__details" style="margin-top: 1.25rem;">
+        <div class="result__detail">
+            <dt>Target volume</dt>
+            <dd>{{ "%g"|format(result.target_volume_ml) }} mL</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Target concentration</dt>
+            <dd>{{ "%g"|format(result.target_percent) }}%</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Stock concentration</dt>
+            <dd>{{ "%g"|format(result.stock_percent) }}%</dd>
+        </div>
+    </dl>
+
+    {% if result.warnings %}
+    <div class="warnings"><ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    {% endif %}
+</div>

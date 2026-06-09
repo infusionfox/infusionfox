@@ -1,0 +1,75 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    {% if result.no_supplementation_needed %}
+        <div class="result__headline">
+            <div class="eyebrow">Interpretation</div>
+            <div style="font-family: var(--font-display); font-size: 1.4rem; line-height: 1.25; color: var(--ink); margin: 0.5rem 0 0;">
+                No KCl supplementation indicated
+            </div>
+        </div>
+        <p style="color: var(--ink-soft); margin-top: 0.75rem; font-size: 0.95rem;">
+            Patient's serum K ({{ result.serum_k }} mEq/L) is above the
+            hypokalemia scale (5.0 mEq/L). Re-check K and consider
+            hyperkalemia workup if &gt; 5.5 mEq/L.
+        </p>
+    {% elif result.matched_row %}
+        <div class="result__headline">
+            <div class="eyebrow">Add to bag</div>
+            <div class="result__primary">
+                {{ result.kcl_to_add_meq }}<span class="unit">mEq KCl</span>
+            </div>
+            <div class="result__secondary">
+                Per {{ result.bag_size_ml }} mL bag
+                · resulting concentration {{ result.final_concentration_meq_per_l|int if result.final_concentration_meq_per_l == result.final_concentration_meq_per_l|int else result.final_concentration_meq_per_l }} mEq/L
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+            <div class="eyebrow" style="margin: 0 0 0.4rem;">Maximum safe pump rate</div>
+            <p style="margin: 0; color: var(--ink); font-size: 1.05rem;">
+                <strong>{{ result.max_pump_rate_ml_per_hr|int if result.max_pump_rate_ml_per_hr == result.max_pump_rate_ml_per_hr|int else result.max_pump_rate_ml_per_hr }} mL/hr</strong>
+                ({{ result.matched_row.max_rate_ml_per_kg_per_hr }} mL/kg/hr × {{ "%.2f"|format(result.weight_kg) }} kg)
+            </p>
+            <p style="margin: 0.4rem 0 0; color: var(--ink-mute); font-size: 0.85rem;">
+                Delivers {{ "%.2f"|format(result.delivered_k_rate_meq_per_kg_per_hr) }} mEq K/kg/hr at this rate (ceiling: 0.5).
+            </p>
+        </div>
+
+        <dl class="result__details" style="margin-top: 1.25rem;">
+            <div class="result__detail">
+                <dt>Serum K band</dt>
+                <dd>{{ result.band_label }} mEq/L</dd>
+            </div>
+            <div class="result__detail">
+                <dt>Weight</dt>
+                <dd>
+                    {{ "%.2f"|format(result.weight_kg) }} kg
+                    <br><span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.1f"|format(result.weight_kg * 2.2046) }} lb)</span>
+                </dd>
+            </div>
+            <div class="result__detail">
+                <dt>Bag</dt>
+                <dd>{{ result.bag_size_ml }} mL</dd>
+            </div>
+        </dl>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings danger"><ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+    {% if result.valid %}
+    <template id="worked-example-source">{% if result.matched_row %}$$\text{max rate} = {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.matched_row.max_rate_ml_per_kg_per_hr }}_{\text{mL/kg/hr}} = {{ "%.1f"|format(result.max_pump_rate_ml_per_hr) }}\,\text{mL/hr} \quad \text{concentration} = {{ "%.1f"|format(result.final_concentration_meq_per_l) }}\,\text{mEq/L}$${% endif %}</template>
+    {% endif %}
+</div>

@@ -1,0 +1,87 @@
+{# Dilution helper partial.
+   Usage:
+     {% include "partials/dilution_helper.html" %}
+   Accepts (optional via context):
+     - dilution_prefill_stock   (float): pre-fills stock concentration
+     - dilution_prefill_label   (str):   shown in the header
+     - dilution_open            (bool):  whether to render open by default
+
+   When embedded on a drug page, we derive the prefill from `drug`.
+#}
+
+{% set prefill_stock = dilution_prefill_stock
+    if dilution_prefill_stock is defined
+    else (drug.stock_concentration_ug_per_ml if drug is defined else 1000) %}
+{% set prefill_label = dilution_prefill_label
+    if dilution_prefill_label is defined
+    else (drug.display_name if drug is defined else "Dilution helper") %}
+{% set is_open = dilution_open if dilution_open is defined else false %}
+
+{% set suggested_targets = drug.concentration_presets
+    if drug is defined
+    else [] %}
+
+<details class="dilution" id="dilution-helper" {% if is_open %}open{% endif %}>
+    <summary>Dilution helper — {{ prefill_label }}</summary>
+
+    <p style="color: var(--ink-soft); margin-top: 1rem; margin-bottom: 0; font-size: 0.93rem;">
+        Work out how many mL of stock drug and diluent to combine for any target concentration.
+        Stock is pre-filled for {{ prefill_label }}; change it if you're using a different vial.
+    </p>
+
+    <div class="dilution__grid">
+        <form
+            hx-post="/dilution/compute"
+            hx-target="#dilution-result"
+            hx-swap="outerHTML"
+            hx-trigger="input changed delay:250ms, change, load"
+        >
+            <div class="field">
+                <label for="dh-stock">Stock concentration (µg/mL)</label>
+                <input type="number" step="any" min="0.1" id="dh-stock"
+                       name="stock_concentration_ug_per_ml" value="{{ prefill_stock }}" required>
+            </div>
+
+            <div class="field">
+                <label for="dh-desired">Desired concentration (µg/mL)</label>
+                {% if suggested_targets %}
+                    {#
+                        Default the desired concentration to the calculator's
+                        default_concentration_ug_per_ml when available. Previously
+                        this picked suggested_targets[1] (the second preset),
+                        which silently differed from the calculator's default
+                        on 4 of 5 CRI drugs — a clinician using both could end
+                        up preparing a bag at a different concentration than
+                        the pump-rate calculation assumed. Fall back to the
+                        first preset only when the drug doesn't expose a
+                        default_concentration_ug_per_ml.
+                    #}
+                    {% set helper_default_conc = drug.default_concentration_ug_per_ml
+                        if drug is defined and drug.default_concentration_ug_per_ml
+                        else suggested_targets[0].concentration_ug_per_ml %}
+                    <input type="number" step="any" min="0.1" id="dh-desired"
+                           name="desired_concentration_ug_per_ml"
+                           value="{{ helper_default_conc }}"
+                           list="dh-desired-suggestions" required>
+                    <datalist id="dh-desired-suggestions">
+                        {% for preset in suggested_targets %}
+                            <option value="{{ preset.concentration_ug_per_ml }}">{{ preset.when_to_use }}</option>
+                        {% endfor %}
+                    </datalist>
+                    <div class="help">Suggestions from the reference table above</div>
+                {% else %}
+                    <input type="number" step="any" min="0.1" id="dh-desired"
+                           name="desired_concentration_ug_per_ml" value="100" required>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <label for="dh-volume">Final volume (mL)</label>
+                <input type="number" step="any" min="0.5" id="dh-volume"
+                       name="final_volume_ml" value="50" required>
+            </div>
+        </form>
+
+        {% include "partials/dilution_result.html" ignore missing %}
+    </div>
+</details>

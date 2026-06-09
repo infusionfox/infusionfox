@@ -1,0 +1,86 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">CRI pump rate</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.pump_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            = ({{ "%.2f"|format(result.weight_kg) }} kg ×
+            {{ "%g"|format(result.dose_mg_per_kg_per_hr) }} mg/kg/hr)
+            ÷ {{ "%g"|format(result.stock_mg_per_ml) }} mg/mL
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Dose &mdash; both conventions</div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="color: var(--ink-soft);">Per minute:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.dose_ug_per_kg_per_min) }} µg/kg/min
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Per hour:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.dose_mg_per_kg_per_hr) }} mg/kg/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Pump rate (per minute):</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.pump_rate_ml_per_min) }} mL/min
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {% if result.indication.value == 'surgical' %}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Loading bolus (precedes CRI)</div>
+        <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">
+            Give a <strong>0.5 mg/kg IV</strong> loading dose if
+            anesthesia was induced with a non-ketamine agent. For a
+            {{ "%.2f"|format(result.weight_kg) }} kg patient:
+            <strong>{{ "%g"|format(result.loading_dose_mg) }} mg</strong>
+            (= {{ "%g"|format(result.loading_volume_ml) }} mL of 100 mg/mL stock).
+        </p>
+    </div>
+    {% endif %}
+
+    {% if result.pump_rate_ml_per_hr < 0.1 %}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--accent-warm); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Low pump rate &mdash; consider dilution</div>
+        <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">
+            The calculated rate of <strong>{{ "%g"|format(result.pump_rate_ml_per_hr) }} mL/hr</strong>
+            is below the accuracy threshold of many syringe pumps. Dilute
+            ketamine into a small bag of 5% dextrose or 0.9% NaCl for
+            accurate delivery, or use a multi-drug protocol such as MLK
+            (which dilutes ketamine to 60 µg/mL), see
+            <a href="/analgesia-cri?prep_mode=combined_bag&opioid=morphine&adjuncts=ketamine,lidocaine" style="color: var(--ink);">/mlk</a>.
+        </p>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>
+{% if result.valid %}
+<template id="worked-example-source">$$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ "%.3f"|format(result.dose_mg_per_kg_per_hr) }}_{\text{mg/kg/hr}} }{ 100_{\text{mg/mL}} } = {{ "%.3f"|format(result.pump_rate_ml_per_hr) }}\,\text{mL/hr}$$</template>
+{% endif %}

@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Heatstroke hub | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Emergency · Workflow hub</div>
+                <h1>Heatstroke hub</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Workflow for non-exertional and exertional heatstroke in dogs and cats. Cooling is the single most time-critical intervention; multi-organ complications are the most common cause of death.
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li>
+                    <strong>Stop active cooling at 39.4°C / 103°F.</strong> Continued cooling causes hypothermic overshoot, which is independently associated with worse outcomes. The thermometer goes in the rectum and stays there.
+                </li>
+                <li>
+                    <strong>Do not use ice or ice water.</strong> Causes peripheral vasoconstriction and traps heat centrally. Use cool tap water (room temperature) on the body, fans, alcohol on paw pads.
+                </li>
+                <li>
+                    <strong>The patient is not out of the woods at 39.4°C.</strong> Coagulopathy, AKI, GI translocation, and cerebral edema develop over the following 24–72 hours. Monitor aggressively.
+                </li>
+                <li>
+                    <strong>Hypoglycemia is common.</strong> Especially in hunting dogs and small breeds. Check BG on arrival and treat if &lt; 60 mg/dL.
+                </li>
+            </ul>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Recognition</h2>
+        <div class="compare-cards">
+            <div class="compare-card">
+                <div class="eyebrow">Exertional heatstroke</div>
+                <p style="margin: 0.4rem 0 0; line-height: 1.6; font-size: 0.9rem;">
+                    Working dogs, hunting dogs, agility/sporting dogs in warm weather. Often relatively young, otherwise healthy. Onset during or shortly after exercise. Hypoglycemia common. Often more severe coagulopathy than non-exertional cases.
+                </p>
+            </div>
+            <div class="compare-card">
+                <div class="eyebrow">Non-exertional (classic) heatstroke</div>
+                <p style="margin: 0.4rem 0 0; line-height: 1.6; font-size: 0.9rem;">
+                    Confined patient: cars, closed rooms, sun exposure without shade, hair dryer / cage dryer mishaps. Brachycephalic breeds, obese patients, and patients with laryngeal paralysis are over-represented. Cats less commonly affected because of behavioral thermoregulation.
+                </p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Diagnostic criteria</h2>
+        <div style="padding: 1rem; background: var(--paper-warm); border-radius: var(--radius); margin-top: 1rem; font-size: 0.9rem; line-height: 1.7;">
+            Heatstroke is the combination of:
+            <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem;">
+                <li>Core body temperature ≥ 40.5°C / 105°F (often 41–43°C / 106–110°F at presentation)</li>
+                <li>CNS dysfunction (obtundation, ataxia, seizures, coma) <strong>OR</strong> known heat exposure</li>
+                <li>Multi-organ dysfunction in advanced cases: coagulopathy, AKI, hepatic injury, GI signs, cardiovascular collapse</li>
+            </ul>
+            <p style="margin: 0.6rem 0 0;">
+                A presentation temperature within reference range does not rule out heatstroke; cooling may have already occurred during transport. The history and clinical picture matter as much as the thermometer.
+            </p>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Treatment checklist</h2>
+
+        <ol style="list-style: none; padding-left: 0; margin-top: 1.5rem;">
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 1rem; padding-top: 0.5rem; list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">1</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Begin active cooling immediately</h3>
+                    <p>
+                        Wet the patient with cool tap water (not ice water); apply liberally to body, axillae, groin, paw pads. Place fans to maximize evaporative cooling. Alcohol on paw pads adds modest evaporative effect. Move to a cool environment.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Cooling rate target ~0.05–0.08°C/min (drop ~3°C in 30–45 min). Faster cooling than this risks overshoot and shivering.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        <strong>Cold water IV fluids (refrigerated) are not standard.</strong> Use room-temperature crystalloids. Cold gastric or peritoneal lavage is sometimes described in case reports but is not first-line.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">2</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Continuous rectal temperature monitoring</h3>
+                    <p>
+                        Rectal probe in continuously, ideally with display in line of sight. Stop active cooling at <strong>39.4°C / 103°F</strong>. Dry the patient, remove fans. The temperature will continue to drift down for 15–30 minutes after active cooling stops.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Hypothermic overshoot below 37.2°C / 99°F warrants passive warming (blankets) but not active heating.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">3</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>IV access + initial fluid resuscitation</h3>
+                    <p>
+                        Place IV catheter as cooling begins (do not delay cooling for IV access). Balanced isotonic crystalloid. Avoid aggressive over-resuscitation; heatstroke patients are at risk for cerebral edema.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 40%;">Initial bolus (dog):</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">10–20 mL/kg over 15–20 min, reassess</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Initial bolus (cat):</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">10–15 mL/kg over 15–20 min, reassess</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Maintenance:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">2–4 mL/kg/hr after volume status restored</td>
+                        </tr>
+                    </table>
+                    <a href="/fluid-therapy" class="btn">Open fluid therapy calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">4</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Glucose check + correct hypoglycemia</h3>
+                    <p>
+                        Blood glucose on arrival. If &lt; 60 mg/dL, give 50% dextrose 0.5–1 mL/kg IV diluted 1:4 with saline. Recheck in 15 min and add dextrose to maintenance fluids (2.5–5%) if persistent.
+                    </p>
+                    <a href="/hypoglycemia" class="btn">Open hypoglycemia hub →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">5</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Baseline diagnostics</h3>
+                    <p>
+                        Run on arrival, repeat at 6, 12, 24 hr, and as clinically indicated:
+                    </p>
+                    <ul style="line-height: 1.8; padding-left: 1.5rem;">
+                        <li><strong>PCV/TS</strong>: hemoconcentration on arrival, may drop later from coagulopathy or fluid resuscitation</li>
+                        <li><strong>Lactate</strong>: marker of perfusion; normalize with resuscitation; persistent elevation = poor prognosis</li>
+                        <li><strong>Glucose, electrolytes, BUN, creatinine</strong>: AKI develops over 24–48 hr</li>
+                        <li><strong>PT/aPTT, platelet count</strong>: coagulopathy is the most common cause of death; check at admission and serially</li>
+                        <li><strong>ALT, total bilirubin</strong>: hepatic injury common, peaks at 24–48 hr</li>
+                        <li><strong>CK</strong>: rhabdomyolysis</li>
+                        <li><strong>Continuous ECG</strong>: VPCs, AV blocks common</li>
+                        <li><strong>Blood gas</strong> if available: metabolic acidosis with respiratory compensation typical</li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">6</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Treat coagulopathy / DIC if present</h3>
+                    <p>
+                        DIC is the leading cause of death in heatstroke. Indicated by prolonged PT/aPTT, thrombocytopenia, schistocytes, or active bleeding (petechiae, melena, hematuria, hemoptysis). Initiate transfusion of fresh frozen plasma if active bleeding or PT/aPTT &gt; 1.5× normal with clinical signs.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 40%;">FFP dose:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">10–20 mL/kg, may repeat q8–12 hr</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">pRBC if PCV &lt; 20%:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">Volume per transfusion calculator</td>
+                        </tr>
+                    </table>
+                    <a href="/transfusion" class="btn">Open transfusion calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">7</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>GI protection</h3>
+                    <p>
+                        Bloody diarrhea, mucosal sloughing, and bacterial translocation are common as gut perfusion is restored. Empiric coverage may be appropriate.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 40%;">Antiemetic:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">Maropitant 1 mg/kg IV q24h</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">GI protectant:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">Pantoprazole 1 mg/kg IV q12–24h or omeprazole 1 mg/kg PO q12h once eating</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Empiric antibiotics:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">Ampicillin/sulbactam 22 mg/kg IV q8h ± enrofloxacin 10 mg/kg IV q24h if bloody diarrhea or sepsis evidence</td>
+                        </tr>
+                    </table>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">8</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Address cerebral edema if signs present</h3>
+                    <p>
+                        Persistent obtundation, deteriorating mentation, or seizures after cooling raise concern for cerebral edema. Indications for treatment include declining mentation despite normothermia and hemodynamic stability.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 40%;">Mannitol:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">0.5–1 g/kg IV slow over 15–20 min, may repeat q6h × 3 doses</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Hypertonic saline (alternative):</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">3–5 mL/kg of 7.2% over 5–10 min</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Head elevation:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">15–30° to facilitate venous drainage</td>
+                        </tr>
+                    </table>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Avoid mannitol if patient is anuric or volume-depleted. Check renal function and volume status first.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.3rem;">
+                        Seizure activity: treat with the status epilepticus protocol. Heatstroke + status carries a poor prognosis.
+                    </p>
+                    <a href="/status-canine" class="btn">Open status epilepticus hub →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">9</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Monitor for arrhythmias</h3>
+                    <p>
+                        Continuous ECG for at least 24 hours. Ventricular premature complexes are most common; hemodynamically significant ventricular tachycardia warrants treatment with lidocaine 2 mg/kg IV bolus followed by CRI 25–80 µg/kg/min if needed. Avoid lidocaine in cats.
+                    </p>
+                    <a href="/lidocaine" class="btn">Open lidocaine CRI calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">10</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>What NOT to do</h3>
+                    <ul style="line-height: 1.8; padding-left: 1.5rem;">
+                        <li><strong>Do not use ice baths or ice packs.</strong> Peripheral vasoconstriction traps heat centrally. Cool tap water + fans is more effective.</li>
+                        <li><strong>Do not give corticosteroids prophylactically.</strong> No evidence of benefit; may worsen GI ulceration and immunosuppression.</li>
+                        <li><strong>Do not give NSAIDs.</strong> Worsens AKI risk and GI ulceration in already compromised patient.</li>
+                        <li><strong>Do not give heparin prophylactically.</strong> Evidence does not support routine use; may worsen bleeding in DIC.</li>
+                        <li><strong>Do not over-resuscitate with fluids.</strong> Cerebral edema risk; titrate to perfusion endpoints rather than a fixed volume target.</li>
+                        <li><strong>Do not stop monitoring at 24 hr.</strong> Coagulopathy, AKI, hepatic injury can manifest 48–72 hr post-event.</li>
+                    </ul>
+                </div>
+            </li>
+
+        </ol>
+
+        <h2 style="margin-top: 3rem;">Prognosis</h2>
+        <div style="padding: 1rem; background: var(--paper-warm); border-radius: var(--radius); margin-top: 1rem; font-size: 0.9rem; line-height: 1.7;">
+            Overall mortality ~50% in retrospective studies, with most deaths in the first 24–48 hours from coagulopathy and multi-organ failure. Negative prognostic indicators include:
+            <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem;">
+                <li>Persistently low body temperature on arrival (already in hypothermic phase = worse)</li>
+                <li>Hypoglycemia, hypocoagulability, or DIC at admission</li>
+                <li>Persistent hyperlactatemia despite resuscitation</li>
+                <li>Seizures, persistent obtundation, or coma</li>
+                <li>Acute kidney injury with oliguria/anuria</li>
+                <li>Time to active cooling &gt; 90 min from event onset</li>
+            </ul>
+            <p style="margin: 0.6rem 0 0;">
+                Patients who survive the first 48 hours and avoid AKI generally have a good long-term outcome.
+            </p>
+        </div>
+
+        <h2 style="margin-top: 3rem;">Sources</h2>
+        <ul style="color: var(--ink-soft); line-height: 1.7;">
+            <li style="margin-bottom: 0.5rem;">
+                Bruchim Y, Klement E, Saragusty J, et al. Heat stroke in dogs: a retrospective study of 54 cases (1999–2004) and analysis of risk factors for death. <em>J Vet Intern Med</em> 2006;20:38–46.
+            </li>
+            <li style="margin-bottom: 0.5rem;">
+                Hall EJ, Carter AJ, Bradbury J, et al. Establishing risk factors for canine heat-related illness in UK dogs: a VetCompass study. <em>Sci Rep</em> 2020;10:9128.
+            </li>
+            <li style="margin-bottom: 0.5rem;">
+                Drobatz KJ. Heatstroke. In: Silverstein DC, Hopper K, eds. <em>Small Animal Critical Care Medicine</em>, 3rd ed. Elsevier; 2023.
+            </li>
+            <li style="margin-bottom: 0.5rem;">
+                Segev G, Daminet S, Meyer E, et al. Characterization of kidney damage using several renal biomarkers in dogs with naturally occurring heatstroke. <em>Vet J</em> 2015;206:231–235.
+            </li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

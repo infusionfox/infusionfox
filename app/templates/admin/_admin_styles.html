@@ -1,0 +1,224 @@
+<style>
+    /* Admin chrome — minimal, consistent with the rest of infusionfox's
+       paper/ink aesthetic. CSS variables come from app.css. */
+    .admin-page { padding: 1.5rem 0 3rem; }
+    .admin-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--line, #d8d3c8);
+    }
+    .admin-header h1 {
+        margin: 0.25rem 0 0.5rem;
+        font-size: 1.5rem;
+    }
+    .admin-nav {
+        margin-top: 0.75rem;
+        display: flex;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+        font-size: 0.92rem;
+    }
+    .admin-nav a {
+        color: var(--ink-soft, #2a2a2a);
+        text-decoration: none;
+        padding-bottom: 0.25rem;
+        border-bottom: 2px solid transparent;
+    }
+    .admin-nav a:hover { color: var(--ink, #1c1c1c); }
+    .admin-nav a.active {
+        border-bottom-color: var(--ink, #1c1c1c);
+        font-weight: 600;
+    }
+
+    .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .admin-card {
+        background: var(--paper-warm, #f0ebe0);
+        border: 1px solid var(--line, #d8d3c8);
+        border-radius: 8px;
+        padding: 1rem 1.1rem;
+    }
+    .admin-card__label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ink-mute, #5c5c5c);
+        margin-bottom: 0.4rem;
+    }
+    .admin-card__primary {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+    }
+    .admin-card__secondary {
+        margin-top: 0.45rem;
+        font-size: 0.82rem;
+        color: var(--ink-mute, #5c5c5c);
+    }
+
+    .admin-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .admin-block h2 {
+        font-size: 1rem;
+        margin: 0 0 0.5rem;
+        color: var(--ink-soft, #2a2a2a);
+    }
+    .admin-empty {
+        color: var(--ink-mute, #5c5c5c);
+        font-style: italic;
+        font-size: 0.92rem;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+    .admin-table thead th {
+        text-align: left;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ink-mute, #5c5c5c);
+        border-bottom: 2px solid var(--line, #d8d3c8);
+        padding: 0.4rem 0.5rem;
+        font-weight: 600;
+    }
+    .admin-table tbody td {
+        padding: 0.5rem;
+        border-bottom: 1px solid var(--line, #d8d3c8);
+        vertical-align: top;
+    }
+    .admin-table tbody tr:hover { background: var(--paper-warm, #f0ebe0); }
+    .admin-table code {
+        font-family: var(--font-mono, "IBM Plex Mono", monospace);
+        font-size: 0.85em;
+    }
+    .admin-table__truncate {
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .admin-pagination {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin-top: 1rem;
+        font-size: 0.88rem;
+    }
+    .admin-pagination a, .admin-pagination span {
+        padding: 0.3rem 0.6rem;
+        border: 1px solid var(--line, #d8d3c8);
+        border-radius: 4px;
+        text-decoration: none;
+        color: var(--ink-soft, #2a2a2a);
+    }
+    .admin-pagination .current {
+        background: var(--ink, #1c1c1c);
+        color: var(--paper, #f8f5f0);
+        border-color: var(--ink, #1c1c1c);
+    }
+    .admin-pagination .disabled {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    .admin-toolbar {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: end;
+        margin-bottom: 1rem;
+    }
+    .admin-toolbar label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.78rem;
+        color: var(--ink-mute, #5c5c5c);
+    }
+    .admin-toolbar select, .admin-toolbar input {
+        padding: 0.35rem 0.5rem;
+        border: 1px solid var(--line, #d8d3c8);
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.9rem;
+    }
+    .admin-toolbar .admin-toolbar__actions {
+        margin-left: auto;
+    }
+    .admin-toolbar button, .admin-toolbar a.admin-btn {
+        padding: 0.4rem 0.85rem;
+        border: 1px solid var(--ink, #1c1c1c);
+        background: var(--ink, #1c1c1c);
+        color: var(--paper, #f8f5f0);
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.88rem;
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+    .admin-detail {
+        background: var(--paper-warm, #f0ebe0);
+        border: 1px solid var(--line, #d8d3c8);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .admin-detail dl {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.5rem 1rem;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    .admin-detail dt {
+        font-weight: 600;
+        color: var(--ink-mute, #5c5c5c);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        align-self: start;
+    }
+    .admin-detail dd {
+        margin: 0;
+        font-family: var(--font-mono, "IBM Plex Mono", monospace);
+        word-break: break-word;
+    }
+    .admin-detail dd.admin-detail__message {
+        font-family: var(--font-prose, "IBM Plex Serif", Georgia, serif);
+        white-space: pre-wrap;
+    }
+    .admin-status-form {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        padding: 0.85rem 1rem;
+        background: var(--paper, #f8f5f0);
+        border: 1px solid var(--line, #d8d3c8);
+        border-radius: 6px;
+    }
+    .admin-status-form textarea {
+        flex: 1 1 100%;
+        min-height: 60px;
+        padding: 0.4rem 0.5rem;
+        border: 1px solid var(--line, #d8d3c8);
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.9rem;
+    }
+</style>

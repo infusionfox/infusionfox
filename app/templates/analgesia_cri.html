@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}Analgesia CRI · multi-modal | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <style>
+            /* Species-restricted adjunct cards (lidocaine in Phase 2):
+               gray out and surface a "not used in <species>" note when
+               the patient species doesn't match the drug's restriction.
+               Pure CSS (uses :has() with the species radio) so the visual
+               state updates instantly when the user clicks a species
+               radio — no server roundtrip needed. The engine still
+               surfaces a global warning if the user submits the form
+               with a restricted drug toggled on; this CSS is defense-
+               in-depth UX, not the safety mechanism. */
+            .species-restriction-note { display: none; }
+
+            #calc-form:has(input[name="species"][value="cat"]:checked)
+                .drug-card[data-species-restriction="dog"],
+            #calc-form:has(input[name="species"][value="dog"]:checked)
+                .drug-card[data-species-restriction="cat"] {
+                opacity: 0.55;
+            }
+
+            #calc-form:has(input[name="species"][value="cat"]:checked)
+                .drug-card[data-species-restriction="dog"]
+                .species-restriction-note,
+            #calc-form:has(input[name="species"][value="dog"]:checked)
+                .drug-card[data-species-restriction="cat"]
+                .species-restriction-note {
+                display: block;
+            }
+
+            /* Phase 3 — preparation-mode toggle. The form holds both
+               sets of mode-specific inputs in the DOM; CSS shows the
+               set matching the chosen prep_mode radio and hides the
+               other. Combined-bag inputs (bag size, shared pump rate)
+               appear only in combined-bag mode; per-drug concentration
+               inputs appear only in per-drug mode. */
+            #calc-form .combined-bag-only { display: none; }
+            #calc-form:has(input[name="prep_mode"][value="combined_bag"]:checked)
+                .combined-bag-only { display: block; }
+            #calc-form:has(input[name="prep_mode"][value="combined_bag"]:checked)
+                .per-drug-only { display: none; }
+
+            /* ---------- Print styles ----------
+               Goal: fit a 4-drug per-drug result or a combined-bag
+               recipe on one US-letter / A4 page. Strategy:
+                 - Tight @page margins (12 mm).
+                 - 9pt base, smaller headings.
+                 - Strip card backgrounds (no toner waste).
+                 - Hide Formula and Titration-ladder expanders in print
+                   — they're screen-only reference content; printing
+                   them busts the one-page budget on 4-drug results.
+                 - page-break-inside: avoid on each drug card so a
+                   single drug doesn't split across pages.
+            */
+            .print-only { display: none; }
+
+            @page {
+                margin: 12mm;
+            }
+
+            @media print {
+                .no-print,
+                .site-header,
+                .site-footer,
+                .feedback-widget,
+                #fb-widget,
+                .calc-header,
+                .how-it-works,
+                #calc-form,
+                nav.calc-tabs,
+                .result-toolbar,
+                /* Hide the screen-only reference expanders to keep the
+                   print to one page; clinicians don't need the formula
+                   walkthrough or interactive titration ladder on a
+                   bedside printout. */
+                #result-panel details {
+                    display: none !important;
+                }
+                .print-only { display: block !important; }
+                html, body {
+                    background: white !important;
+                    color: black !important;
+                    font-size: 9pt !important;
+                    line-height: 1.25 !important;
+                }
+                .container,
+                section.calc-page,
+                .calc-grid,
+                .calc-right-column {
+                    display: block !important;
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                }
+                /* Strip background fills + shadows from result cards.
+                   Preserve thin borders for grouping. Force tight
+                   internal padding and small bottom-margin so 3–4
+                   cards land on one page. */
+                #result-panel .analgesia-drug-card,
+                #result-panel .analgesia-combined-bag-card {
+                    background: white !important;
+                    box-shadow: none !important;
+                    page-break-inside: avoid;
+                    margin: 0 0 0.3rem 0 !important;
+                    padding: 0.4rem 0.5rem !important;
+                    border: 1px solid #999 !important;
+                }
+                /* Subordinate panels inside cards (loading-dose blocks,
+                   warning blocks, syringe-prep recipes) all get the
+                   same flat treatment. */
+                #result-panel [style*="background: var(--paper-warm)"],
+                #result-panel [style*="background:var(--paper-warm)"] {
+                    background: white !important;
+                    border-left-color: #000 !important;
+                    padding: 0.25rem 0.4rem !important;
+                    margin-top: 0.25rem !important;
+                }
+                /* Headlines stay readable but compact. The big
+                   pump-rate number (currently 1.875rem) is the
+                   single most-glanced value on the printout. */
+                #result-panel h2 {
+                    font-size: 11pt !important;
+                    margin: 0 !important;
+                }
+                #result-panel [style*="font-size: 1.875rem"] {
+                    font-size: 14pt !important;
+                }
+                #result-panel [style*="font-size: 1.25rem"] {
+                    font-size: 11pt !important;
+                }
+                #result-panel [style*="font-size: 1.15rem"] {
+                    font-size: 10pt !important;
+                }
+                /* Tables inside cards (titration ladder, bag recipe)
+                   read fine smaller. */
+                #result-panel table {
+                    font-size: 8pt !important;
+                }
+                #result-panel table th,
+                #result-panel table td {
+                    padding: 0.15rem 0.3rem !important;
+                }
+                /* Tight global margins inside #result-panel so the
+                   stacked cards don't leave gaps. */
+                #result-panel > * {
+                    margin-top: 0.2rem !important;
+                }
+            }
+        </style>
+
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Analgesia &amp; sedation</div>
+                <h1>Analgesia CRI · multi-modal</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Build a multi-modal analgesia CRI: choose an opioid
+                    backbone and optionally add adjunct drugs. Each drug
+                    is computed independently with its own pump rate.
+                    Adjuncts: ketamine, lidocaine (dogs only), and
+                    dexmedetomidine.
+                </p>
+            </div>
+            <button type="button"
+                class="analgesia-print-btn no-print"
+                onclick="infusionfox_analgesia_print()"
+                style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; font-size: 0.9rem; font-weight: 600; background: var(--accent); color: white; border: none; border-radius: var(--radius); cursor: pointer; font-family: inherit; height: fit-content; align-self: flex-start; white-space: nowrap;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Print
+            </button>
+        </div>
+
+        <details class="how-it-works">
+            <summary>How this calculator works</summary>
+            <div class="how-it-works__body">
+                <p>
+                    Pick one opioid (fentanyl, morphine, or hydromorphone)
+                    and optionally toggle on any combination of adjuncts:
+                    ketamine, lidocaine, and dexmedetomidine. Each selected
+                    drug gets its own card on the right with the pump rate
+                    to deliver the requested dose at the chosen bag
+                    concentration. The drugs are computed independently;
+                    each is a separate bag or syringe with its own pump
+                    rate, run through its own line.
+                </p>
+                <p>
+                    Use the loading-dose panels on each card as starting
+                    boluses before beginning the CRI. Adjuncts add
+                    mechanisms on top of the opioid backbone: ketamine
+                    for NMDA antagonism and anti-windup, lidocaine for
+                    sodium-channel blockade and supraspinal anti-nociception
+                    (dogs only; cardiotoxicity in cats), dexmedetomidine
+                    for α₂-mediated opioid-sparing analgesia.
+                </p>
+                <p>
+                    Phase 3 will add a combined-bag preparation mode for
+                    clinicians who want all selected drugs in a single
+                    bag (the MLK / DMLK workflow).
+                </p>
+            </div>
+        </details>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                id="calc-form"
+                hx-post="/analgesia-cri/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                {# Patient inputs — weight + species. Species changes the
+                   dose ranges and warnings per drug; the form re-submits
+                   on change via the HTMX trigger above. #}
+                <fieldset class="form-group">
+                    <legend>Patient</legend>
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+                        <label style="flex: 1; min-width: 8rem;">
+                            <span class="form-label">Weight</span>
+                            <input
+                                name="weight_value"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value="{{ weight_value }}"
+                                placeholder="e.g., 20"
+                                style="width: 100%;"
+                            >
+                        </label>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.75rem;">
+                        <span class="form-label">Species</span>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+                            <label>
+                                <input type="radio" name="species" value="dog" {% if species == 'dog' %}checked{% endif %}>
+                                Dog
+                            </label>
+                            <label>
+                                <input type="radio" name="species" value="cat" {% if species == 'cat' %}checked{% endif %}>
+                                Cat
+                            </label>
+                        </div>
+                    </div>
+                </fieldset>
+
+                {# Preparation mode — toggles between per-drug independent
+                   pumps and one combined bag with all selected drugs.
+                   Default per_drug preserves the Phase 2 workflow. The
+                   form holds both modes' inputs in the DOM; CSS shows
+                   the active mode's fields only. #}
+                <fieldset class="form-group">
+                    <legend>Preparation</legend>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <label>
+                            <input type="radio" name="prep_mode" value="per_drug" {% if prep_mode == 'per_drug' %}checked{% endif %}>
+                            Per-drug independent
+                        </label>
+                        <label>
+                            <input type="radio" name="prep_mode" value="combined_bag" {% if prep_mode == 'combined_bag' %}checked{% endif %}>
+                            Combined bag
+                        </label>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--ink-mute); margin: 0.4rem 0 0;">
+                        Combined bag covers the named-acronym workflows: MLK
+                        (morphine·lidocaine·ketamine), FLK
+                        (fentanyl·lidocaine·ketamine), DMLK
+                        (dex·morphine·lidocaine·ketamine), KL
+                        (ketamine·lidocaine), DLK
+                        (dex·lidocaine·ketamine), and any other one-bag·
+                        one-pump-rate combination the case calls for.
+                    </p>
+                    <div class="combined-bag-only" style="margin-top: 0.75rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <label style="flex: 1; min-width: 8rem;">
+                            <span class="form-label">Bag volume (mL)</span>
+                            <input
+                                name="bag_volume_ml"
+                                type="number"
+                                step="1"
+                                min="0"
+                                value="{{ bag_volume_ml|int if bag_volume_ml == bag_volume_ml|int else bag_volume_ml }}"
+                                style="width: 100%;"
+                            >
+                        </label>
+                        <label style="flex: 1; min-width: 8rem;">
+                            <span class="form-label">Pump rate (mL/kg/hr)</span>
+                            <input
+                                name="shared_pump_rate_ml_per_kg_per_hr"
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                value="{{ shared_pump_rate_ml_per_kg_per_hr }}"
+                                style="width: 100%;"
+                            >
+                        </label>
+                    </div>
+                </fieldset>
+                <fieldset class="form-group">
+                    <legend>Opioid backbone</legend>
+                    {% for opioid in opioid_specs %}
+                    <div class="drug-card" data-drug-slug="{{ opioid.slug }}" style="padding: 0.75rem 1rem; border: 1px solid var(--rule); border-radius: var(--radius); margin-bottom: 0.5rem;">
+                        <label style="font-weight: 600; display: block; cursor: pointer;">
+                            <input type="radio" name="opioid_slug" value="{{ opioid.slug }}" {% if opioid.slug == default_opioid_slug %}checked{% endif %}>
+                            {{ opioid.display_name }}
+                        </label>
+                        {% if opioid.role_caveat %}
+                        <p style="font-size: 0.85rem; color: var(--ink-soft); margin: 0.25rem 0 0.5rem 1.5rem;">
+                            {{ opioid.role_caveat }}
+                        </p>
+                        {% endif %}
+                        <div class="drug-inputs" style="display: flex; gap: 0.75rem; margin-left: 1.5rem; flex-wrap: wrap;">
+                            <label style="flex: 1; min-width: 8rem;">
+                                <span class="form-label">Dose ({{ opioid.dose_unit.value }})</span>
+                                <input
+                                    name="dose_{{ opioid.slug }}"
+                                    type="number"
+                                    step="0.001"
+                                    min="0"
+                                    value="{{ doses[opioid.slug] }}"
+                                    style="width: 100%;"
+                                >
+                            </label>
+                            <label class="per-drug-only" style="flex: 1; min-width: 8rem;">
+                                <span class="form-label">Concentration (µg/mL)</span>
+                                <input
+                                    name="concentration_{{ opioid.slug }}"
+                                    type="number"
+                                    step="0.1"
+                                    min="0"
+                                    value="{{ concentrations[opioid.slug] }}"
+                                    style="width: 100%;"
+                                >
+                            </label>
+                        </div>
+                        {% if dose_range_summaries.get(opioid.slug) %}
+                        <p style="font-size: 0.8rem; color: var(--ink-mute); margin: 0.5rem 0 0 1.5rem;">
+                            Range: {{ dose_range_summaries[opioid.slug] }}
+                        </p>
+                        {% endif %}
+                        {% if opioid.syringe_prep %}
+                        <div class="per-drug-only" style="margin: 0.5rem 0 0 1.5rem; padding: 0.5rem 0.75rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius); font-size: 0.8rem; color: var(--ink-soft);">
+                            <strong style="color: var(--ink); font-weight: 600;">Syringe prep:</strong> {{ opioid.syringe_prep }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {# Opioid-free option — DLK, KL, monotherapy-with-
+                       adjuncts compositions all live here. The card
+                       carries no dose/concentration inputs because no
+                       opioid is being prepped; toggling this radio
+                       leaves the visible opioid cards inactive (they
+                       remain in the DOM with their values preserved so
+                       switching back doesn't clear the user's entries). #}
+                    <div class="drug-card" data-drug-slug="none" style="padding: 0.75rem 1rem; border: 1px solid var(--rule); border-radius: var(--radius); margin-bottom: 0.5rem;">
+                        <label style="font-weight: 600; display: block; cursor: pointer;">
+                            <input type="radio" name="opioid_slug" value="none" {% if default_opioid_slug == 'none' %}checked{% endif %}>
+                            None (opioid-free)
+                        </label>
+                        <p style="font-size: 0.85rem; color: var(--ink-soft); margin: 0.25rem 0 0 1.5rem;">
+                            Use the adjuncts alone: KL (ketamine + lidocaine), DLK (dex + lidocaine + ketamine), or single-adjunct CRI. For opioid-intolerant patients, opioid-shortage situations, or where the case calls for opioid-sparing analgesia.
+                        </p>
+                    </div>
+                </fieldset>
+
+                {# Adjuncts — independent checkbox cards. Phase 1 has just
+                   ketamine. Phase 2 will add lidocaine (cat-gated) and
+                   dexmedetomidine here. #}
+                <fieldset class="form-group">
+                    <legend>Adjuncts</legend>
+                    {% for adj in adjunct_specs %}
+                    <div class="drug-card" data-drug-slug="{{ adj.slug }}"{% if adj.species_restriction %} data-species-restriction="{{ adj.species_restriction.value }}"{% endif %} style="padding: 0.75rem 1rem; border: 1px solid var(--rule); border-radius: var(--radius); margin-bottom: 0.5rem;">
+                        <label style="font-weight: 600; display: block; cursor: pointer;">
+                            <input type="checkbox" name="adjunct_{{ adj.slug }}" {% if adj.slug in default_adjunct_slugs %}checked{% endif %}>
+                            {{ adj.display_name }}
+                        </label>
+                        {% if adj.species_restriction %}
+                        <p class="species-restriction-note" style="font-size: 0.85rem; color: var(--danger); margin: 0.25rem 0 0.25rem 1.5rem;">
+                            ⚠ Not used in {{ "cats" if adj.species_restriction.value == "dog" else "dogs" }}; will be skipped if the patient species doesn't match.
+                        </p>
+                        {% endif %}
+                        {% if adj.role_caveat %}
+                        <p style="font-size: 0.85rem; color: var(--ink-soft); margin: 0.25rem 0 0.5rem 1.5rem;">
+                            {{ adj.role_caveat }}
+                        </p>
+                        {% endif %}
+                        <div class="drug-inputs" style="display: flex; gap: 0.75rem; margin-left: 1.5rem; flex-wrap: wrap;">
+                            <label style="flex: 1; min-width: 8rem;">
+                                <span class="form-label">Dose ({{ adj.dose_unit.value }})</span>
+                                <input
+                                    name="dose_{{ adj.slug }}"
+                                    type="number"
+                                    step="0.001"
+                                    min="0"
+                                    value="{{ doses[adj.slug] }}"
+                                    style="width: 100%;"
+                                >
+                            </label>
+                            <label class="per-drug-only" style="flex: 1; min-width: 8rem;">
+                                <span class="form-label">Concentration (µg/mL)</span>
+                                <input
+                                    name="concentration_{{ adj.slug }}"
+                                    type="number"
+                                    step="0.1"
+                                    min="0"
+                                    value="{{ concentrations[adj.slug] }}"
+                                    style="width: 100%;"
+                                >
+                            </label>
+                        </div>
+                        {% if dose_range_summaries.get(adj.slug) %}
+                        <p style="font-size: 0.8rem; color: var(--ink-mute); margin: 0.5rem 0 0 1.5rem;">
+                            Range: {{ dose_range_summaries[adj.slug] }}
+                        </p>
+                        {% endif %}
+                        {% if adj.syringe_prep %}
+                        <div class="per-drug-only" style="margin: 0.5rem 0 0 1.5rem; padding: 0.5rem 0.75rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius); font-size: 0.8rem; color: var(--ink-soft);">
+                            <strong style="color: var(--ink); font-weight: 600;">Syringe prep:</strong> {{ adj.syringe_prep }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </fieldset>
+            </form>
+
+            <div class="calc-right-column">
+                <div id="result-panel">
+                {% if result %}
+                    {% include "partials/analgesia_result.html" %}
+                {% else %}
+                    <div class="placeholder-panel" style="padding: 2rem; text-align: center; color: var(--ink-mute);">
+                        <p style="margin: 0;">Enter a patient weight to compute pump rates.</p>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Print helper — stamps a current timestamp into the
+            // print-only header before opening the browser print dialog.
+            // The timestamp anchor (#print-timestamp) lives inside the
+            // result-panel partial and gets re-created on every HTMX
+            // swap; this function finds it fresh on each call so the
+            // printout always shows the moment of printing, not the
+            // moment of computation.
+            function infusionfox_analgesia_print() {
+                var ts = document.getElementById('print-timestamp');
+                if (ts) {
+                    var now = new Date();
+                    ts.textContent = 'Printed: ' + now.toLocaleString();
+                }
+                window.print();
+            }
+        </script>
+
+        {# Sources section — aggregate from the specs that are most likely
+           on display. Could be expanded with a "drug references" expander
+           in a later phase. #}
+        <section style="margin-top: 3rem;">
+            <div class="eyebrow">References</div>
+            <h2>Sources</h2>
+            <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                Dose ranges and protocols sourced from Plumb's Veterinary
+                Drugs (current edition) and Lukasik V. 2015 (WSAVA Proceedings).
+                Each drug's clinical background is on its <a href="/learn/fentanyl">fentanyl</a>,
+                <a href="/learn/hydromorphone-cri">hydromorphone</a>, or
+                <a href="/learn/ketamine">ketamine</a> learn page.
+            </p>
+        </section>
+    </div>
+</section>
+{% endblock %}

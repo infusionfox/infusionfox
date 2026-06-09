@@ -1,0 +1,29 @@
+{% if ok %}
+    <div class="fb-confirm">
+        <div class="eyebrow" style="color: var(--success);">Received</div>
+        <h3 style="margin: 0.5rem 0 1rem;">Thanks.</h3>
+        {% if is_dose_concern %}
+            <p style="color: var(--ink-soft);">
+                You flagged this as a clinical concern, these get triaged first. If it's urgent,
+                please do not rely on InfusionFox's numbers in the meantime. Verify against your usual
+                reference, and use your clinical judgment.
+            </p>
+            <p style="color: var(--ink-soft); margin-top: 0.75rem;">
+                For an urgent reply, email <a href="mailto:support@infusionfox.com">support@infusionfox.com</a> directly.
+            </p>
+        {% else %}
+            <p style="color: var(--ink-soft);">
+                We'll review it. If you left an email and it needs a reply, we'll be in touch.
+                You can also reach <a href="mailto:support@infusionfox.com">support@infusionfox.com</a> directly.
+            </p>
+        {% endif %}
+        <button type="button" class="btn btn--ghost" style="width: 100%; margin-top: 1rem;"
+                onclick="document.getElementById('fb-close').click()">Close</button>
+    </div>
+{% else %}
+    <div class="warnings" style="margin: 0 0 1rem;">
+        <ul style="margin: 0; padding-left: 1.2rem;"><li>{{ error }}</li></ul>
+    </div>
+    <button type="button" class="btn btn--ghost" style="width: 100%;"
+            onclick="location.reload()">Try again</button>
+{% endif %}

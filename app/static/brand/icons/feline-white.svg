@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="Feline">
+  <title>Feline</title>
+  <g fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 5 12 L 6 5 L 9 8 Q 12 7 15 8 L 18 5 L 19 12 C 19 16 16 18 12 18 C 8 18 5 16 5 12 Z"></path>
+    <path d="M 8.5 12 Q 9.25 11 10 12"></path>
+    <path d="M 14 12 Q 14.75 11 15.5 12"></path>
+    <path d="M 11 13.5 L 13 13.5 L 12 14.5 Z" fill="#FFFFFF"></path>
+    <path d="M 12 14.5 L 12 15.3 M 12 15.3 Q 11.3 15.8 10.5 15.5 M 12 15.3 Q 12.7 15.8 13.5 15.5"></path>
+    <path d="M 1.5 13 L 5.5 13.3"></path>
+    <path d="M 1 14.5 L 5.5 14.5"></path>
+    <path d="M 1.5 16 L 5.5 15.7"></path>
+    <path d="M 22.5 13 L 18.5 13.3"></path>
+    <path d="M 23 14.5 L 18.5 14.5"></path>
+    <path d="M 22.5 16 L 18.5 15.7"></path>
+  </g>
+</svg>

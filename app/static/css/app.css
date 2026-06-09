@@ -1,0 +1,4319 @@
+/* ============================================================
+   InfusionFox — clinical precision
+   ============================================================ */
+
+:root {
+    /* Brand palette (InfusionFox brand book, the-drop direction).
+       Deep navy ink + warm paper. Variable names preserved from the
+       original token set so the rest of the codebase keeps working;
+       only the values changed. */
+    --ink:          #1C3A57;   /* primary ink — wordmark, body text */
+    --ink-soft:     #25527C;   /* hover / secondary chrome (was ink-2) */
+    --ink-mute:     #6B6A66;   /* captions, meta, labels (was ink-quiet) */
+    --paper:        #F4F1EA;   /* default surface, warm */
+    --paper-warm:   #ECE7DC;   /* recessed surface (paper-2) */
+    --line:         #DAD4C5;   /* hairlines (was hairline) */
+    --line-strong:  #C7BFAC;   /* stronger dividers (was hairline-2) */
+
+    --accent:       #25527C;   /* clinical blue — aliased to ink-2 */
+    --accent-soft:  #e6ecf3;   /* tinted from --accent for soft surfaces */
+    --signal:       #B36A1F;   /* amber — warning / out-of-range */
+    --signal-soft:  #f6ead8;
+    --danger:       #9B2C2C;   /* wine — hard ceiling violation */
+    --danger-soft:  #f4dede;
+    --success:      #2F7D6F;   /* teal-green — confirmed, in-range */
+
+    /* Severity / category accents — color-blind safe, always paired
+       with an icon or text label (never carry meaning by color alone).
+       Meaning is consistent across the app:
+         critical = immediate-life-threat / step 1 / hypovolemic
+         high     = high severity / step 2 / distributive
+         info     = data / step 3 / cardiogenic
+         special  = obstructive / unusual category
+         caution  = moderate concern (warning amber)                 */
+    --sev-critical:      #9B2C2C;
+    --sev-critical-soft: #f4dede;
+    --sev-high:          #B36A1F;
+    --sev-high-soft:     #f6ead8;
+    --sev-info:          #25527C;
+    --sev-info-soft:     #e2e8f6;
+    --sev-special:       #7c3aed;
+    --sev-special-soft:  #ede5fb;
+    --sev-caution:       #B36A1F;
+    --sev-caution-soft:  #f6ead8;
+
+    /* Spacing scale — used for vertical rhythm */
+    --space-xs: 0.4rem;
+    --space-sm: 0.6rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2.25rem;
+    --space-2xl: 3rem;
+
+    /* Standard breakpoints. Mobile-first; min-width queries activate
+       these layouts on larger screens.                                  */
+    /* --bp-mobile: 600px; */
+    /* --bp-tablet: 900px; */
+
+    --font-display: 'IBM Plex Serif', Georgia, serif;
+    --font-body:    'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
+
+    --radius: 2px;
+    --radius-lg: 4px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.55;
+    font-feature-settings: "kern", "liga", "tnum";
+    /* Sticky-footer layout. On short pages (homepage, an empty
+       calculator page on a tall monitor) <main> grows to fill the
+       viewport so <footer> sits at the bottom of the screen rather
+       than floating with empty space below it. */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.site-footer {
+    flex-shrink: 0;
+}
+
+.container {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* Wide container variant for catalog/grid pages (/calculators, /hubs,
+   /learn/practice). These are pure grids of cards — adding a 5th or
+   6th card per row on a big monitor is useful, not visually
+   confusing the way it would be for prose. The cap is generous so
+   even ultrawide monitors get a usable extra row of cards, but not
+   completely unbounded — at some point the page just gets sparser. */
+.container--wide {
+    max-width: 1800px;
+}
+
+/* Site chrome (header + footer). Independent of .container so the
+   hamburger pins to the left edge and the top nav pins to the right
+   edge of the viewport, regardless of which page is rendered or how
+   wide its content column is. Gmail, Linear, Notion all anchor chrome
+   to the viewport, not to the content column. The gutter (2rem at
+   typical viewport, 1.5rem on small) keeps the controls from touching
+   the screen edge. */
+.site-frame {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 2rem;
+    box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+    .site-frame {
+        padding: 0 1rem;
+    }
+}
+
+/* Large desktop / ultrawide. On monitors above ~1600px, the default
+   1180px container leaves huge empty margins on each side. Bump it
+   so individual calculator/hub pages and prose articles span more
+   of the viewport. Prose-heavy elements (clinical background
+   articles, intro paragraphs, the hero lede) still constrain
+   themselves via per-element max-width rules to keep reading-line
+   length comfortable. */
+@media (min-width: 1600px) {
+    .container {
+        max-width: 1600px;
+    }
+}
+
+/* ---------- Header ---------- */
+
+.site-header {
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: saturate(1.2) blur(6px);
+    background: rgba(250, 250, 247, 0.88);
+}
+
+.site-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1.1rem;
+    padding-bottom: 1.1rem;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--ink);
+}
+
+.brand__mark-tile {
+    display: block;
+    width: 28px;
+    height: 28px;
+}
+
+.brand__wordmark {
+    /* Wordmark SVG comes in at 910×201.6; size to the header line-height.
+       The SVG has descender space at the bottom (for the 'g') that makes
+       the text appear top-heavy in its box. A small margin-top nudges the
+       visual center down to align with the tile. */
+    display: block;
+    height: 28px;
+    width: auto;
+    margin-top: 4px;
+}
+
+/* Install page brand mark — large 3D drop above the page heading. */
+.install__mark {
+    display: block;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.5rem;
+}
+
+.site-nav {
+    display: flex;
+    gap: 2rem;
+    /* The wordmark SVG carries a `margin-top: 4px` to compensate for its
+       built-in descender space and visually center on the mark tile.
+       Mirror that adjustment here so the nav links optically align with
+       the wordmark rather than sitting a few pixels too high. */
+    margin-top: 4px;
+}
+
+.site-nav a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.94rem;
+    letter-spacing: 0.01em;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease, color 120ms ease;
+}
+
+.site-nav a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+/* ---------- Typography ---------- */
+
+h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    margin: 0 0 0.5em;
+}
+
+h1 { font-size: 2.4rem; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.2rem; }
+
+/* Default heading rhythm. Sections in calc/hub pages use these unless
+   explicitly overridden. The :first-child rules prevent unwanted top
+   margin when a heading opens a parent container. */
+.calc-page h2 {
+    margin-top: 2.5rem;
+    margin-bottom: 0.6rem;
+    font-size: 1.4rem;
+}
+.calc-page h2:first-child { margin-top: 0; }
+
+.calc-page h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.4rem;
+    font-size: 1.05rem;
+}
+
+/* Inside a numbered step body, headings sit tighter — they're already
+   indented and the step has its own top spacing.                       */
+.dka-step__body h3 {
+    margin-top: 0.1rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+p { margin: 0 0 1rem; }
+
+a { color: var(--accent); }
+
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+
+.eyebrow {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.75rem;
+    color: var(--ink-mute);
+    margin-bottom: 0.9rem;
+}
+
+/* ---------- Home / hero ---------- */
+
+.hero {
+    padding: 5rem 0 4rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.hero__grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 4rem;
+    /* `align-items: stretch` makes both columns the same height (whichever
+     * is taller wins). Combined with the .hero__left flex layout below
+     * (which pushes the CTA row to the bottom via margin-top: auto), this
+     * lines the bottom of the three blue section buttons up with the
+     * bottom of the animation tile on desktop. */
+    align-items: stretch;
+}
+
+.hero h1 {
+    font-size: 3.2rem;
+    line-height: 1.08;
+    margin-bottom: 1.2rem;
+}
+
+.hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+}
+
+.hero__drop {
+    /* Drop-as-period after "infusionfox". Sized and positioned to read as
+       a period — narrower than the previous heft, and shifted down so
+       it sits in the bottom of the x-height rather than reaching toward
+       the top of lowercase letters. */
+    display: inline-block;
+    width: 0.22em;
+    height: 0.22em;
+    margin-left: 0.02em;
+    vertical-align: -0.05em;
+    fill: var(--ink);
+}
+
+.hero p.lede {
+    font-size: 1.15rem;
+    color: var(--ink-soft);
+    max-width: 40ch;
+}
+
+.hero__sidepanel {
+    border-left: 1px solid var(--line);
+    padding-left: 2rem;
+}
+
+.hero__sidepanel h3 {
+    font-size: 0.95rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-mute);
+    margin-bottom: 1rem;
+}
+
+.hero__sidepanel ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.hero__sidepanel li {
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95rem;
+}
+
+.hero__sidepanel li a {
+    text-decoration: none;
+    color: var(--ink);
+}
+
+.hero__sidepanel li a:hover { color: var(--accent); }
+
+.hero__sidepanel li .short {
+    color: var(--ink-mute);
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+}
+
+.hero__sidepanel .nav-group {
+    margin-bottom: 1.5rem;
+}
+
+.hero__sidepanel .nav-group:last-child {
+    margin-bottom: 0;
+}
+
+.hero__sidepanel .nav-group h4 {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.7rem;
+    color: var(--ink-mute);
+    font-weight: 500;
+    margin: 0 0 0.4rem;
+    padding-bottom: 0.25rem;
+}
+
+.btn {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 0.75rem 1.4rem;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    border-radius: var(--radius);
+    border: 1px solid var(--accent);
+    cursor: pointer;
+    transition: background 150ms ease, transform 150ms ease;
+}
+
+.btn:hover {
+    background: #152a47;
+}
+
+.btn--ghost {
+    background: transparent;
+    color: var(--accent);
+    margin-left: 0.5rem;
+}
+
+.btn--ghost:hover {
+    background: var(--accent-soft);
+}
+
+/* ---------- Home / what's inside ---------- */
+
+/* Three-column section that fills the homepage below the hero. Each
+   column previews one of the site's top-level areas (Calculators,
+   Hubs, Practice) with a count, a one-line description, a few
+   highlighted entries, and a CTA. Sits on a slightly different
+   background so the hero and the inside section feel like separate
+   bands of the page. */
+.home-inside {
+    padding: 4rem 0 5rem;
+    background: var(--paper-warm);
+    border-top: 1px solid var(--line);
+}
+
+.home-inside__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.home-inside__col {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.home-inside__count {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    line-height: 1;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+
+/* The anesthesia callout has no meaningful count (it's a single
+   worksheet), so it uses an SVG document icon in the count slot
+   instead. Inline SVG (not an emoji) so the icon renders at the
+   same size on every OS — emoji metrics differ between Apple,
+   Windows, and Google fonts, which produced visible inconsistency
+   between desktop and laptop screens.
+
+   Sized to roughly match the cap height of the numeric digits in
+   the other columns. The SVG inherits color via currentColor from
+   the .home-inside__count rule. */
+.home-inside__count--icon {
+    /* Override the font-size hack from the numeric variant; SVG
+       sizing comes from explicit width/height below. line-height
+       collapses so the icon doesn't carry a giant text line-box. */
+    font-size: 0;
+    line-height: 0;
+}
+
+.home-inside__count--icon svg {
+    width: 2.4rem;
+    height: 2.4rem;
+    display: block;
+}
+
+.home-inside__title {
+    margin: 0 0 0.6rem;
+    font-size: 1.35rem;
+    /* Use the body sans font (not the serif display font that other
+       <h3> headings inherit) so the column title matches the visual
+       weight and family of the list-item titles below it. Those
+       list items are <a> tags inside <li>, which inherit the body
+       sans by default. On mobile the columns stack, so any
+       serif/sans mismatch between the column title and the items
+       under it reads as a bug. */
+    font-family: var(--font-body);
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.home-inside__title a {
+    color: var(--ink);
+    text-decoration: none;
+    /* Belt and suspenders: explicitly inherit font-family and -weight
+       from the parent <h3>. Links don't inherit these in all browsers
+       (some user-agent stylesheets reset links to a sans-serif body
+       font), which would make this column heading render differently
+       from the columns whose headings happen to render correctly. */
+    font-family: inherit;
+    font-weight: inherit;
+}
+
+.home-inside__title a:hover {
+    color: var(--accent);
+}
+
+.home-inside__lede {
+    margin: 0 0 1.25rem;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    /* Lock the lede to exactly 5 lines so column heights stay
+       synchronized — the dotted dividers between bullets must line
+       up across the three columns, and any variation here cascades
+       down. line-clamp truncates if content overflows; min-height
+       (computed as 5 × line-height × font-size) reserves the space
+       even when content is shorter than 5 lines. */
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(5 * 1.55 * 0.95rem);
+}
+
+.home-inside__list {
+    list-style: none;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    border-top: 1px dashed var(--line);
+}
+
+.home-inside__list li {
+    padding: 0.7rem 0;
+    border-bottom: 1px dashed var(--line);
+    /* Make the li title bold by default so the anesthesia column's
+       plain-text bullets render at the same weight as the linked
+       bullets in the calculator and hub columns. The blurb span
+       inside resets to font-weight: 400 so the lighter description
+       text below the bold title still reads as supporting copy. */
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.home-inside__list a {
+    color: var(--ink);
+    text-decoration: none;
+    display: block;
+}
+
+.home-inside__list a:hover {
+    color: var(--accent);
+}
+
+.home-inside__blurb {
+    color: var(--ink-mute);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    margin-top: 0.2rem;
+    font-weight: 400;
+    /* Lock every bullet blurb to exactly 2 lines so the dotted
+       dividers between bullets line up across all three columns.
+       Each <li> = title (1 line) + blurb (2 lines) + padding =
+       same height in every column regardless of content. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(2 * 1.45 * 0.85rem);
+}
+
+/* The CTA sits at the bottom of every column regardless of how many
+   list items are above it, so the three columns line up at the bottom
+   even if one has fewer highlights. */
+.home-inside__cta {
+    margin-top: auto;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.home-inside__cta:hover {
+    text-decoration: underline;
+}
+
+/* Stack the columns on narrower screens. The grid collapses at the
+   same breakpoint the hero collapses, so the page reads as a single
+   coherent flow on tablet and below. */
+@media (max-width: 900px) {
+    .home-inside__grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+}
+
+/* ---------- Catalog ---------- */
+
+.catalog {
+    padding: 3rem 0 5rem;
+}
+
+.catalog__category {
+    margin-bottom: 3rem;
+}
+
+.catalog__category h2 {
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 0.4rem;
+    margin-bottom: 1.25rem;
+}
+
+.catalog__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.catalog__card {
+    display: block;
+    padding: 1.5rem;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 120ms, transform 120ms;
+}
+
+.catalog__card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.catalog__card h3 {
+    margin: 0 0 0.25rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.catalog__card h3 .title {
+    flex: 1;
+    min-width: 0;
+}
+
+.catalog__card h3 .short {
+    flex-shrink: 0;
+    white-space: nowrap;
+    /* Nudge the tag down a hair so its top aligns with the title
+       baseline rather than its cap-line. */
+    margin-top: 0.35em;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ink-mute);
+    letter-spacing: 0.1em;
+}
+
+/* On narrow viewports the card width forces long titles (e.g.
+   "Dexmedetomidine CRI") and long shorts (e.g. "Dexmedetomidine") to
+   compete for the same row. Single-word titles can't break
+   mid-character so the title overflows its flex column and visually
+   collides with the short. Stack them vertically instead — title on
+   top with full row width, short as a tag below. */
+@media (max-width: 720px) {
+    .catalog__card h3 {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+    }
+    .catalog__card h3 .short {
+        margin-top: 0;
+    }
+}
+
+.catalog__card p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+}
+
+/* ---------- Calculator page ---------- */
+
+.calc-page {
+    padding: 2.5rem 0 5rem;
+}
+
+.calc-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.calc-header h1 {
+    font-size: 2.6rem;
+    margin: 0;
+}
+
+.calc-header .stock {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--ink-mute);
+}
+
+.calc-tabs {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2rem;
+    /* Don't wrap. On narrow screens scroll horizontally so the
+       underline always sits under the row of items rather than
+       stretching past a wrapped row. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.calc-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.calc-tabs a {
+    padding: 0.6rem 0;
+    text-decoration: none;
+    color: var(--ink-soft);
+    border-bottom: 2px solid transparent;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+.calc-tabs a.active {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+}
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+/* Tool pages use a 50/50 layout at desktop (small form + small result, no
+   reason for the form column to be fixed-width as with the heavier calculators).
+   Collapses to single column on mobile via the .calc-grid media rule. */
+.tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+/* ---------- Inputs ---------- */
+
+.field {
+    margin-bottom: 1.25rem;
+}
+
+.field label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+.field .help {
+    font-size: 0.78rem;
+    color: var(--ink-mute);
+    margin-top: 0.3rem;
+}
+
+input[type="number"], input[type="text"], select {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: white;
+    color: var(--ink);
+    transition: border-color 120ms, box-shadow 120ms;
+}
+
+input[type="number"]:focus, input[type="text"]:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.field-group {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+}
+
+/* ---------- Norepi-style fixed prep card + alternatives disclosure ---------- */
+
+/* Replaces the concentration <select> on calculators where a single
+   preparation is the right default and alternatives are edge cases. The
+   card displays the concentration prominently so it reads like the kind of
+   bag-prep instruction a vet would write on a label.
+
+   Sized larger than other form fields because it's the only place on the
+   page where the user reads "this is the bag I'm preparing" — clarity
+   wins over compactness. */
+.prep-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    background: var(--accent-soft, #eef2f7);
+    border: 1px solid var(--accent, #1f3a5f);
+    border-radius: var(--radius);
+}
+
+.prep-card__concentration {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+}
+.prep-card__value {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--accent, #1f3a5f);
+    line-height: 1;
+}
+.prep-card__unit {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+}
+.prep-card__recipe {
+    font-size: 0.9rem;
+    color: var(--ink);
+    line-height: 1.35;
+}
+
+/* The "Use a different concentration" disclosure. Closed by default; opens
+   inline below the prep card so users on phones don't get a modal. */
+/* ---- "How this calculator works" disclosure ---- */
+/* Collapsed by default; an optional explainer for calculators with
+   more involved UI patterns (norepi at present). Visible enough to be
+   a clear affordance — pill-shaped summary with chevron — but zero
+   real estate when closed, so clinicians who already know the flow
+   aren't slowed down. */
+
+.how-it-works {
+    margin: 0 0 1.5rem;
+}
+.how-it-works > summary {
+    list-style: none;
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.55rem 0.95rem;
+    user-select: none;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.how-it-works > summary:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+}
+.how-it-works > summary::-webkit-details-marker {
+    display: none;
+}
+.how-it-works > summary::before {
+    content: "▸";
+    font-size: 0.75rem;
+    transition: transform 120ms ease;
+    display: inline-block;
+}
+.how-it-works[open] > summary::before {
+    transform: rotate(90deg);
+}
+.how-it-works__body {
+    margin-top: 0.85rem;
+    padding: 1rem 1.25rem;
+    background: white;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    max-width: 65ch;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+}
+.how-it-works__body p {
+    margin: 0 0 0.85rem;
+}
+.how-it-works__body p:last-child {
+    margin-bottom: 0;
+}
+.how-it-works__body strong {
+    color: var(--ink);
+}
+
+.alt-concentration-panel {
+    margin-top: 0.5rem;
+}
+.alt-concentration-panel > summary {
+    list-style: none;
+    cursor: pointer;
+    color: var(--accent, #1f3a5f);
+    font-size: 0.85rem;
+    padding: 0.4rem 0;
+    user-select: none;
+    border-bottom: 1px dotted var(--accent, #1f3a5f);
+    display: inline-block;
+}
+.alt-concentration-panel > summary::-webkit-details-marker {
+    display: none;
+}
+.alt-concentration-panel > summary::before {
+    content: "▸ ";
+    font-size: 0.7rem;
+    margin-right: 0.15rem;
+    transition: transform 120ms;
+    display: inline-block;
+}
+.alt-concentration-panel[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.alt-concentration-panel__body {
+    margin-top: 0.6rem;
+    padding: 0.85rem 1rem;
+    background: white;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+}
+
+.alt-concentration-panel__intro {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    line-height: 1.45;
+}
+
+.alt-concentration-panel__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+/* Each radio + its explanation reads as a small card. The radio is the
+   target tap area on mobile; the whole label is clickable. */
+.alt-concentration-option {
+    display: flex;
+    gap: 0.7rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color 120ms, background 120ms;
+}
+.alt-concentration-option:hover {
+    border-color: var(--accent, #1f3a5f);
+    background: var(--accent-soft, #eef2f7);
+}
+.alt-concentration-option input[type="radio"] {
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+    width: auto;
+    cursor: pointer;
+}
+.alt-concentration-option > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+.alt-concentration-option strong {
+    color: var(--ink);
+    font-size: 0.95rem;
+}
+.alt-concentration-option__recipe {
+    font-family: var(--font-mono);
+    color: var(--ink);
+    font-size: 0.8rem;
+}
+.alt-concentration-option__when {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+}
+
+/* ---- Concentration tabs (form's "Bag preparation" segmented selector) ---- */
+/* Used in calculator.html for the form's three-options-highlighted
+   concentration picker. All pump-safe presets are rendered as tabs;
+   the matching recipe card below shows the details of the currently
+   selected one. JS swaps which recipe card is .is-active when the user
+   clicks a different tab. Visual highlight on the active tab is CSS
+   only via :has(input:checked). */
+
+.conc-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.conc-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    background: var(--paper);
+    color: var(--ink-soft);
+    transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+.conc-tab:hover {
+    border-color: var(--ink-mute);
+    color: var(--ink);
+}
+.conc-tab:has(input[type="radio"]:checked) {
+    border-color: var(--signal);
+    background: var(--paper-warm);
+    color: var(--ink);
+}
+.conc-tab input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+.conc-tab:focus-within {
+    outline: 2px solid var(--signal);
+    outline-offset: 1px;
+}
+.conc-tab__value {
+    font-weight: 700;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+}
+.conc-tab__unit {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+}
+
+/* Suggested-badge inside concentration and bag-size tabs. Renders the
+   word "suggested" as a small secondary label inside the tab. Hidden by
+   default; visible only when the parent label carries .is-suggested.
+   JS moves the badge to track the patient-optimal preparation as
+   weight/dose changes; the badge is independent of which tab is checked
+   (selection vs. recommendation are visually distinct). */
+.conc-tab__badge,
+.bag-size-tab__badge {
+    display: none;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--signal);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 0.4rem;
+    padding-left: 0.45rem;
+    border-left: 1px solid currentColor;
+    align-self: center;
+}
+.conc-tab.is-suggested .conc-tab__badge,
+.bag-size-tab.is-suggested .bag-size-tab__badge {
+    display: inline-block;
+}
+
+/* Recipe cards: only the one matching the selected tab is visible.
+   The .is-active class is toggled by JS on radio change. */
+.conc-recipe {
+    display: none;
+    padding: 0.7rem 0.9rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+.conc-recipe.is-active {
+    display: block;
+}
+.conc-recipe__recipe {
+    color: var(--ink);
+}
+.conc-recipe__when {
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    margin-top: 0.3rem;
+}
+
+/* ---- Bag-size tabs (form's "Bag preparation" — second tab row) ----- */
+/* Sits below the concentration tabs in the norepinephrine form. Same
+   visual language as .conc-tab but visually a separate row. Together
+   the two tab rows drive which .conc-bag-recipe card is .is-active. */
+
+.bag-size-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin: 0.5rem 0 0.7rem;
+    flex-wrap: wrap;
+}
+
+.bag-size-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 0.92rem;
+    transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+.bag-size-tab:hover {
+    border-color: var(--ink-mute);
+    color: var(--ink);
+}
+.bag-size-tab:has(input[type="radio"]:checked) {
+    border-color: var(--signal);
+    background: var(--paper-warm);
+    color: var(--ink);
+}
+.bag-size-tab input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+.bag-size-tab:focus-within {
+    outline: 2px solid var(--signal);
+    outline-offset: 1px;
+}
+
+/* ---- Combined concentration × bag-size recipe card ---- */
+/* The form pre-renders 9 cards (3 concentrations × 3 bag sizes); JS
+   toggles which has .is-active based on the currently-checked
+   concentration AND bag-size radios. Same structured DRAW / ADD TO /
+   FINAL layout as the original norepi-prep recipe card pattern. */
+
+.conc-bag-recipe {
+    display: none;
+    padding: 0.85rem 1rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+.conc-bag-recipe.is-active {
+    display: block;
+}
+.conc-bag-recipe__headline {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+}
+.conc-bag-recipe__title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink);
+}
+.conc-bag-recipe__badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--signal);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.conc-bag-recipe__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+.conc-bag-recipe__step {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+.conc-bag-recipe__label {
+    flex-shrink: 0;
+    width: 3.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.conc-bag-recipe__value {
+    color: var(--ink);
+}
+.conc-bag-recipe__detail {
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+}
+.conc-bag-recipe__final {
+    margin-top: 0.3rem;
+    padding-top: 0.45rem;
+    border-top: 1px dashed var(--line);
+}
+.conc-bag-recipe__final .conc-bag-recipe__value {
+    font-weight: 600;
+}
+
+/* ---- Norepinephrine bag-size preparation card ------------------------- */
+/* Used in result_panel.html. A tab-style selector picks 250 / 500 / 1 L;
+   the recipe card below shows the preparation for the selected bag only.
+   Hiding the unselected recipes is intentional safety design: drug
+   amounts differ across bag sizes (2 / 4 / 8 mg at 8 µg/mL), so three
+   recipes visible at once invites a "tech grabs the wrong number" error.
+
+   The "suggested" badge marks the full-vial preparation as a persistent
+   informational cue, regardless of which tab the user has selected.
+   Concentration and pump rate are invariant across the selection, so
+   nothing else on the page needs to update — pure CSS, no JS or HTMX. */
+
+.norepi-prep__tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.norepi-prep__tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    font-weight: 600;
+    transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+.norepi-prep__tab:hover {
+    border-color: var(--ink-mute);
+    color: var(--ink);
+}
+.norepi-prep__tab:has(input[type="radio"]:checked) {
+    border-color: var(--signal);
+    background: var(--paper-warm);
+    color: var(--ink);
+}
+/* Hide the actual radio input — the label is the visible affordance.
+   Keep it focusable for keyboard nav. */
+.norepi-prep__tab input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+.norepi-prep__tab:focus-within {
+    outline: 2px solid var(--signal);
+    outline-offset: 1px;
+}
+
+.norepi-prep__tab-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--signal);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Recipe cards: only the one matching the selected tab is visible.
+   data-bag matches the radio value. */
+.norepi-prep__recipes {
+    margin-top: 0;
+}
+.norepi-prep__recipe {
+    display: none;
+    padding: 0.85rem 1rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+.norepi-prep:has(input[value="250"]:checked) .norepi-prep__recipe[data-bag="250"],
+.norepi-prep:has(input[value="500"]:checked) .norepi-prep__recipe[data-bag="500"],
+.norepi-prep:has(input[value="1000"]:checked) .norepi-prep__recipe[data-bag="1000"] {
+    display: block;
+}
+
+.norepi-prep__recipe-headline {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+}
+.norepi-prep__recipe-bag {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink);
+}
+.norepi-prep__recipe-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--signal);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.norepi-prep__recipe-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+.norepi-prep__recipe-step {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+.norepi-prep__recipe-label {
+    flex-shrink: 0;
+    width: 3.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.norepi-prep__recipe-value {
+    color: var(--ink);
+}
+.norepi-prep__recipe-detail {
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+}
+.norepi-prep__recipe-final {
+    margin-top: 0.3rem;
+    padding-top: 0.45rem;
+    border-top: 1px dashed var(--line);
+}
+.norepi-prep__recipe-final .norepi-prep__recipe-value {
+    font-weight: 600;
+}
+
+.segmented {
+    display: inline-flex;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.segmented input { display: none; }
+
+.segmented label {
+    margin: 0;
+    padding: 0.65rem 0.9rem;
+    cursor: pointer;
+    background: white;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-right: 1px solid var(--line-strong);
+    transition: background 120ms, color 120ms;
+}
+
+.segmented label:last-of-type { border-right: none; }
+
+.segmented input:checked + label {
+    background: var(--accent);
+    color: white;
+}
+
+/* Always-column variant: stacks rows full-width.
+   Used when labels are long enough that horizontal layout produces a
+   ragged-right edge, and where each label wraps a radio in a span. */
+.segmented--column {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+.segmented--column > span {
+    display: flex;
+    width: 100%;
+}
+.segmented--column > span > label,
+.segmented--column > label {
+    flex: 1;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--line-strong);
+    box-sizing: border-box;
+}
+.segmented--column > span:last-of-type > label,
+.segmented--column > label:last-of-type {
+    border-bottom: none;
+}
+
+/* ---------- Results — the headline numbers ---------- */
+
+.result {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+}
+
+/* Placeholder shown when input is incomplete or unparseable.
+   Matches result-panel padding so layout doesn't jump when input
+   becomes valid. */
+.result-panel-placeholder {
+    background: var(--paper);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+}
+.result-placeholder-text {
+    color: var(--ink-mute);
+    font-size: 1rem;
+    margin: 0.5rem 0 0;
+}
+
+.result__headline {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.result__headline .eyebrow { margin-bottom: 0.4rem; }
+
+.result__primary {
+    font-family: var(--font-mono);
+    font-size: 3.5rem;
+    line-height: 1;
+    color: var(--ink);
+    font-weight: 500;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.02em;
+}
+
+.result__primary .unit {
+    font-size: 1.2rem;
+    color: var(--ink-mute);
+    margin-left: 0.5rem;
+    font-weight: 400;
+}
+
+.result__secondary {
+    color: var(--ink-mute);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    margin-top: 0.4rem;
+}
+
+.result__details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem 2rem;
+}
+
+.result__detail {
+    border-top: 1px solid var(--line);
+    padding-top: 0.75rem;
+}
+
+.result__detail dt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-mute);
+    margin-bottom: 0.2rem;
+    font-family: var(--font-mono);
+}
+
+.result__detail dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    color: var(--ink);
+}
+
+/* ---------- Anesthesia sheet (preop/intraop) ----------
+   Used by `partials/anesthesia_sheet_preop.html` and
+   `partials/anesthesia_sheet_intraop.html`. The sheet is a printable
+   drug reference — visually it sits inside a white card on screen and
+   prints edge-to-edge on paper. Sections, titles, warning banners,
+   and tables all share these styles. */
+
+.sheet-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 1rem;
+}
+.sheet-patient-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.1;
+}
+.sheet-patient-meta {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    margin-top: 0.15rem;
+}
+.sheet-brand {
+    text-align: right;
+    line-height: 1.3;
+}
+
+/* The amber-bordered "verify all concentrations" banner. */
+.sheet-warning-banner {
+    background: var(--signal-soft, #fff4e8);
+    border-left: 3px solid var(--signal, #b54708);
+    color: #6b2a13;
+    padding: 0.7rem 1rem;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    margin-bottom: 2rem;
+}
+
+/* A section is one logical block on the sheet (Circuit, Premed opioids,
+   Fluids, etc). Sections need clear vertical separation so the eye can
+   pick out where one block ends and the next begins. */
+.sheet-section {
+    margin-bottom: 2rem;
+}
+.sheet-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Section title: heavier than the bold drug names that follow, with
+   uppercase letter-spacing and a colored bottom border for clear
+   visual hierarchy. The trailing inline span (with the "(choose one)"
+   hint) gets reset to a lower-weight, regular-case secondary line. */
+.sheet-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.35rem 0 0.4rem;
+    margin-bottom: 0.6rem;
+    border-bottom: 1px solid var(--ink-mute);
+}
+.sheet-section-title > span {
+    /* Inline hint text appended after the title — render it as a
+       quieter, normal-case subtitle on its own line so the title stays
+       clean. */
+    display: block;
+    margin-top: 0.15rem;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    font-weight: 400 !important;
+    color: var(--ink-mute);
+    font-size: 0.78rem !important;
+    line-height: 1.4;
+}
+
+.sheet-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+.sheet-table th {
+    text-align: left;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-mute);
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    font-weight: 600;
+}
+.sheet-table td {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+    line-height: 1.4;
+}
+.sheet-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+.sheet-table .col-vol {
+    white-space: nowrap;
+}
+
+.sheet-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.78rem;
+    color: var(--ink-mute);
+    line-height: 1.5;
+}
+
+/* ---------- Titration ladder card ---------- */
+
+/* Grid wrapper used on the intraoperative anesthesia sheet to lay out
+   titration-card panels side-by-side. Currently dobutamine and norepi
+   render ladders; dopamine omits its ladder (the 6×kg method makes
+   pump rate identically equal to dose). `auto-fit` adapts to the number
+   of cards: 2 cards take 50/50, 3 cards take a third each, and at narrow
+   widths cards stack into a single column once each would drop below
+   280px. */
+.titration-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0 1.25rem;
+}
+
+.titration-card {
+    margin: 1rem 0 1.25rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--paper);
+    overflow: hidden;
+}
+
+.titration-card__head {
+    padding: 0.75rem 1rem 0.5rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--accent-soft);
+}
+
+.titration-card__hint {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: var(--ink-mute);
+}
+
+.titration-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+}
+
+.titration-table th {
+    text-align: left;
+    padding: 0.5rem 1rem;
+    font-size: 0.78rem;
+    /* Intentionally NOT text-transform: uppercase here. The dose-column
+       header includes "µg/kg/min", and CSS uppercasing transforms the
+       Greek µ into a glyph that reads as a capital M in many sans-serif
+       fonts — turning "µg/kg/min" into something that looks like
+       "MG/KG/MIN" on screen and print. At a glance the difference
+       between mg and µg is 1000-fold and lethal at vasopressor doses,
+       so we render the header in its written case with letter-spacing
+       for the same scannable look. */
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    color: var(--ink-mute);
+    border-bottom: 1px solid var(--line);
+    background: var(--paper-warm);
+}
+
+.titration-table td {
+    padding: 0.45rem 1rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+}
+
+.titration-table tr:last-child td { border-bottom: 0; }
+
+.titration-table__dose { width: 35%; }
+.titration-table__rate {
+    width: 45%;
+    font-weight: 600;
+}
+.titration-table__flag-col,
+.titration-table__flag { width: 20%; text-align: right; }
+
+/* Highlight the row matching the just-computed dose */
+.titration-table tr.is-current td {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    border-bottom-color: var(--accent);
+}
+.titration-table tr.is-current .titration-table__rate {
+    font-size: 1.05rem;
+}
+
+/* Mark caution rows so the tech knows they're entering watch-closely territory */
+.titration-table tr.is-caution td {
+    background: var(--signal-soft);
+}
+.titration-table tr.is-caution.is-current td {
+    /* If the user is sitting on a caution-row dose, current highlight wins */
+    background: var(--accent-soft);
+}
+
+.titration-table__flag-pill {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-family: var(--font-sans, inherit);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--signal);
+    background: rgba(181, 66, 29, 0.08);
+    border: 1px solid var(--signal);
+}
+
+/* Inline explanation of what the red caution rows mean. Sits inside the
+   titration card so a vet glancing at the ladder can see the clinical
+   rationale without having to enter a caution-level dose. */
+.titration-card__caution-note {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--signal);
+    background: var(--signal-soft);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: #6b2a13;
+}
+.titration-card__caution-note .eyebrow {
+    color: var(--signal);
+    margin-bottom: 0.35rem;
+}
+.titration-card__caution-note p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+/* ---------- Warnings ---------- */
+
+.warnings {
+    margin-top: 1.25rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--signal);
+    background: var(--signal-soft);
+    color: #6b2a13;
+    font-size: 0.93rem;
+}
+
+.warnings.danger {
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: #5a1818;
+}
+
+.warnings ul {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.warnings li + li { margin-top: 0.35rem; }
+
+/* ---------- Dilution helper ---------- */
+
+.dilution {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+}
+
+.calc-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.dilution summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+}
+
+.dilution summary::-webkit-details-marker { display: none; }
+
+.dilution summary::after {
+    content: "+";
+    font-family: var(--font-mono);
+    color: var(--ink-mute);
+    font-size: 1.3rem;
+}
+
+.dilution[open] summary::after { content: "−"; }
+
+.dilution__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+.dilution__result p {
+    margin-bottom: 0.5rem;
+}
+
+.dilution__result .big {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--ink);
+}
+
+/* ---------- Dilution reference table ---------- */
+
+.ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    font-size: 0.92rem;
+}
+
+.ref-table th,
+.ref-table td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.ref-table thead th {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-mute);
+    font-weight: 500;
+    border-bottom: 1px solid var(--line-strong);
+}
+
+.ref-table td:first-child {
+    font-family: var(--font-mono);
+    color: var(--ink);
+}
+
+/* ---------- Article / content ---------- */
+
+.article {
+    padding: 3rem 0 5rem;
+    max-width: 720px;
+}
+
+.article h1 { font-size: 2.4rem; }
+.article h2 { margin-top: 2.5rem; border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+.article h3 { margin-top: 1.75rem; }
+
+.article p, .article li {
+    font-size: 1.02rem;
+    color: var(--ink-soft);
+    line-height: 1.7;
+}
+
+.article blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 0.5rem 1.25rem;
+    margin: 1.5rem 0;
+    color: var(--ink-soft);
+    font-style: italic;
+    background: var(--accent-soft);
+}
+
+.article .admonition {
+    border: 1px solid var(--signal);
+    background: var(--signal-soft);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+}
+
+.article .admonition-title {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    color: var(--signal);
+    margin-bottom: 0.5rem;
+}
+
+/* ---------- Footer ---------- */
+
+.site-footer {
+    margin-top: 4rem;
+    padding: 3rem 0 2rem;
+    border-top: 1px solid var(--line);
+    background: var(--paper-warm);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+}
+
+.site-footer__columns {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.site-footer a {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+}
+
+.site-footer a:hover { color: var(--accent); }
+
+.site-footer__fineprint {
+    font-size: 0.8rem;
+    color: var(--ink-mute);
+    border-top: 1px solid var(--line);
+    padding-top: 1rem;
+    max-width: 70ch;
+}
+
+.site-footer__meta {
+    font-size: 0.75rem;
+    color: var(--ink-mute);
+    margin-top: 0.6rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+}
+
+.site-footer__meta a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 2px;
+}
+
+.site-footer__meta a:hover {
+    color: var(--ink);
+    text-decoration-color: currentColor;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+    .hero__grid { grid-template-columns: 1fr; gap: 2.5rem; }
+    .hero__sidepanel { border-left: none; border-top: 1px solid var(--line); padding: 2rem 0 0; }
+    .hero h1 { font-size: 2.4rem; }
+    .calc-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .tool-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .dilution__grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .result__primary { font-size: 2.6rem; }
+    .calc-header h1 { font-size: 2rem; }
+}
+
+@media (max-width: 560px) {
+    .container { padding: 0 1rem; }
+    .site-nav { gap: 0.85rem; font-size: 0.8rem; }
+    .brand__mark-tile { width: 22px; height: 22px; }
+    .brand__wordmark { height: 22px; }
+    .brand { gap: 0.35rem; }
+    .hero { padding: 3rem 0; }
+    .hero h1 { font-size: 1.9rem; }
+}
+
+/* HTMX: subtle loading indicator on the results panel */
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+.htmx-request .htmx-indicator { opacity: 0.5; }
+.htmx-request.result { opacity: 0.6; }
+
+/* ---------- Auth / account / admin ---------- */
+
+.auth-page {
+    padding: 4rem 0 5rem;
+}
+
+.auth-page h1 {
+    margin-bottom: 0.5rem;
+}
+
+.optional {
+    color: var(--ink-mute);
+    font-weight: 400;
+    font-size: 0.85em;
+}
+
+.field-error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+}
+
+.radio-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.radio-row, .checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: white;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.radio-row:has(input:checked),
+.checkbox-row:has(input:checked) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.radio-row input, .checkbox-row input {
+    margin-top: 0.2rem;
+    accent-color: var(--accent);
+}
+
+.conditional-fields { display: none; }
+
+.attestation {
+    margin-top: 1.75rem;
+    padding: 1.25rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.account-details {
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem 2rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem;
+}
+
+.account-details dt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-mute);
+    margin-bottom: 0.2rem;
+    font-family: var(--font-mono);
+}
+
+.account-details dd {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1rem;
+}
+
+.btn-inline {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--line-strong);
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-family: inherit;
+    margin-right: 0.25rem;
+}
+
+.btn-inline:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+}
+
+.site-nav__user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+    color: var(--ink-mute);
+}
+
+.site-nav__user form {
+    display: inline;
+}
+
+.site-nav__user button {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-family: inherit;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.site-nav__user button:hover { color: var(--accent); }
+
+/* ---------- Protocol steps ---------- */
+
+.protocol-step {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 2rem 2.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.protocol-step__head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.protocol-step__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.protocol-step__head h2 {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.protocol-step__body {
+    color: var(--ink);
+    line-height: 1.7;
+}
+
+.protocol-step__body p:first-child { margin-top: 0; }
+
+.protocol-step__body ul, .protocol-step__body ol {
+    padding-left: 1.3rem;
+}
+
+.protocol-step__body li { margin-bottom: 0.4rem; }
+
+.protocol-step__conditions {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--line-strong);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.protocol-condition {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 0.8rem 1rem;
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.protocol-condition__when {
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+}
+
+.protocol-condition__then {
+    color: var(--ink);
+    font-size: 0.95rem;
+}
+
+/* ---------- Formula display ---------- */
+
+.formula-box {
+    margin-top: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--paper-warm);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--accent);
+}
+
+.formula-box .eyebrow {
+    margin-bottom: 0.5rem;
+}
+
+.formula-caption {
+    color: var(--ink-mute);
+    font-size: 0.82rem;
+    margin: 0.5rem 0 0;
+    line-height: 1.4;
+    text-align: center;
+    font-style: italic;
+}
+
+.formula-display {
+    margin: 1.25rem 0;
+    padding: 1.25rem 1.5rem;
+    background: var(--paper-warm);
+    border-radius: var(--radius);
+    overflow-x: auto;
+}
+
+/* KaTeX overrides for our color scheme */
+.katex { color: var(--ink); }
+.formula-box .katex,
+.formula-display .katex { color: var(--ink); }
+
+/* On narrow screens, allow KaTeX to scroll horizontally rather than overflow */
+@media (max-width: 600px) {
+    .formula-display,
+    .formula-box {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 1rem;
+    }
+    .formula-display .katex-display,
+    .formula-box .katex-display {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 0.5rem;
+        max-width: 100%;
+    }
+    .formula-display .katex-html,
+    .formula-box .katex-html {
+        overflow-x: auto;
+    }
+}
+
+/* Vertical-stack variant of segmented control for 3+ options on narrow screens */
+.segmented--stack {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+.segmented--stack label {
+    border-radius: 0;
+    text-align: left;
+    padding-left: 1rem;
+}
+.segmented--stack label:first-of-type { border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); }
+.segmented--stack label:last-of-type { border-bottom-left-radius: var(--radius); border-bottom-right-radius: var(--radius); }
+@media (min-width: 600px) {
+    .segmented--stack { grid-template-columns: repeat(3, 1fr); }
+    .segmented--stack label { text-align: center; padding-left: 0; }
+    .segmented--stack label:first-of-type {
+        border-top-right-radius: 0;
+        border-bottom-left-radius: var(--radius);
+    }
+    .segmented--stack label:last-of-type {
+        border-bottom-left-radius: 0;
+        border-top-right-radius: var(--radius);
+    }
+}
+
+/* ---------- Feedback widget ---------- */
+
+#fb-widget { z-index: 40; }
+
+#fb-open {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: white;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    z-index: 40;
+}
+
+#fb-open:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+#fb-open svg { color: var(--accent); }
+
+#fb-dialog[hidden] { display: none; }
+
+#fb-dialog {
+    position: fixed;
+    inset: 0;
+    background: rgba(19, 21, 26, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 50;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.fb-dialog__panel {
+    background: var(--paper);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    animation: fb-slide-up 180ms ease-out;
+}
+
+@keyframes fb-slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.fb-dialog__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.fb-dialog__head h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+#fb-close {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    font-size: 1.6rem;
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+    border-radius: 50%;
+}
+#fb-close:hover { color: var(--ink); background: var(--line); }
+
+#fb-body { padding: 1.25rem 1.5rem 1.5rem; }
+
+#fb-body textarea {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    font-size: 0.95rem;
+    font-family: var(--font-body);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: white;
+    color: var(--ink);
+    resize: vertical;
+    min-height: 100px;
+}
+#fb-body textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.fb-confirm { padding: 0.5rem 0; }
+
+/* Desktop: float the dialog as a card, not a sheet */
+@media (min-width: 700px) {
+    #fb-dialog {
+        align-items: center;
+        padding: 3rem 1rem;
+    }
+}
+
+/* Keep the feedback button out of the way on small screens where space is tight */
+@media (max-width: 560px) {
+    #fb-open {
+        padding: 0.55rem 0.8rem;
+        font-size: 0.82rem;
+        right: 0.8rem;
+        bottom: 0.8rem;
+    }
+    #fb-open span { display: none; }
+}
+
+/* ---------- DKA-style numbered step layout (used in DKA, anaphylaxis,
+   hypoglycemia, hyperkalemia, heatstroke, shock hubs) ---------- */
+.dka-step {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.85rem;
+    align-items: start;
+    margin: 0;
+    padding: 2.25rem 0 1.5rem;
+    border-top: 1px solid var(--line);
+}
+.dka-step:first-child {
+    border-top: none;
+    padding-top: 0.5rem;
+}
+.dka-step__number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--ink);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.dka-step__body {
+    min-width: 0;
+}
+.dka-step__body h3 {
+    margin: 0.1rem 0 0.5rem;
+    font-size: 1.1rem;
+}
+.dka-step__body p:first-of-type {
+    margin-top: 0;
+}
+.dka-step__body p {
+    line-height: 1.6;
+}
+.dka-step__body .btn {
+    margin-top: 0.5rem;
+}
+.dka-step__body > *:last-child {
+    margin-bottom: 0;
+}
+@media (max-width: 560px) {
+    .dka-step {
+        gap: 0.65rem;
+        padding: 2rem 0 1.25rem;
+    }
+    .dka-step__number {
+        width: 1.85rem;
+        height: 1.85rem;
+        font-size: 0.9rem;
+    }
+    .dka-step__body h3 {
+        font-size: 1rem;
+    }
+}
+
+/* ============================================================
+   Hub component classes — shared across emergency hubs
+   ============================================================ */
+
+/* Comparison card grid: stacks on mobile, 2-up on desktop. */
+.compare-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+    margin-top: var(--space-md);
+}
+@media (min-width: 760px) {
+    .compare-cards { grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+}
+.compare-card {
+    padding: 1rem;
+    background: var(--paper-warm);
+    border-radius: var(--radius);
+    border-left: 4px solid var(--ink-soft);
+}
+.compare-card .eyebrow { font-weight: 600; }
+.compare-card p { margin: var(--space-xs) 0; line-height: 1.55; font-size: 0.92rem; }
+
+/* Severity-colored variants for compare-card and step__number */
+.compare-card--critical { border-left-color: var(--sev-critical); }
+.compare-card--high     { border-left-color: var(--sev-high); }
+.compare-card--info     { border-left-color: var(--sev-info); }
+.compare-card--special  { border-left-color: var(--sev-special); }
+.compare-card--caution  { border-left-color: var(--sev-caution); }
+
+.compare-card--critical .eyebrow { color: var(--sev-critical); }
+.compare-card--high     .eyebrow { color: var(--sev-high); }
+.compare-card--info     .eyebrow { color: var(--sev-info); }
+.compare-card--special  .eyebrow { color: var(--sev-special); }
+.compare-card--caution  .eyebrow { color: var(--sev-caution); }
+
+/* Definition-list pattern for the "label : value" pairs inside a card */
+.compare-card .signs {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.35rem 0.85rem;
+    margin-top: 0.55rem;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+.compare-card .signs dt { color: var(--ink-soft); font-weight: 400; }
+.compare-card .signs dd { margin: 0; font-weight: 600; }
+
+/* Treatment / Rx label-value table inside a step body */
+.rx-table {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem 0;
+    margin-top: 0.55rem;
+    font-size: 0.92rem;
+}
+@media (min-width: 600px) {
+    .rx-table { grid-template-columns: max-content 1fr; gap: 0.5rem 1rem; }
+}
+.rx-table .label { color: var(--ink-soft); }
+.rx-table .value { font-weight: 600; }
+.rx-table .label + .value { margin-top: -0.25rem; }
+@media (min-width: 600px) {
+    .rx-table .label + .value { margin-top: 0; }
+}
+
+/* Lactate-style banded reference table — compact 2-col definition list */
+.banded-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.4rem 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.92rem;
+}
+.banded-list dt {
+    color: var(--ink-soft);
+    font-weight: 600;
+    white-space: nowrap;
+    margin: 0;
+}
+.banded-list dd { margin: 0; }
+
+/* Wrapping flex row for cross-link buttons under a step */
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+.button-row .btn { flex: 0 0 auto; }
+
+/* Step badge color modifiers — apply alongside dka-step__number */
+.step-num--critical { background: var(--sev-critical); }
+.step-num--high     { background: var(--sev-high); }
+.step-num--info     { background: var(--sev-info); }
+.step-num--special  { background: var(--sev-special); }
+.step-num--caution  { background: var(--sev-caution); }
+
+/* ============================================================
+   Data tables in result partials
+   ============================================================ */
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+.data-table thead tr {
+    border-bottom: 2px solid var(--line);
+}
+.data-table thead th {
+    text-align: left;
+    padding: 0.4rem 0.5rem;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+.data-table thead th:last-child { text-align: right; }
+.data-table tbody td {
+    padding: 0.5rem;
+    vertical-align: top;
+}
+.data-table tbody tr {
+    border-bottom: 1px solid var(--line);
+}
+.data-table tbody tr:last-child { border-bottom: none; }
+.data-table tbody td:last-child {
+    font-weight: 600;
+    text-align: right;
+}
+
+/* For label-value style tables without <thead> */
+.data-table.kv tbody td:first-child {
+    color: var(--ink-soft);
+    width: 40%;
+}
+.data-table.kv tbody td:last-child {
+    text-align: left;
+    font-weight: 600;
+}
+@media (max-width: 560px) {
+    .data-table.kv tbody td:first-child {
+        width: auto;
+    }
+}
+
+/* ============================================================
+ * Practice problems
+ * ============================================================ */
+
+.practice-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.practice-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    padding: 1.25rem 1.4rem;
+}
+
+.practice-card__head {
+    margin-bottom: 0.75rem;
+}
+
+.practice-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    align-items: center;
+}
+
+.practice-card__topic {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+}
+
+.practice-card__difficulty {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    background: var(--paper-warm);
+}
+
+.practice-card__difficulty--intro {
+    border-color: #c8d8c4;
+    color: #2f4f2f;
+    background: #f1f7ef;
+}
+.practice-card__difficulty--clinical {
+    border-color: #c5cee0;
+    color: #2c3e5d;
+    background: #eef3fb;
+}
+.practice-card__difficulty--advanced {
+    border-color: #e0c5b8;
+    color: #6b3a1d;
+    background: #fbf2ec;
+}
+
+.practice-card__title {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.35;
+}
+
+.practice-card__scenario {
+    color: var(--ink);
+    line-height: 1.65;
+    margin-bottom: 1rem;
+}
+
+.practice-card__solution {
+    border-top: 1px dashed var(--line);
+    padding-top: 0.85rem;
+}
+
+.practice-card__solution > summary {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.practice-card__solution > summary::-webkit-details-marker {
+    display: none;
+}
+
+.practice-card__solution > summary::before {
+    content: "▸";
+    display: inline-block;
+    transition: transform 0.15s ease;
+    font-size: 0.7rem;
+    color: var(--ink-mute);
+}
+
+.practice-card__solution[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.practice-card__solution[open] > summary {
+    margin-bottom: 0.85rem;
+}
+
+.practice-card__solution-body {
+    /* Solution body content lives here */
+}
+
+.practice-steps {
+    list-style: decimal;
+    padding-left: 1.5rem;
+    margin: 0;
+    counter-reset: practice-step;
+}
+
+.practice-step {
+    margin-bottom: 1rem;
+    line-height: 1.65;
+}
+
+.practice-step:last-child {
+    margin-bottom: 0;
+}
+
+.practice-step__narrative {
+    margin: 0 0 0.35rem;
+    color: var(--ink);
+}
+
+.practice-step__math {
+    margin: 0.3rem 0 0;
+    padding: 0.5rem 0.75rem;
+    background: var(--paper-warm);
+    border-left: 3px solid var(--line);
+    border-radius: var(--radius);
+    overflow-x: auto;
+}
+
+.practice-answer {
+    margin-top: 1.25rem;
+    padding: 0.85rem 1rem;
+    background: var(--paper-warm);
+    border-left: 3px solid var(--signal);
+    border-radius: var(--radius);
+}
+
+/* Hints are stacked above the worked answer. Visually lighter than the
+ * main reveal so the eye lands on "Show worked answer" if you're not
+ * stuck, but the hints are right there if you are. */
+.practice-card__hints {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+}
+
+.practice-card__hint > summary {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.65rem;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    background: transparent;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+}
+
+.practice-card__hint > summary:hover {
+    color: var(--ink);
+    border-color: var(--ink-mute);
+}
+
+.practice-card__hint > summary::-webkit-details-marker {
+    display: none;
+}
+
+.practice-card__hint > summary::before {
+    content: "?";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.05rem;
+    height: 1.05rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--paper);
+    background: var(--ink-mute);
+    border-radius: 50%;
+}
+
+.practice-card__hint[open] > summary {
+    margin-bottom: 0.5rem;
+    color: var(--ink);
+}
+
+.practice-card__hint-body {
+    margin: 0 0 0 0.25rem;
+    padding: 0.55rem 0.85rem;
+    color: var(--ink);
+    background: var(--paper-warm);
+    border-left: 2px solid var(--line);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* Answer-check input. Sits between scenario and hints — visible by
+ * default since it's the interactive element the user is most likely
+ * to use right after reading the scenario. */
+.practice-check {
+    margin-bottom: 0.85rem;
+    padding: 0.75rem 0.9rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.practice-check__label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 0.35rem;
+}
+
+.practice-check__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.practice-check__input {
+    flex: 1 1 9rem;
+    min-width: 7rem;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+}
+
+.practice-check__input:focus {
+    outline: none;
+    border-color: var(--signal);
+    box-shadow: 0 0 0 2px var(--signal-soft, rgba(20, 90, 165, 0.12));
+}
+
+.practice-check__unit {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    min-width: 3.5rem;
+}
+
+.practice-check__btn {
+    padding: 0.45rem 0.95rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--paper);
+    background: var(--ink);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.practice-check__btn:hover {
+    background: var(--ink-soft);
+    border-color: var(--ink-soft);
+}
+
+.practice-check__feedback {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-height: 1.2em;  /* reserve space so layout doesn't jump */
+}
+
+.practice-check__feedback--correct {
+    color: #2f4f2f;
+}
+.practice-check__feedback--close {
+    color: #6b3a1d;
+}
+.practice-check__feedback--incorrect {
+    color: #5a1818;
+}
+.practice-check__feedback--bad-input {
+    color: var(--ink-mute);
+    font-style: italic;
+    font-weight: 400;
+}
+
+/* Container when a problem has multiple checks. Each individual check
+ * keeps the same padding/border treatment from before. */
+.practice-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+}
+
+/* Multiple-choice variant of practice-check. Reset fieldset defaults
+ * (browsers add their own borders/padding) so MC blocks look the same
+ * as numeric blocks. */
+.practice-check--mc {
+    border-radius: var(--radius);
+    /* fieldset reset */
+    padding: 0.75rem 0.9rem;
+    margin: 0;
+    /* same surface as numeric input block */
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+}
+
+.practice-check--mc > legend {
+    /* keep legend styled like the numeric label */
+    padding: 0;
+    margin: 0;
+}
+
+.practice-check__choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin: 0.45rem 0 0.5rem;
+}
+
+.practice-check__choice {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.92rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.practice-check__choice:hover {
+    border-color: var(--ink-mute);
+}
+
+.practice-check__choice input[type="radio"] {
+    margin: 0;
+    accent-color: var(--ink);
+}
+
+.practice-check__choice input[type="radio"]:checked + span {
+    font-weight: 600;
+}
+
+/* Reference links at the bottom of each practice card. Always visible
+ * (not inside the worked-answer disclosure) so students can navigate to
+ * the underlying background or the calculator without revealing the
+ * solution. */
+.practice-card__refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px dashed var(--line);
+}
+
+.practice-card__ref {
+    flex: 1 1 14rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.55rem 0.8rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.12s ease;
+}
+
+.practice-card__ref:hover {
+    border-color: var(--ink-mute);
+    text-decoration: none;
+}
+
+.practice-card__ref-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+}
+
+.practice-card__ref-name {
+    font-size: 0.9rem;
+    color: var(--ink);
+    font-weight: 500;
+}
+
+/* ---------- Drawer navigation ----------
+ *
+ * Hamburger button sits in the site header to the left of the wordmark.
+ * Clicking it slides a drawer in from the left edge of the viewport,
+ * containing the full categorized "in the app" inventory. A dark
+ * overlay sits between the page and the drawer; clicking it dismisses.
+ *
+ * The drawer is rendered on every page (via base.html) so the
+ * inventory is always one click away from anywhere in the app. */
+
+.drawer-toggle {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 1.4rem;
+    height: 1.05rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    align-self: center;
+}
+
+.site-header__brand-cluster {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.drawer-toggle__bar {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: background 150ms ease;
+}
+
+.drawer-toggle:hover .drawer-toggle__bar {
+    background: var(--ink);
+}
+
+/* Dark overlay behind the open drawer. Hidden by default; fades in
+ * when JS adds .drawer-backdrop--visible. The element itself uses the
+ * `hidden` attribute to disappear from layout when fully closed; the
+ * --visible class drives the opacity transition. */
+.drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 22, 35, 0.45);
+    opacity: 0;
+    transition: opacity 200ms ease;
+    z-index: 90;
+}
+
+.drawer-backdrop--visible {
+    opacity: 1;
+}
+
+/* The drawer panel itself. Sits off-screen to the left until JS adds
+ * .drawer--open; transforms in over 200ms. Width caps at 22rem on
+ * wide screens; on narrow viewports it stretches to leave a small
+ * gap so the backdrop is still visible (cue that this is dismissable). */
+.drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 22rem;
+    max-width: calc(100vw - 3rem);
+    background: var(--paper);
+    border-right: 1px solid var(--line);
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+    z-index: 100;
+    box-shadow: 0 0 24px rgba(15, 22, 35, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+.drawer--open {
+    transform: translateX(0);
+}
+
+.drawer__inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.25rem 0.85rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.drawer__brand {
+    /* The lockup inside the drawer should match the header lockup size
+       so the brand reads consistently from header to drawer. */
+    flex: 0 0 auto;
+}
+
+/* Visually hide an element while keeping it accessible to screen readers.
+   Standard pattern; used here so the drawer's aria-labelledby still resolves
+   to a real heading even though the visible header is the brand lockup. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.drawer__close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--ink-mute);
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: var(--radius);
+}
+
+.drawer__close:hover {
+    background: var(--paper-warm);
+    color: var(--ink);
+}
+
+.drawer__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.85rem 1.25rem 1.5rem;
+}
+
+.drawer__section-label {
+    /* Visible section label above the first category. Reads as "In the
+       app" and orients the user inside the drawer. Slightly more prominent
+       than the category labels below it. */
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 1rem;
+}
+
+.drawer-group {
+    margin-bottom: 1.25rem;
+}
+
+.drawer-group__title {
+    margin: 0 0 0.4rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-mute);
+}
+
+.drawer-group__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.drawer-group__list li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px dashed transparent;
+}
+
+.drawer-group__list a {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.94rem;
+    flex: 1;
+}
+
+.drawer-group__list a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.drawer-group__short {
+    font-size: 0.7rem;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ---------- Hero homepage layout (post-drawer-refactor) ----------
+ *
+ * Two-column hero. Left holds the headline, value prop, and three section
+ * CTAs. Right holds an animation placeholder + a 2×2 grid of screenshot
+ * placeholders. On narrow viewports both columns stack and the screenshot
+ * grid drops to a single column. */
+
+.hero__left {
+    /* Flex column so we can push the CTA row to the bottom with
+     * margin-top: auto on .hero__ctas. Without this, the text content
+     * starts at the top and the buttons sit immediately under the
+     * paragraph — which means on a wider hero where the animation is
+     * tall, the buttons float in the middle of the visual frame. */
+    display: flex;
+    flex-direction: column;
+}
+
+.hero__valueprop {
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin: 1rem 0 0;
+    line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+    /* On mobile, the two-column desktop layout collapses to one column
+       and the long valueprop paragraph ends up between the lede and the
+       CTAs — a wall of text before the action. Swap their visual order
+       so users hit the CTAs first; valueprop stays available below for
+       readers who want the longer pitch. DOM order is unchanged, so
+       screen readers and SEO still see the natural narrative flow. */
+    .hero__ctas { order: 1; margin-top: 1.25rem; }
+    .hero__valueprop { order: 2; margin-top: 1.5rem; }
+}
+
+/* Three section-link buttons. Equal-weight blue buttons side by side
+ * on desktop, full-width stacked on mobile. margin-top: auto pushes the
+ * row to the bottom of the flex parent (.hero__left), lining up with
+ * the bottom of the right-column animation tile. */
+.hero__ctas {
+    margin-top: auto;
+    padding-top: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+/* Mobile: stack the CTAs full-width so each is a comfortable thumb
+ * target. The breakpoint here matches the hero grid collapse below. */
+@media (max-width: 880px) {
+    .hero__ctas {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .hero__ctas .btn {
+        text-align: center;
+    }
+}
+
+/* Right column: marketing visuals. Animation on top, 2x2 screenshot
+ * grid below. */
+/* Right column: a single screen recording of the app in use. The video
+ * itself is portrait (phone aspect), so we show it at its natural shape
+ * with a phone-like max width. The surrounding tile uses the same warm
+ * paper background as the rest of the hero so the video reads as
+ * "phone-shaped device, with the app on it" rather than "letterboxed
+ * landscape panel." */
+.hero__right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hero__shot {
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper-warm);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Ghost caption above the animation. Sits outside the bordered video
+ * tile so the video itself isn't covered. Small, muted, monospace —
+ * reads as a label, not a headline. */
+.hero__shot-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.hero__shot--animation {
+    /* Aspect matches the screen recording (734x858, ~6:7). max-width
+     * keeps the tile from growing absurdly wide on huge displays; the
+     * column itself sets the upper bound on most viewports. */
+    aspect-ratio: 734 / 858;
+    width: 100%;
+    max-width: 420px;
+}
+
+.hero__shot-video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;  /* video aspect matches tile aspect; fill cleanly */
+    background: var(--paper-warm);
+}
+
+@media (max-width: 880px) {
+    /* Hero grid collapses on mobile: right column drops below left.
+     * The phone-frame animation tile keeps its max-width cap so it
+     * doesn't span the full mobile viewport; it centers inside the
+     * right column. */
+    .hero__grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+}
+
+/* ---------- Tube feeding: printable schedule ---------- */
+
+/* Screen-only: hide elements meant for the printable. Per-page print
+   stylesheets (inline in tube_feeding.html) flip these to visible. */
+.print-only {
+    display: none;
+}
+
+/* "Print this schedule" button at the top of the result panel.
+   Same understated treatment as the anesthesia print button: ghost
+   appearance, accent color on hover, sits to the right so it's
+   never in the eye line of the headline number. */
+.tube-feeding-print-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+.tube-feeding-print-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+
+.tube-feeding-print-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Printable header. Hidden on screen (above), shown on print by
+   the inline @media print rules in tube_feeding.html. Carries
+   patient ID, weight, species, tube, and RER at the top of the
+   page so a cage-side reader can verify identity before reading
+   the schedule. Date is a write-in line so a nurse can hand-date
+   it when posted (avoids stamping a date the schedule may outlive). */
+.tube-feeding-print-header__title {
+    font-size: 14pt;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid #000;
+    padding-bottom: 0.25rem;
+}
+
+.tube-feeding-print-header__fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem 1.5rem;
+    font-size: 10pt;
+    margin-bottom: 0.75rem;
+}
+
+.tube-feeding-print-header__label {
+    color: #555;
+    margin-right: 0.4rem;
+}
+
+.tube-feeding-print-header__value {
+    color: #000;
+    font-weight: 600;
+}
+
+/* Write-in line for handwriting (patient ID when omitted, date
+   always). Renders as an underlined blank that's long enough to
+   write on. nbsp inside keeps the line drawn even when empty. */
+.tube-feeding-print-header__writein {
+    display: inline-block;
+    min-width: 12em;
+    border-bottom: 1px solid #999;
+}
+
+/* Three-column grid for the clinical background highlights below the
+   ramp table. Each column is a small subsection (Tube selection,
+   When to start, When to discontinue). Collapses to single-column on
+   narrow viewports and on print so the cage card reads top-to-bottom. */
+.tube-feeding-highlights__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+
+.tube-feeding-highlights__title {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.tube-feeding-highlights__list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    color: var(--ink-soft);
+}
+
+.tube-feeding-highlights__list li {
+    margin-bottom: 0.25rem;
+}
+
+@media (max-width: 760px) {
+    .tube-feeding-highlights__grid {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Learn — module index and module page styles
+   --------------------------------------------------------------------------- */
+
+/* Index: module cards in a vertical list. Each card is clickable. */
+.learn-module-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.learn-module-card {
+    display: block;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.learn-module-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.learn-module-card__meta {
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    font-size: 0.82rem;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.4rem;
+}
+
+.learn-module-card__ce {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.learn-module-card__title {
+    font-size: 1.15rem;
+    margin: 0 0 0.35rem;
+    color: var(--ink);
+    line-height: 1.35;
+}
+
+.learn-module-card__summary {
+    margin: 0 0 0.85rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    font-size: 0.95rem;
+}
+
+.learn-module-card__components {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+}
+
+.learn-module-card__components span {
+    padding: 0.15rem 0.55rem;
+    background: var(--surface-alt, #f3f1ec);
+    border-radius: 4px;
+    color: var(--ink-soft);
+}
+
+/* Module page: meta strip under the title with time / instructor / reviewed */
+.learn-module-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 0.85rem;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+}
+
+.learn-module-meta__label {
+    color: var(--ink-mute);
+    font-weight: 500;
+    margin-right: 0.25rem;
+}
+
+.learn-module-objectives {
+    color: var(--ink);
+    line-height: 1.7;
+    padding-left: 1.25rem;
+    max-width: 65ch;
+}
+
+.learn-module-objectives li {
+    margin-bottom: 0.4rem;
+}
+
+/* Video embed wrapper: 16:9 aspect ratio. */
+.learn-module-video {
+    position: relative;
+    width: 100%;
+    max-width: 880px;
+    aspect-ratio: 16 / 9;
+    background: var(--surface-alt, #f3f1ec);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.learn-module-video iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* Calculators section: 2-column grid of card links. */
+.learn-module-calculators {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.learn-module-calc-card {
+    display: block;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.15s;
+}
+
+.learn-module-calc-card:hover {
+    border-color: var(--accent);
+}
+
+.learn-module-calc-card h3 {
+    font-size: 1rem;
+    margin: 0 0 0.4rem;
+    color: var(--accent);
+}
+
+.learn-module-calc-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
+
+/* Practice problem list — links + topic tag. */
+.learn-module-practice {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+}
+
+.learn-module-practice li {
+    padding: 0.65rem 0;
+    border-bottom: 1px dashed var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.learn-module-practice li:last-child {
+    border-bottom: 0;
+}
+
+.learn-module-practice__topic {
+    font-size: 0.82rem;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+/* Quiz styling. */
+.learn-module-quiz {
+    list-style: none;
+    counter-reset: quiz-q;
+    padding: 0;
+    margin: 1.5rem 0 0;
+}
+
+.learn-module-quiz__q {
+    counter-increment: quiz-q;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.learn-module-quiz__q:last-child {
+    border-bottom: 0;
+}
+
+.learn-module-quiz__prompt::before {
+    content: counter(quiz-q) ". ";
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 0.3rem;
+}
+
+.learn-module-quiz__prompt {
+    color: var(--ink);
+    line-height: 1.6;
+    margin-bottom: 0.85rem;
+}
+
+.learn-module-quiz__choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+}
+
+.learn-module-quiz__choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    cursor: pointer;
+    line-height: 1.5;
+    color: var(--ink-soft);
+}
+
+.learn-module-quiz__choice input[type="radio"] {
+    margin-top: 0.3em;
+    flex-shrink: 0;
+}
+
+.learn-module-quiz__feedback {
+    margin: 0.85rem 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-alt, #f3f1ec);
+    border-left: 3px solid var(--ink-mute);
+    border-radius: 4px;
+}
+
+.learn-module-quiz__verdict {
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+.learn-module-quiz__verdict.is-correct {
+    color: #2f7d3a;
+}
+
+.learn-module-quiz__verdict.is-incorrect {
+    color: #a04040;
+}
+
+.learn-module-quiz__explanation {
+    color: var(--ink-soft);
+    line-height: 1.6;
+    font-size: 0.92rem;
+}
+
+
+/* ---------------------------------------------------------------------------
+   CRI mode toggle and target-pump-rate result panel
+   --------------------------------------------------------------------------- */
+
+/* Mode toggle at the top of the CRI form. Two stacked radio cards so
+   each option's hint sits below its own label, not cramped to the side. */
+.cri-mode-toggle .cri-mode-radios {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.cri-mode-radios__option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+        "radio label"
+        "radio hint";
+    gap: 0.15rem 0.6rem;
+    align-items: start;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+    background: var(--surface);
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.cri-mode-radios__option:hover {
+    border-color: var(--accent);
+}
+
+.cri-mode-radios__option:has(input:checked) {
+    border-color: var(--accent);
+    background: var(--surface-alt, #f3f1ec);
+}
+
+.cri-mode-radios__option input[type="radio"] {
+    grid-area: radio;
+    margin-top: 0.2em;
+}
+
+.cri-mode-radios__label {
+    grid-area: label;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.4;
+}
+
+.cri-mode-radios__hint {
+    grid-area: hint;
+    font-size: 0.85rem;
+    color: var(--ink-mute);
+    line-height: 1.45;
+}
+
+/* Mode banner on the target-pump-rate result panel. Color-coded to
+   make the alternate mode unmistakable at a glance. */
+.result__mode-banner {
+    margin-bottom: 1rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--surface-alt, #f3f1ec);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+}
+
+.result__mode-label {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 0.95rem;
+}
+
+/* Bag-prep recipe card. Reads like a procedure, with bold callouts
+   for the numbers the clinician needs to act on. */
+.bag-prep-card {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    background: var(--surface-alt, #f3f1ec);
+    border-radius: 6px;
+    border: 1px solid var(--line);
+}
+
+.bag-prep-card__steps {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+    color: var(--ink);
+    line-height: 1.65;
+}
+
+.bag-prep-card__steps li {
+    margin-bottom: 0.55rem;
+}
+
+.bag-prep-card__steps li:last-child {
+    margin-bottom: 0;
+}
+
+.titration-ladder__note {
+    margin-top: 1.25rem;
+    margin-bottom: 0.4rem;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Callout under the bag-prep card in target-pump-rate mode that
+   explicitly directs users to change the pump rate to titrate, not
+   re-enter the dose. The most common confusion in this mode is users
+   editing the dose field after preparing the bag — that recomputes a
+   new bag rather than telling them how to titrate the existing one. */
+.titration-callout {
+    margin: 1rem 0 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-alt, #fff5e6);
+    border-left: 3px solid var(--accent-warning, #c47c00);
+    border-radius: 4px;
+}
+
+.titration-callout__title {
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+    line-height: 1.4;
+}
+
+.titration-callout__body {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+
+/* ---------- Site-wide print rules ----------
+ * The mobile nav drawer and hamburger toggle are UI affordances that
+ * should never appear on a printed page. Hide them explicitly in print
+ * mode, since transform-based hiding (translateX off-screen) can
+ * unexpectedly snap into place when the browser applies print layout.
+ */
+@media print {
+    .drawer,
+    .drawer-backdrop,
+    .drawer-toggle,
+    .site-drawer {
+        display: none !important;
+    }
+}
+/* ---------- Blood gas reference-range hints ---------- *
+ * The form renders all four species/sample reference ranges under each
+ * numeric input; CSS `:has()` shows only the active combination. No JS
+ * required — the radios drive the state and the form's selector picks
+ * the matching `.bg-range[data-bg-context=...]` element. Browser
+ * support for `:has()` is the same as the `.radio-row:has(input:checked)`
+ * usage already in this file.
+ *
+ * If a browser without `:has()` support loads this page, all four
+ * hints display by default — overwhelming but not broken; the form
+ * still computes correctly.
+ */
+.bg-form .bg-range {
+    display: none;
+}
+.bg-form:has(input[name="species"][value="dog"]:checked):has(input[name="sample"][value="arterial"]:checked) .bg-range[data-bg-context="dog-arterial"],
+.bg-form:has(input[name="species"][value="dog"]:checked):has(input[name="sample"][value="venous"]:checked)   .bg-range[data-bg-context="dog-venous"],
+.bg-form:has(input[name="species"][value="cat"]:checked):has(input[name="sample"][value="arterial"]:checked) .bg-range[data-bg-context="cat-arterial"],
+.bg-form:has(input[name="species"][value="cat"]:checked):has(input[name="sample"][value="venous"]:checked)   .bg-range[data-bg-context="cat-venous"] {
+    display: block;
+}
+.bg-range__qual {
+    color: var(--ink-soft);
+    font-style: italic;
+}
+
+/* ============================================================
+   Header search widget + dropdown
+   ============================================================ */
+
+.header-search {
+    position: relative;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.header-search__form {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.5rem 0.35rem 0.6rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    transition: border-color 120ms ease, background 120ms ease;
+}
+
+.header-search__form:focus-within {
+    border-color: var(--ink-soft);
+    background: var(--paper);
+}
+
+.header-search__icon {
+    color: var(--ink-mute);
+    flex-shrink: 0;
+}
+
+.header-search__input {
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.9rem;
+    width: 200px;
+    outline: none;
+    padding: 0.05rem 0;
+}
+
+.header-search__input::placeholder {
+    color: var(--ink-mute);
+}
+
+.header-search__shortcut {
+    font-size: 0.7rem;
+    font-family: inherit;
+    padding: 0.05rem 0.32rem;
+    background: var(--paper);
+    color: var(--ink-mute);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.header-search__form:focus-within .header-search__shortcut {
+    visibility: hidden;
+}
+
+/* Dropdown panel */
+.search-dropdown {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    width: 480px;
+    max-width: 92vw;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    z-index: 100;
+}
+
+.search-dropdown[hidden] {
+    display: none;
+}
+
+.search-dropdown__inner {
+    padding: 0.3rem 0;
+}
+
+.search-result {
+    display: block;
+    padding: 0.55rem 0.9rem;
+    text-decoration: none;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+}
+
+.search-result:last-child {
+    border-bottom: none;
+}
+
+.search-result:hover,
+.search-result--active > .search-result,
+[role="option"].search-result--active > .search-result,
+li.search-result--active > a.search-result {
+    background: var(--paper-warm);
+}
+
+.search-result__row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.search-result__title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-result__title mark {
+    background: var(--signal-soft);
+    color: var(--ink);
+    padding: 0 1px;
+    border-radius: 2px;
+}
+
+.search-result__type {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-mute);
+    padding: 0.05rem 0.35rem;
+    background: var(--paper-warm);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.search-result__meta {
+    margin-top: 0.15rem;
+    font-size: 0.78rem;
+    color: var(--ink-mute);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-result__category {
+    color: var(--ink-soft);
+    font-weight: 500;
+}
+
+.search-dropdown__see-all {
+    display: block;
+    padding: 0.55rem 0.9rem;
+    background: var(--paper-warm);
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    text-decoration: none;
+    border-top: 1px solid var(--line);
+    text-align: center;
+}
+
+.search-dropdown__see-all:hover {
+    background: var(--line);
+    color: var(--ink);
+}
+
+.search-dropdown__empty {
+    padding: 1rem;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+}
+
+.search-dropdown__empty p {
+    margin: 0 0 0.3rem;
+}
+
+.search-dropdown__empty .muted {
+    color: var(--ink-mute);
+    font-size: 0.82rem;
+}
+
+/* Mobile: wrap the header search to a second row.
+   On phones the header has hamburger + brand + 3 nav links + search,
+   which is too much for a single ~390px row. Switch the header to
+   flex-wrap and let the search drop to its own full-width row below.
+   The drawer filter still provides search-from-the-hamburger; this
+   restores always-visible top-of-screen search affordance without
+   cramming row 1. Breakpoint at 768px (iPad mini portrait boundary). */
+@media (max-width: 768px) {
+    .site-header__inner {
+        flex-wrap: wrap;
+        row-gap: 0.55rem;
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+    }
+    .header-search {
+        flex-basis: 100%;
+        order: 99;          /* defensive: always last so it's the one that wraps */
+        margin-left: 0;
+    }
+    .header-search__form {
+        padding: 0.5rem 0.75rem;
+    }
+    .header-search__input {
+        width: 100%;
+        font-size: 1rem;    /* prevents iOS Safari auto-zoom on focus */
+    }
+    .header-search__shortcut {
+        display: none;      /* no keyboard shortcut hint on touch devices */
+    }
+    /* Dropdown spans the full width of the wrapped search row so it
+       reads as a continuation of the input rather than a floating panel. */
+    .search-dropdown {
+        right: 0;
+        left: 0;
+        width: auto;
+        max-width: none;
+    }
+}
+
+/* When the search input is in the page body (search.html), the result
+   <mark> elements share the same highlight color. */
+mark {
+    background: var(--signal-soft);
+    color: var(--ink);
+    padding: 0 1px;
+    border-radius: 2px;
+}
+
+/* ============================================================
+   Drawer filter
+   ============================================================ */
+
+.drawer-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0 0.85rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    transition: border-color 120ms ease;
+}
+
+.drawer-filter:focus-within {
+    border-color: var(--ink-soft);
+    background: var(--paper);
+}
+
+.drawer-filter__icon {
+    color: var(--ink-mute);
+    flex-shrink: 0;
+}
+
+.drawer-filter__input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.92rem;
+    outline: none;
+    min-width: 0;
+}
+
+.drawer-filter__input::placeholder {
+    color: var(--ink-mute);
+}
+
+.drawer-filter__clear {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: var(--line);
+    color: var(--ink-soft);
+    border-radius: 50%;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.drawer-filter__clear:hover {
+    background: var(--line-strong);
+    color: var(--ink);
+}
+
+/* Hidden state for filtered-out items */
+.drawer-group--hidden,
+.drawer-group__list li.drawer-item--hidden {
+    display: none;
+}
+
+.drawer-group__list li mark {
+    background: var(--signal-soft);
+    color: var(--ink);
+    padding: 0 1px;
+    border-radius: 2px;
+}
+
+.drawer-filter__empty {
+    padding: 1rem 0.75rem;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    border-top: 1px solid var(--line);
+    margin-top: 0.5rem;
+}
+
+.drawer-filter__empty p {
+    margin: 0 0 0.5rem;
+}
+
+.drawer-filter__fallback-link {
+    display: inline-block;
+    color: var(--ink-soft);
+    font-weight: 600;
+    text-decoration: none;
+    padding: 0.45rem 0.7rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.drawer-filter__fallback-link:hover {
+    background: var(--line);
+    color: var(--ink);
+}
+
+/* ILE protocol comparison tables — table on desktop, stacked card layout
+   on narrow viewports. The Phase 2 table has 6 columns which forces a
+   horizontal page scroll on phones; the Phase 3 rebolus table is 3
+   columns and works at most widths but uses the same pattern for
+   visual consistency. data-label attributes on each <td> drive the
+   ::before label content shown in the stacked view. */
+@media (max-width: 640px) {
+    .ile-protocols,
+    .ile-protocols thead,
+    .ile-protocols tbody,
+    .ile-protocols tr,
+    .ile-protocols td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .ile-protocols thead {
+        display: none;
+    }
+    .ile-protocols tr {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.6rem 0.75rem;
+        margin-bottom: 0.6rem;
+        border-bottom: 1px solid var(--border) !important;
+    }
+    .ile-protocols td {
+        text-align: left !important;
+        padding: 0.3rem 0 !important;
+        border: none !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.75rem;
+    }
+    .ile-protocols td::before {
+        content: attr(data-label);
+        font-weight: 500;
+        color: var(--ink-mute);
+        font-size: 0.82rem;
+        flex: 0 0 auto;
+    }
+    /* The Protocol column has nested name + short label; let it stack
+       differently. */
+    .ile-protocols td[data-label="Protocol"] {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 0.5rem !important;
+        border-bottom: 1px solid var(--border) !important;
+        margin-bottom: 0.4rem;
+    }
+    .ile-protocols td[data-label="Protocol"]::before {
+        display: none;
+    }
+}

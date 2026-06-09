@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Insulin CRI · DKA | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Regular crystalline insulin · 250 mL bag · IV</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Regular crystalline insulin only.</strong> Do
+                    NOT use lispro, aspart, NPH, glargine, detemir, or any
+                    long- or ultra-short-acting analogue for this protocol.
+                    Hoehne specifies regular insulin (Humulin R, Novolin
+                    R, ReliOn R, etc.) for the low-dose CRI.
+                </li>
+                <li>
+                    <strong>Prime the line and discard 50 mL.</strong>
+                    Regular insulin binds to plastic IV tubing, running
+                    50 mL of the prepared solution through the
+                    administration set and discarding it saturates the
+                    binding sites so the delivered dose matches the
+                    calculated rate. This is not optional.
+                </li>
+                <li>
+                    <strong>Goal: BG decline ≤ 50–75 mg/dL/hr</strong>
+                    toward < 250 mg/dL. Faster decline risks osmotic
+                    shifts. Adjust by changing the pump rate per the
+                    sliding scale, not the bag concentration. Re-check
+                    BG every 2 hours.
+                </li>
+                <li>
+                    <strong>Do not give insulin SC</strong> in dehydrated
+                    DKA patients, absorption is unreliable. IV CRI or
+                    intermittent IM (see <a href="/insulin-im-dka">/insulin-im-dka</a>)
+                    until rehydrated and eating.
+                </li>
+            </ul>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/insulin-cri-dka">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#electrolytes">Electrolytes &amp; monitoring</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/insulin-cri-dka/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="blood_glucose_mg_per_dl">Current blood glucose (mg/dL)</label>
+                    <input type="number" step="1" min="20" max="900"
+                           id="blood_glucose_mg_per_dl" name="blood_glucose_mg_per_dl"
+                           value="{{ inputs.blood_glucose_mg_per_dl }}" required>
+                    <div class="help">
+                        Determines the current sliding-scale tier (pump
+                        rate + fluid composition). Re-enter when BG is
+                        rechecked every 2 hours.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Cat loading dose option</label>
+                    <div class="segmented">
+                        <input type="radio" name="cat_dose_option" value="standard" id="cdo-std"
+                               {% if inputs.cat_dose_option.value == 'standard' %}checked{% endif %}>
+                        <label for="cdo-std">Standard 2.2 U/kg</label>
+                        <input type="radio" name="cat_dose_option" value="conservative" id="cdo-cons"
+                               {% if inputs.cat_dose_option.value == 'conservative' %}checked{% endif %}>
+                        <label for="cdo-cons">Conservative 1.1 U/kg</label>
+                    </div>
+                    <div class="help">
+                        Default 2.2 U/kg for both species; modern evidence
+                        supports this in cats. The conservative 1.1 U/kg
+                        cat option remains in the literature; only affects
+                        calculations when species is cat.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/insulin_cri_dka_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The bag is prepared once: 2.2 U/kg regular insulin added to 250 mL 0.9% NaCl. After priming and discarding 50 mL to saturate the tubing binding sites, the effective concentration is:
+            </p>
+            <div class="formula-display">
+                $$\text{effective concentration} = \frac{2.2_{\text{U/kg}} \times \text{weight}_{\text{kg}}}{250 - 50}\,\text{U/mL}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The sliding scale then specifies the pump rate (mL/hr) for each blood glucose tier, which delivers:
+            </p>
+            <div class="formula-display">
+                $$\text{delivered dose (U/kg/hr)} = \frac{\text{rate}_{\text{mL/hr}} \times \text{concentration}_{\text{U/mL}}}{\text{weight}_{\text{kg}}}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{total units} = 2.2 \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.2f"|format(result.total_units_added_to_bag) }}\,\text{U in 250 mL}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div id="worked-example-concentration" class="formula-display">
+                {% if result %}
+                $$\text{effective concentration} = \frac{ {{ "%.2f"|format(result.total_units_added_to_bag) }} }{200} = {{ "%.4f"|format(result.bag_concentration_units_per_ml) }}\,\text{U/mL (after prime)}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div id="worked-example-delivered" class="formula-display">
+                {% if result and result.pump_rate_ml_per_hr is not none %}
+                $$\text{delivered} = \frac{ {{ "%.2f"|format(result.pump_rate_ml_per_hr) }}_{\text{mL/hr}} \times {{ "%.4f"|format(result.bag_concentration_units_per_ml) }}_{\text{U/mL}} }{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} } = {{ "%.4f"|format(result.units_per_kg_per_hr_delivered) }}\,\text{U/kg/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="electrolytes" style="margin-top: 3rem;">
+            <div class="eyebrow">Concurrent management</div>
+            <h2>Electrolytes and monitoring</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Hypokalemia, hypophosphatemia, and hypomagnesemia commonly
+                develop or worsen as DKA therapy progresses (rapid declines
+                in K and P seen in 84% and 48% of dogs respectively per
+                Hoehne). Monitor electrolytes every 4–6 hours initially.
+            </p>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>
+                    <strong>Potassium:</strong> KCl CRI per the InfusionFox
+                    sliding-scale calculator (<a href="/hypokalemia">/hypokalemia</a>).
+                    Hard ceiling 0.5 mEq/kg/hr.
+                </li>
+                <li>
+                    <strong>Phosphate:</strong> KPhos CRI 0.03–0.12
+                    mmol/kg/hr IV. <em>If KPhos is given concurrently
+                    with KCl for K supplementation, subtract the K
+                    contribution of the KPhos from the total K
+                    administered as KCl.</em>
+                </li>
+                <li>
+                    <strong>Magnesium:</strong> MgSO₄ CRI 0.25–1
+                    mEq/kg/day in patients with documented
+                    hypomagnesemia.
+                </li>
+                <li>
+                    <strong>Bicarbonate:</strong> Generally not needed,
+                    the metabolic acidosis of DKA resolves with fluid +
+                    insulin therapy. Hoehne notes ADA recommends IV
+                    bicarbonate only if arterial pH &lt; 7.0 after 1 hr
+                    of fluids; give one-third to one-half of the
+                    calculated dose, then re-check pH.
+                </li>
+            </ul>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                <strong>BG / interstitial glucose:</strong> every 1–2 hr
+                until stable, then every 4 hr. Hoehne notes continuous
+                glucose monitoring systems are an accurate alternative
+                in DKA patients.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                <strong>Concurrent disease workup is essential.</strong>
+                Concurrent diseases drive DKA in up to 74% of dogs and
+                93% of cats (Hoehne, citing pancreatitis, UTI, neoplasia,
+                hyperadrenocorticism in dogs; hepatic lipidosis,
+                cholangiohepatitis, pancreatitis, infections, and
+                neoplasia in cats). DKA will not resolve durably without
+                identifying and treating the underlying trigger.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Hoehne SN. Diabetic Ketoacidosis. In: Silverstein DC,
+                Hopper K, eds. <em>Small Animal Critical Care Medicine</em>.
+                3rd ed. St. Louis, MO: Elsevier; 2023. Chapter 73, pp.
+                432–435. Sliding scale: Table 73.1, p. 435 (CRI protocol;
+                Macintire 1993 cited as the source of the per-tier rates).
+                Treatment overview: Box 73.1, p. 434.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    See also <a href="/insulin-im-dka">/insulin-im-dka</a>
+                for the intermittent IM alternative protocol.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

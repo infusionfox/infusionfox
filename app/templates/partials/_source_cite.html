@@ -1,0 +1,14 @@
+{# Shared inline citation block for calculator results.
+   Renders a compact "Source" footer with one or more citations.
+   Expects a `sources` variable (iterable of objects with .citation and optional .url, .reviewer). #}
+{% if sources %}
+<div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--ink-mute); line-height: 1.55;">
+    <div style="font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.7rem; color: var(--ink-soft); margin-bottom: 0.4rem;">Source{{ 's' if sources|length > 1 else '' }}</div>
+    {% for s in sources %}
+    <div style="margin-bottom: 0.35rem;">
+        {% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener" style="color: inherit; text-decoration: underline; text-decoration-color: var(--border);">{{ s.citation }}</a>{% else %}{{ s.citation }}{% endif %}
+        {% if s.reviewer %}<span style="display: block; font-style: italic; margin-top: 0.15rem;">{{ s.reviewer }}</span>{% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

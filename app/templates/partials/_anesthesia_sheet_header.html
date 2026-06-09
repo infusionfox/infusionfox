@@ -1,0 +1,24 @@
+{# Shared header for preop and intraop anesthesia sheets. Caller passes
+   `sheet_kind` ("preop" or "intraop") so each rendered header has a unique
+   DOM id for its timestamp. Both sheets carry the same patient/weight info
+   so each print copy stands alone. #}
+<div class="sheet-header">
+    <div class="sheet-patient">
+        <div class="sheet-patient-name">
+            {% if result.patient_name %}{{ result.patient_name }}{% else %}<span style="color: var(--ink-mute); font-style: italic;">Patient</span>{% endif %}
+        </div>
+        <div class="sheet-patient-meta">
+            {{ result.species.value | capitalize }}
+            {% if result.patient_age %} · {{ result.patient_age }}{% endif %}
+            · {{ result.weight_display }}
+        </div>
+    </div>
+    <div class="sheet-brand">
+        <div style="display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end;">
+            <img src="/static/brand/logos/mark.png" alt="" aria-hidden="true" style="width: 18px; height: 18px;">
+            <div style="font-size: 0.75rem; color: var(--ink-mute);">infusionfox.com</div>
+        </div>
+        <div style="font-size: 0.7rem; color: var(--ink-mute); text-align: right;" id="sheet-timestamp-{{ sheet_kind }}"></div>
+        <script>document.getElementById('sheet-timestamp-{{ sheet_kind }}').textContent = new Date().toLocaleString();</script>
+    </div>
+</div>

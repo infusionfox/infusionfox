@@ -1,0 +1,25 @@
+#
+# Development docker-compose for InfusionFox.
+# Use this for local testing on your laptop or homelab staging.
+# For production, see docker-compose.prod.yml (uses GHCR + Watchtower + Cloudflare Tunnel).
+#
+
+services:
+  infusionfox:
+    build: .
+    image: infusionfox:dev
+    container_name: infusionfox
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${INFUSIONFOX_PORT:-8765}:8000"
+    volumes:
+      - infusionfox_data:/data
+      # Bind-mount content so article edits don't require a rebuild
+      - ./content:/app/content:ro
+    labels:
+      - com.infusionfox.description=Veterinary CRI calculators (dev)
+
+volumes:
+  infusionfox_data:

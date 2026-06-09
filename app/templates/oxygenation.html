@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}Oxygenation · PaO₂:FiO₂ and A-a gradient | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">P:F and A-a are complementary, not redundant</div>
+            <p style="margin: 0;">
+                The P:F ratio quantifies oxygenation severity on a
+                continuous scale comparable across patients receiving
+                different FiO₂. The A-a gradient, when combined with
+                PaCO₂, identifies the physiologic cause of any
+                hypoxemia: hypoventilation (normal A-a + high PaCO₂),
+                V/Q mismatch (high A-a, oxygen-responsive), or true
+                shunt (high A-a, oxygen-refractory). Use both, and
+                interpret in the context of the patient's clinical
+                status, not the numbers alone.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            {% if "oxygenation" in available_articles %}
+            <a href="/learn/oxygenation">Clinical background</a>
+            {% endif %}
+            <a href="#formula">Formula</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                class="bg-form"
+                hx-post="/oxygenation/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label for="ox-pao2">PaO₂ (mmHg)</label>
+                    <input type="number" step="1" min="10" max="700"
+                           id="ox-pao2" name="pao2_mmhg"
+                           value="{{ pao2_value }}"
+                           placeholder="enter PaO₂" required>
+                    <div class="help">
+                        Arterial partial pressure of oxygen. Normal on
+                        room air is 80–100 mmHg in dogs and cats.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="ox-fio2">FiO₂</label>
+                    <div class="weight-input">
+                        <input type="number" step="0.01" min="0.21" max="100"
+                               id="ox-fio2" name="fio2_value"
+                               value="{{ fio2_value }}"
+                               placeholder="enter FiO₂" required>
+                        <div class="segmented segmented--compact">
+                            <input type="radio" name="fio2_unit" value="decimal"
+                                   id="ox-fio2-dec"
+                                   {% if inputs.fio2_unit.value == 'decimal' %}checked{% endif %}>
+                            <label for="ox-fio2-dec">decimal</label>
+                            <input type="radio" name="fio2_unit" value="percent"
+                                   id="ox-fio2-pct"
+                                   {% if inputs.fio2_unit.value == 'percent' %}checked{% endif %}>
+                            <label for="ox-fio2-pct">%</label>
+                        </div>
+                    </div>
+                    <div class="help">
+                        Inspired oxygen fraction. Room air is 0.21
+                        (or 21%). Nasal cannula at 50 mL/kg/min
+                        delivers roughly 0.30–0.40; bag-mask or ET
+                        with 100% O₂ delivers up to 1.0 (or 100%).
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="ox-paco2">PaCO₂ (mmHg)</label>
+                    <input type="number" step="1" min="10" max="150"
+                           id="ox-paco2" name="paco2_mmhg"
+                           value="{{ paco2_value }}"
+                           placeholder="enter PaCO₂" required>
+                    <div class="help">
+                        Arterial partial pressure of CO₂. Normal 35–45
+                        mmHg in dogs and cats. Required for the
+                        alveolar gas equation; also disambiguates
+                        hypoventilation from V/Q mismatch as a cause of
+                        any hypoxemia.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="ox-patm">
+                        Barometric pressure (mmHg)
+                        <span class="optional">(optional, default 760 at sea level)</span>
+                    </label>
+                    <input type="number" step="1" min="400" max="800"
+                           id="ox-patm" name="patm_mmhg"
+                           value="{{ patm_value }}"
+                           placeholder="760">
+                    <div class="help">
+                        Override only for altitude. Ridgefield CT ≈760;
+                        Denver CO ≈630; Mexico City ≈580. Each 1500 m
+                        gain drops Patm by ~120 mmHg, reducing the
+                        achievable PaO₂ proportionally.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="ox-r">
+                        Respiratory quotient (R)
+                        <span class="optional">(optional, default 0.8)</span>
+                    </label>
+                    <input type="number" step="0.05" min="0.5" max="1.2"
+                           id="ox-r" name="respiratory_quotient"
+                           value="{{ r_value }}"
+                           placeholder="0.8">
+                    <div class="help">
+                        Ratio of CO₂ produced to O₂ consumed. 0.8 is
+                        standard for a mixed diet; rarely changed in
+                        clinical practice. Pure-carbohydrate states
+                        approach 1.0; pure-fat states approach 0.7.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/oxygenation_result.html" %}
+                {% else %}
+                    {% with placeholder_message="Enter PaO₂, FiO₂, and PaCO₂ to compute the P:F ratio and A-a gradient." %}
+                        {% include "partials/_invalid_input_placeholder.html" %}
+                    {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Formulas</h2>
+
+            <h3 style="margin-top: 1.5rem;">PaO₂:FiO₂ ratio</h3>
+            <div class="formula-display">
+                $$\text{P:F} = \frac{\text{PaO}_2}{\text{FiO}_2}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                FiO₂ as a decimal (0.21 to 1.0). A healthy patient on
+                room air with PaO₂ ≈ 95 mmHg has a P:F of 95 / 0.21 ≈
+                450. Berlin-adapted cutoffs (per Wilkins et al 2007 for
+                vet use):
+            </p>
+            <table class="ref-table" style="margin-top: 1rem;">
+                <thead>
+                    <tr>
+                        <th>P:F ratio</th>
+                        <th>Classification</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>&gt; 400</td><td>Normal oxygenation</td></tr>
+                    <tr><td>300–400</td><td>Mild oxygenation impairment</td></tr>
+                    <tr><td>200–300</td><td>Moderate (ALI threshold)</td></tr>
+                    <tr><td>100–200</td><td>Severe (ARDS equivalent)</td></tr>
+                    <tr><td>&lt; 100</td><td>Very severe</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Alveolar gas equation and A-a gradient</h3>
+            <div class="formula-display">
+                $$\text{PAO}_2 = \text{FiO}_2 \times (P_{atm} - P_{H_2O}) - \frac{\text{PaCO}_2}{R}$$
+            </div>
+            <div class="formula-display">
+                $$\text{A-a gradient} = \text{PAO}_2 - \text{PaO}_2$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Default constants: P<sub>atm</sub> = 760 mmHg (sea level),
+                P<sub>H₂O</sub> = 47 mmHg (water vapor pressure at
+                37 °C), R = 0.8 (respiratory quotient on a mixed diet).
+                At sea level with default R:
+            </p>
+            <div class="formula-display">
+                $$\text{PAO}_2 = \text{FiO}_2 \times 713 - \frac{\text{PaCO}_2}{0.8}$$
+            </div>
+
+            <h3 style="margin-top: 2rem;">Interpreting the A-a gradient</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                A normal A-a gradient on room air is below 15 mmHg in
+                young healthy patients; it rises modestly with age. On
+                supplemental oxygen the alveolar PO₂ rises faster than
+                the patient can equilibrate, so the expected A-a rises
+                with FiO₂. A rough rule of thumb is A-a &lt;
+                (FiO₂ × 100) − 10 mmHg; the qualitative interpretation
+                (high vs normal) matters more than the precise cutoff.
+            </p>
+            <table class="ref-table" style="margin-top: 1rem;">
+                <thead>
+                    <tr>
+                        <th>A-a gradient</th>
+                        <th>PaCO₂</th>
+                        <th>Interpretation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Normal</td>
+                        <td>High</td>
+                        <td>Hypoventilation (anesthetic depth, opioids, neuromuscular, pleural)</td>
+                    </tr>
+                    <tr>
+                        <td>Elevated</td>
+                        <td>Normal or low</td>
+                        <td>V/Q mismatch or shunt. Differentiate by O₂ response.</td>
+                    </tr>
+                    <tr>
+                        <td>Elevated, O₂-responsive</td>
+                        <td>Normal</td>
+                        <td>V/Q mismatch (pneumonia, atelectasis, edema, asthma)</td>
+                    </tr>
+                    <tr>
+                        <td>Elevated, O₂-refractory</td>
+                        <td>Normal</td>
+                        <td>True shunt (consolidation, severe edema, intracardiac R-to-L)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Altitude effect</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Barometric pressure falls roughly 120 mmHg per 1500 m
+                of elevation. The maximal achievable PaO₂ on room air
+                drops proportionally: at sea level ~100 mmHg; in Denver
+                (1600 m) ~75 mmHg; on the high plateau of Mexico City
+                (2240 m) ~65 mmHg. The calculator accepts a custom
+                Patm to handle this; default 760 is correct for
+                Ridgefield CT and most US coastal cities.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <div class="eyebrow">Sources</div>
+            <h2>Source citations</h2>
+            <ol style="color: var(--ink-soft); line-height: 1.7;">
+                <li>
+                    West JB, Luks AM. <em>West's Respiratory Physiology:
+                    The Essentials</em>. 11th ed. Wolters Kluwer; 2020.
+                    Foundational physiology for the alveolar gas equation
+                    and A-a gradient.
+                </li>
+                <li>
+                    Lumb AB, Jones GM. <em>Lumb and Jones' Veterinary
+                    Anesthesia and Analgesia</em>. 6th ed. Wiley-Blackwell;
+                    2024. Ch. 22 (Respiratory Monitoring).
+                </li>
+                <li>
+                    Silverstein DC, Hopper K, eds. <em>Small Animal
+                    Critical Care Medicine</em>. 4th ed. Elsevier; 2023.
+                    Ch. 23 (Oxygenation and Ventilation Monitoring).
+                </li>
+                <li>
+                    ARDS Definition Task Force. Acute Respiratory Distress
+                    Syndrome: the Berlin Definition. <em>JAMA</em>. 2012;
+                    307(23):2526–2533. doi:10.1001/jama.2012.5669. Source
+                    of the P:F cutoffs.
+                </li>
+                <li>
+                    Wilkins PA, Otto CM, Baumgardner JE, et al. Acute lung
+                    injury and acute respiratory distress syndromes in
+                    veterinary medicine: consensus definitions. <em>J Vet
+                    Emerg Crit Care</em>. 2007;17(4):333–339. Veterinary
+                    ALI/ARDS adaptation of Berlin.
+                </li>
+            </ol>
+        </section>
+    </div>
+</section>
+{% endblock %}

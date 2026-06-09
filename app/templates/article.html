@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ drug.display_name }}. Clinical background | InfusionFox{% endblock %}
+
+{% block content %}
+<article class="article container">
+    <div class="eyebrow">{{ drug.category }} · Clinical background</div>
+    <h1>{{ drug.display_name }}</h1>
+    <p style="color: var(--ink-soft); font-size: 1.1rem;">{{ drug.mechanism_summary }}</p>
+
+    {% if calc_url %}
+    <p style="margin-top: 1.5rem;">
+        <a href="{{ calc_url }}" class="btn">Open calculator →</a>
+    </p>
+    {% endif %}
+
+    <hr style="border: none; border-top: 1px solid var(--line); margin: 2.5rem 0;">
+
+    {% if placeholder %}
+        <div class="admonition">
+            <div class="admonition-title">Article coming</div>
+            <p style="margin: 0;">
+                A full clinical background article for {{ drug.display_name }} is being prepared.
+                In the meantime, use the calculator and reference the dose range and safety notes
+                on the calculator page.
+            </p>
+        </div>
+    {% else %}
+        {{ body_html|safe }}
+    {% endif %}
+</article>
+{% endblock %}

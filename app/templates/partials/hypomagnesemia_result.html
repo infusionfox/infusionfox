@@ -1,0 +1,74 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    {% if result.not_indicated %}
+    <div class="result__headline">
+        <div class="eyebrow">No supplementation indicated</div>
+        <div class="result__primary" style="font-size: 1.6rem;">
+            Mg = {{ "%g"|format(result.serum_mg_mg_per_dl) }} mg/dL
+        </div>
+        <div class="result__secondary" style="margin-top: 0.4rem;">
+            {{ result.matched_tier.label }} &mdash; {{ result.matched_tier.severity }}
+        </div>
+    </div>
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">MgSO4 pump rate</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.pump_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            = {{ "%g"|format(result.target_rate_meq_per_kg_per_day) }} mEq/kg/day
+            × {{ "%.2f"|format(result.weight_kg) }} kg ÷ 24 hr ÷ {{ "%g"|format(result.stock_meq_per_ml) }} mEq/mL
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--ink-soft);">
+            <strong>{{ result.matched_tier.label }}</strong> &mdash; {{ result.matched_tier.severity }}
+            &middot; stock {{ result.stock_concentration_label }}
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Equivalent rates</div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td style="color: var(--ink-soft);">Daily dose:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.daily_meq) }} mEq/day
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Hourly dose:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.hourly_meq) }} mEq/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft);">Pump rate (per day):</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ "%g"|format(result.pump_rate_ml_per_day) }} mL/day
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+    {% if result.valid %}
+    <template id="worked-example-source">{% if not result.not_indicated and result.pump_rate_ml_per_hr is not none %}$$\text{mL/hr} = \frac{ {{ result.target_rate_meq_per_kg_per_day }}_{\text{mEq/kg/day}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{ {{ result.stock_meq_per_ml }}_{\text{mEq/mL}} \times 24 } = {{ "%.3f"|format(result.pump_rate_ml_per_hr) }}\,\text{mL/hr}$${% endif %}</template>
+    {% endif %}
+</div>

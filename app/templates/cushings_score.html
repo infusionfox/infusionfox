@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Cushing's pretest score | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Endocrine &amp; Metabolic · Prediction tool</div>
+                <h1>Cushing's pretest score</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Estimates the pretest probability of canine
+                    hyperadrenocorticism from signalment, clinical
+                    signs, and routine bloodwork. Useful as a gate
+                    before confirmatory testing. A very low score
+                    makes Cushing's a poor next move; a very high
+                    score keeps it plausible despite an equivocal test.
+                </p>
+            </div>
+        </div>
+
+        <div class="calc-grid">
+            <!-- Form -->
+            <div class="calc-form-col">
+                <form
+                    hx-post="/cushings-score/compute"
+                    hx-target="#result-panel"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:250ms, change, load"
+                >
+                    <fieldset>
+                        <legend>Demography</legend>
+
+                        <div class="field">
+                            <label for="sex">Sex / neuter status</label>
+                            <select name="sex" id="sex">
+                                <option value="female_entire"   {% if inputs.sex == 'female_entire' %}selected{% endif %}>Female intact (0)</option>
+                                <option value="female_neutered" {% if inputs.sex == 'female_neutered' %}selected{% endif %}>Female neutered (−1)</option>
+                                <option value="male_entire"     {% if inputs.sex == 'male_entire' %}selected{% endif %}>Male intact (−1)</option>
+                                <option value="male_neutered"   {% if inputs.sex == 'male_neutered' %}selected{% endif %}>Male neutered (−1)</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="age">Age at first suspicion (years)</label>
+                            <input type="number" id="age" name="age"
+                                value="{{ inputs.age }}" min="0" max="25" step="any" required>
+                            <p class="field-hint">≥ 7 yr = +1 point &nbsp;·&nbsp; &lt; 7 yr = 0 points</p>
+                        </div>
+
+                        <div class="field">
+                            <label for="breed">Breed</label>
+                            <select name="breed" id="breed">
+                                <option value="other"          {% if inputs.breed == 'other' %}selected{% endif %}>Other breed or crossbreed (0)</option>
+                                <option value="bichon_frise"   {% if inputs.breed == 'bichon_frise' %}selected{% endif %}>Bichon Frisé (+2)</option>
+                                <option value="border_terrier" {% if inputs.breed == 'border_terrier' %}selected{% endif %}>Border Terrier (+1)</option>
+                                <option value="labrador"       {% if inputs.breed == 'labrador' %}selected{% endif %}>Labrador Retriever (−3)</option>
+                                <option value="schnauzer"      {% if inputs.breed == 'schnauzer' %}selected{% endif %}>Schnauzer (−2)</option>
+                                <option value="whwt"           {% if inputs.breed == 'whwt' %}selected{% endif %}>West Highland White Terrier (−3)</option>
+                            </select>
+                        </div>
+                    </fieldset>
+
+                    <fieldset style="margin-top: 1.25rem;">
+                        <legend>Presenting clinical signs</legend>
+
+                        {% set yn_fields = [
+                            ('polydipsia', 'Polydipsia', '+2 / 0', inputs.polydipsia),
+                            ('vomiting',   'Vomiting',   '−2 / 0', inputs.vomiting),
+                            ('potbelly',   'Potbelly / hepatomegaly', '+3 / 0', inputs.potbelly),
+                            ('alopecia',   'Alopecia',   '+2 / 0', inputs.alopecia),
+                            ('pruritus',   'Pruritus',   '−2 / 0', inputs.pruritus),
+                        ] %}
+                        {% for name, label, hint, current in yn_fields %}
+                        <div class="field">
+                            <label>{{ label }} <span style="color: var(--ink-mute); font-size: 0.82rem;">({{ hint }})</span></label>
+                            <div class="segmented">
+                                <input type="radio" name="{{ name }}" value="no"  id="{{ name }}-no"  {% if current == 'no' %}checked{% endif %}>
+                                <label for="{{ name }}-no">No</label>
+                                <input type="radio" name="{{ name }}" value="yes" id="{{ name }}-yes" {% if current == 'yes' %}checked{% endif %}>
+                                <label for="{{ name }}-yes">Yes</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </fieldset>
+
+                    <fieldset style="margin-top: 1.25rem;">
+                        <legend>Laboratory factors</legend>
+
+                        <div class="field">
+                            <label for="usg">Urine specific gravity</label>
+                            <select name="usg" id="usg">
+                                <option value="not_recorded" {% if inputs.usg == 'not_recorded' %}selected{% endif %}>Not recorded (−1)</option>
+                                <option value="dilute"       {% if inputs.usg == 'dilute' %}selected{% endif %}>Dilute ≤ 1.020 (0)</option>
+                                <option value="not_dilute"   {% if inputs.usg == 'not_dilute' %}selected{% endif %}>Not dilute &gt; 1.020 (−2)</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="alkp">Serum ALKP (alkaline phosphatase)</label>
+                            <select name="alkp" id="alkp">
+                                <option value="not_recorded" {% if inputs.alkp == 'not_recorded' %}selected{% endif %}>Not recorded (0)</option>
+                                <option value="elevated"     {% if inputs.alkp == 'elevated' %}selected{% endif %}>Elevated (0)</option>
+                                <option value="not_elevated" {% if inputs.alkp == 'not_elevated' %}selected{% endif %}>Not elevated (−3)</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+            <!-- Result panel -->
+            <div class="calc-result-col">
+                {% include "partials/cushings_result.html" %}
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 3rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/cushings-score">Clinical background</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#score-table">Score table</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the score works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The tool was derived from a multivariable binary logistic regression model
+                developed in 398 Cushing's cases and 541 noncases from the UK VetCompass
+                primary-care database. Each predictor's regression coefficient was divided
+                by a common factor (the smallest significant optimism-adjusted coefficient,
+                for "USG not recorded" = 0.38) and rounded to the nearest integer to produce
+                the point values in Table 5.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The predicted likelihood for each total score is calculated from the inverse
+                logit of the linear predictor:
+                LP = β + B × (points total), where β = −0.42 (optimism-adjusted constant)
+                and B = 0.38 (common factor). The model demonstrated good discrimination
+                (AUROC = 0.78, optimism-adjusted 0.76) and calibration (C-slope = 0.86).
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                <strong>Important:</strong> the tool was developed in dogs already suspected
+                of Cushing's by their attending veterinarian, it is a decision aid at the
+                point of first suspicion, not a screening tool for the general population.
+                External validation has not yet been performed.
+            </p>
+        </section>
+
+        <section id="score-table" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Score → likelihood table</h2>
+            <p style="color: var(--ink-soft); margin-bottom: 1rem;">Table 6, Schofield et al. 2020.</p>
+            <table class="ref-table">
+                <thead>
+                    <tr><th>Score</th><th>Predicted likelihood</th><th>Score</th><th>Predicted likelihood</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>−13</td><td>0%</td><td>−1</td><td>27%</td></tr>
+                    <tr><td>−12</td><td>1%</td><td>0</td><td>35%</td></tr>
+                    <tr><td>−11</td><td>1%</td><td>1</td><td>44%</td></tr>
+                    <tr><td>−10</td><td>1%</td><td>2</td><td>53%</td></tr>
+                    <tr><td>−9</td><td>2%</td><td>3</td><td>63%</td></tr>
+                    <tr><td>−8</td><td>3%</td><td>4</td><td>71%</td></tr>
+                    <tr><td>−7</td><td>4%</td><td>5</td><td>78%</td></tr>
+                    <tr><td>−6</td><td>5%</td><td>6</td><td>84%</td></tr>
+                    <tr><td>−5</td><td>8%</td><td>7</td><td>88%</td></tr>
+                    <tr><td>−4</td><td>11%</td><td>8</td><td>92%</td></tr>
+                    <tr><td>−3</td><td>15%</td><td>9</td><td>94%</td></tr>
+                    <tr><td>−2</td><td>20%</td><td>10</td><td>96%</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Schofield I, Brodbelt DC, Niessen SJM, Church DB, Geddes RF, Kennedy N, O'Neill DG.
+                Development and internal validation of a prediction tool to aid the diagnosis of
+                Cushing's syndrome in dogs attending primary-care practice.
+                <em>J Vet Intern Med.</em> 2020;34:2306–2318.
+                <a href="https://doi.org/10.1111/jvim.15851" target="_blank" rel="noopener" style="color: var(--accent);">doi:10.1111/jvim.15851</a>
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Open access article. Scoring values implemented directly from Tables 5 and 6 of the paper.
+                This tool has not been externally validated. Performance may differ in populations
+                with different Cushing's prevalence than the VetCompass UK primary-care cohort.
+                </li>
+            </ul>
+        </section>
+
+    </div>
+</section>
+{% endblock %}

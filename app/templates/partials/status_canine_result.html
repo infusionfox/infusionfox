@@ -1,0 +1,133 @@
+<div id="result-panel">
+    <div style="margin-bottom: 1rem; color: var(--ink-soft); font-size: 0.85rem;">
+        Doses for <strong style="color: var(--ink);">{{ "%.1f"|format(result.weight_kg) }} kg</strong> canine
+    </div>
+
+    {# ===== Step 1 ===== #}
+    <div style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
+            <span style="background: var(--sev-critical); color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em;">STEP 1</span>
+            <strong style="font-size: 0.95rem;">First-line benzodiazepine</strong>
+        </div>
+        <p style="color: var(--ink-mute); font-size: 0.82rem; margin: 0 0 0.6rem;">Repeat up to 3 doses, 5 min apart. If still seizing, escalate to step 2.</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--line);">
+                    <th style="text-align: left; padding: 0.35rem 0.4rem; color: var(--ink-soft); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Drug</th>
+                    <th style="text-align: left; padding: 0.35rem 0.4rem; color: var(--ink-soft); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Dose</th>
+                    <th style="text-align: right; padding: 0.35rem 0.4rem; color: var(--ink-soft); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Volume</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in result.doses_step1 %}
+                <tr style="border-bottom: 1px solid var(--line);">
+                    <td style="padding: 0.5rem 0.4rem; vertical-align: top;">
+                        <strong>{{ d.drug.name }}</strong><br>
+                        <span style="color: var(--ink-mute); font-size: 0.78rem;">{{ d.drug.stock }} · {{ d.drug.route }}</span>
+                    </td>
+                    <td style="padding: 0.5rem 0.4rem; vertical-align: top;">
+                        {{ d.drug.dose_label }}<br>
+                        <span style="color: var(--ink-mute); font-size: 0.78rem;">≈ {{ "%g"|format(d.total_mg) }} mg</span>
+                    </td>
+                    <td style="padding: 0.5rem 0.4rem; text-align: right; vertical-align: top; font-weight: 600;">
+                        {{ "%.2f"|format(d.volume_ml) }} mL
+                    </td>
+                </tr>
+                {% if d.drug.note %}
+                <tr><td colspan="3" style="padding: 0 0.4rem 0.5rem; color: var(--ink-mute); font-size: 0.78rem; line-height: 1.5;">{{ d.drug.note }}</td></tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== Step 2 ===== #}
+    <div style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
+            <span style="background: var(--sev-high); color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em;">STEP 2</span>
+            <strong style="font-size: 0.95rem;">AED loading</strong>
+        </div>
+        <p style="color: var(--ink-mute); font-size: 0.82rem; margin: 0 0 0.6rem;">After 2–3 benzo doses without control. Levetiracetam preferred; phenobarbital alternative.</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+            <tbody>
+                {% for d in result.doses_step2 %}
+                <tr style="border-bottom: 1px solid var(--line);">
+                    <td style="padding: 0.5rem 0.4rem; vertical-align: top;">
+                        <strong>{{ d.drug.name }}</strong><br>
+                        <span style="color: var(--ink-mute); font-size: 0.78rem;">{{ d.drug.stock }} · {{ d.drug.route }}</span>
+                    </td>
+                    <td style="padding: 0.5rem 0.4rem; vertical-align: top;">
+                        {{ d.drug.dose_label }}<br>
+                        <span style="color: var(--ink-mute); font-size: 0.78rem;">≈ {{ "%g"|format(d.total_mg) }} mg</span>
+                    </td>
+                    <td style="padding: 0.5rem 0.4rem; text-align: right; vertical-align: top; font-weight: 600;">
+                        {{ "%.2f"|format(d.volume_ml) }} mL
+                    </td>
+                </tr>
+                {% if d.drug.note %}
+                <tr><td colspan="3" style="padding: 0 0.4rem 0.5rem; color: var(--ink-mute); font-size: 0.78rem; line-height: 1.5;">{{ d.drug.note }}</td></tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== Step 3 ===== #}
+    <div style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
+            <span style="background: var(--sev-info); color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em;">STEP 3</span>
+            <strong style="font-size: 0.95rem;">Refractory: anesthetic CRI</strong>
+        </div>
+        <p style="color: var(--ink-mute); font-size: 0.82rem; margin: 0 0 0.6rem;">Intubate. CRI volumes shown are per HOUR for a midpoint dose; titrate to effect.</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+            <tbody>
+                {% for d in result.doses_step3 %}
+                <tr style="border-bottom: 1px solid var(--line);">
+                    <td style="padding: 0.5rem 0.4rem; vertical-align: top;">
+                        <strong>{{ d.drug.name }}</strong><br>
+                        <span style="color: var(--ink-mute); font-size: 0.78rem;">{{ d.drug.stock }} · {{ d.drug.route }}</span>
+                    </td>
+                    <td style="padding: 0.5rem 0.4rem; vertical-align: top;">
+                        {{ d.drug.dose_label }}
+                    </td>
+                    <td style="padding: 0.5rem 0.4rem; text-align: right; vertical-align: top; font-weight: 600;">
+                        {{ "%.2f"|format(d.volume_ml) }} mL{% if "CRI" in d.drug.name %}/hr{% endif %}
+                    </td>
+                </tr>
+                {% if d.drug.note %}
+                <tr><td colspan="3" style="padding: 0 0.4rem 0.5rem; color: var(--ink-mute); font-size: 0.78rem; line-height: 1.5;">{{ d.drug.note }}</td></tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== Supportive ===== #}
+    <div style="margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
+            <span style="background: var(--ink-mute); color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em;">SUPPORTIVE</span>
+            <strong style="font-size: 0.95rem;">If hypoglycemic</strong>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+            <tbody>
+                {% for d in result.doses_supportive %}
+                <tr style="border-bottom: 1px solid var(--line);">
+                    <td style="padding: 0.5rem 0.4rem; vertical-align: top;">
+                        <strong>{{ d.drug.name }}</strong><br>
+                        <span style="color: var(--ink-mute); font-size: 0.78rem;">{{ d.drug.stock }} · {{ d.drug.route }}</span>
+                    </td>
+                    <td style="padding: 0.5rem 0.4rem; vertical-align: top;">{{ d.drug.dose_label }}</td>
+                    <td style="padding: 0.5rem 0.4rem; text-align: right; vertical-align: top; font-weight: 600;">
+                        {{ "%.2f"|format(d.volume_ml) }} mL
+                    </td>
+                </tr>
+                {% if d.drug.note %}
+                <tr><td colspan="3" style="padding: 0 0.4rem 0.5rem; color: var(--ink-mute); font-size: 0.78rem; line-height: 1.5;">{{ d.drug.note }}</td></tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+</div>

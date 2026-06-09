@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Dopamine preparation | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Stock: 40 mg/mL (40 000 µg/mL)</div>
+            <button type="button"
+                class="calculator-print-btn no-print"
+                onclick="infusionfox_dopamine_print()"
+                style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; font-size: 0.9rem; font-weight: 600; background: var(--accent); color: white; border: none; border-radius: var(--radius); cursor: pointer; font-family: inherit; height: fit-content; align-self: flex-start; white-space: nowrap;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Print
+            </button>
+        </div>
+
+        <div class="warnings" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>High-alert medication.</strong> Do NOT confuse
+                    DOPamine with DOBUTamine or DOXapram (Doprap).
+                </li>
+                <li>
+                    <strong>Volume status first.</strong> Volume depletion
+                    should be corrected before dopamine administration.
+                    Vasopressors are not a substitute for adequate fluid
+                    replacement.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">How this calculator works</div>
+            <p style="margin: 0;">
+                Uses the <strong>6 × kg method</strong>: add
+                (6 × patient weight in kg) mg of dopamine to a 100 mL bag
+                of compatible IV fluid. Once mixed, the pump rate in mL/hr
+                is equal to the dose in µg/kg/min, no further math at the
+                bedside.
+            </p>
+            <p style="margin: 0.6rem 0 0; font-size: 0.9rem;">
+                <strong>Don't have a 100 mL bag?</strong> The 6×kg shortcut
+                requires a 100 mL bag specifically (the elegant
+                pump-rate-equals-dose identity is bag-size dependent). If
+                you only have 250 mL or 500 mL bags available, use the
+                <a href="/dopamine-cri">standard dopamine CRI calculator →</a>
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/dopamine">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#how-it-works">Method</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/dopamine/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog" {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat" {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="target_dose_ug_per_kg_per_min">Target dose (µg/kg/min)</label>
+                    <input type="number" step="any" min="0.5" max="30" id="target_dose_ug_per_kg_per_min"
+                           name="target_dose_ug_per_kg_per_min" value="{{ inputs.target_dose_ug_per_kg_per_min }}" required>
+                    <div class="help">
+                        Dogs: 3–20 µg/kg/min (start 2.5–5, titrate +2.5–5 every ~30 min).
+                        Cats: 5–20 µg/kg/min, same titration.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/dopamine_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The 6 × kg method produces a bag where pump rate (mL/hr) equals dose (µg/kg/min).
+                The bag concentration is derived as:
+            </p>
+            <div class="formula-display">
+                $$\text{concentration} = \frac{6 \times \text{BW}_{\text{kg}} \times 1000\,\mu g/mg}{100\,\text{mL}} = 60 \times \text{BW}_{\text{kg}}\;\mu g/\text{mL}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                At that concentration, a dose of D µg/kg/min requires:
+            </p>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{\text{BW}_{\text{kg}} \times D_{\mu g/kg/min} \times 60}{60 \times \text{BW}_{\text{kg}}} = D$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                So pump rate (mL/hr) and dose (µg/kg/min) are numerically equal, no further bedside math needed.
+            </p>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{dopamine to add} = 6 \times {{ "%.1f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.1f"|format(result.mg_dopamine_to_add) }}\,\text{mg} = \frac{ {{ "%.1f"|format(result.mg_dopamine_to_add) }}}{40} = {{ "%.2f"|format(result.ml_stock_to_draw) }}\,\text{mL of stock}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div class="formula-display">
+                {% if result %}
+                $$\text{pump rate} = {{ "%.1f"|format(result.target_dose) }}\,\text{µg/kg/min} \Rightarrow {{ "%.1f"|format(result.pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>The 6 × kg method</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The preparation worksheet specifies:
+            </p>
+            <ol style="color: var(--ink-soft); line-height: 1.8;">
+                <li>Multiply patient weight in kg by 6, that's the milligrams of dopamine to add.</li>
+                <li>From a 40 mg/mL stock vial, draw the equivalent volume.</li>
+                <li>Remove that same volume from a 100 mL bag of compatible IV fluid first, then add the dopamine.</li>
+                <li>Run the pump at <strong>mL/hr = dose in µg/kg/min</strong>.</li>
+            </ol>
+
+            <h3>Worked example</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                For a 10 kg patient: 6 × 10 = <strong>60 mg</strong> of dopamine,
+                which is <strong>1.5 mL</strong> of 40 mg/mL stock. Remove
+                1.5 mL from a 100 mL bag, then add 1.5 mL of dopamine. To dose
+                at 5 µg/kg/min, run the pump at <strong>5 mL/hr</strong>.
+            </p>
+
+            <h3>Why this works</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7; font-size: 0.9rem;">
+                A 100 mL bag with (6 × BW) mg of dopamine has concentration
+                (6 × BW × 1000) ÷ 100 = 60 × BW µg/mL. For a dose D µg/kg/min,
+                total drug needed per hour is BW × D × 60 µg. Divided by the
+                concentration: (60 × BW × D) ÷ (60 × BW) = D mL/hr.
+            </p>
+
+            <h3>Limits and stability</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>The final dopamine concentration is capped at 3,200 µg/mL (3.2 mg/mL). The 6 × kg method exceeds this for patients above ~53 kg; at that point, switch to a 250 mL or 500 mL bag with proportionally more dopamine.</li>
+                <li>Stable for 24 hours at 20–25°C after dilution. Discard if discolored beyond slightly yellow.</li>
+                <li>Administer through a dedicated IV line into a large vein. Extravasation causes tissue necrosis.</li>
+                <li>Stepwise dose reduction prior to discontinuation reduces rebound hypotension risk.</li>
+            </ul>
+
+            <h3>Compatible fluids</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7; font-size: 0.9rem;">
+                5% / 10% dextrose, lactated Ringer's, 5% dextrose in LRS or
+                0.9% NaCl, 6% hetastarch, Plasma-Lyte, 0.9% NaCl.
+            </p>
+
+            <h3>Contraindications and cautions</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li><strong>Contraindicated:</strong> pheochromocytoma, ventricular fibrillation, uncorrected tachyarrhythmias.</li>
+                <li><strong>Caution:</strong> ischemic or occlusive vascular disease; weaning from mechanical ventilation; oliguric acute kidney injury (low-dose dopamine is unlikely to benefit and may worsen renal vasoconstriction).</li>
+                <li><strong>Discontinue or reduce dose</strong> if PVCs occur or if there are signs of reduced peripheral or cardiac perfusion.</li>
+            </ul>
+
+            <h3>Notable drug interactions</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li><strong>α-antagonists</strong> (acepromazine, prazosin): may decrease pressor effects.</li>
+                <li><strong>β-antagonists</strong> (propranolol, metoprolol): combination causes unopposed α stimulation, raising SVR.</li>
+                <li><strong>Inhalant anesthetics</strong> (isoflurane, sevoflurane): may increase arrhythmia risk.</li>
+                <li><strong>MAOIs</strong> (amitraz, selegiline, linezolid): start dopamine at 1/10 the usual dose if MAOI given within 2–3 weeks.</li>
+                <li><strong>Other sympathomimetics</strong> (dobutamine, terbutaline, etc.): toxicity risk if combined.</li>
+            </ul>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Primary:</strong> Plumb's Veterinary Drugs, dopamine
+                    monograph (Prescriber Highlights, Pharmacology/Actions,
+                    Pharmacokinetics, Contraindications/Precautions/Warnings,
+                    Adverse Effects, Drug Interactions, Dosages, Preparation/Stability,
+                    Administration sections).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Secondary (cat HCM/PVC concern):</strong> Lumb and
+                    Jones' Veterinary Anesthesia and Analgesia, 6th ed. Chapter 21
+                    (Cardiovascular Drugs). Editor and full bibliographic details
+                    pending.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Secondary (clinical positioning):</strong> Hart S,
+                    Silverstein DC. Catecholamines. In: Silverstein DC, Hopper K,
+                    eds. <em>Small Animal Critical Care Medicine</em>. 3rd ed.
+                    St. Louis, MO: Elsevier; 2023:855–859 (Chapter 147,
+                    Table 147.1). Confirms the receptor-effect dose tiers
+                    (1–4 µg/kg/min dopaminergic; 5–10 µg/kg/min β; &gt;10 µg/kg/min
+                    α) and provides the clinical context that dopamine is
+                    currently recommended as an alternative to norepinephrine
+                    only in highly selected patients (low risk of tachyarrhythmias,
+                    or absolute/relative bradycardia), its use in critically ill
+                    humans has been associated with significantly poorer
+                    outcomes and higher arrhythmic-event incidence than
+                    norepinephrine.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+
+<style>
+    /* Print styles for dopamine 6×kg — same pattern as the universal
+       calculator template. Hide chrome, render only the result panel
+       (pump rate + bag-prep recipe) on a single page. */
+    .print-only { display: none; }
+    @page { margin: 12mm; }
+    @media print {
+        .no-print,
+        .site-header,
+        .site-footer,
+        .feedback-widget,
+        #fb-widget,
+        .calc-header,
+        .admonition,
+        .warnings,
+        #calc-form,
+        form,
+        nav.calc-tabs,
+        section.background,
+        details {
+            display: none !important;
+        }
+        .print-only { display: block !important; }
+        html, body {
+            background: white !important;
+            color: black !important;
+            font-size: 9pt !important;
+            line-height: 1.25 !important;
+        }
+        .container,
+        section.calc-page,
+        .calc-grid,
+        .calc-right-column {
+            display: block !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        #result-panel [style*="background: var(--paper-warm)"],
+        #result-panel [style*="background:var(--paper-warm)"] {
+            background: white !important;
+            border-left-color: #000 !important;
+            padding: 0.25rem 0.4rem !important;
+        }
+        #result-panel .result__headline {
+            page-break-inside: avoid;
+        }
+        #result-panel .result__primary {
+            font-size: 14pt !important;
+        }
+    }
+</style>
+
+<script>
+    // Print helper for the dopamine 6×kg calculator. Stamps the
+    // current timestamp into the print-only header before opening
+    // the browser print dialog. The result panel is HTMX-swapped on
+    // every input change, so the timestamp anchor is looked up fresh
+    // each invocation.
+    function infusionfox_dopamine_print() {
+        var ts = document.getElementById('print-timestamp');
+        if (ts) {
+            var now = new Date();
+            ts.textContent = 'Printed: ' + now.toLocaleString();
+        }
+        window.print();
+    }
+</script>
+{% endblock %}

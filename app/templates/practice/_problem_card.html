@@ -1,0 +1,139 @@
+{# A single practice problem rendered as a collapsible <details>.
+   Default state: closed (answer hidden). The scenario is always
+   visible above the disclosure; the worked solution and final answer
+   are inside the <details> body. #}
+<article class="practice-card" id="{{ problem.slug }}">
+    <header class="practice-card__head">
+        <div class="practice-card__meta">
+            <span class="practice-card__topic">{{ problem.topic }}</span>
+            <span class="practice-card__difficulty practice-card__difficulty--{{ problem.difficulty|lower }}">{{ problem.difficulty }}</span>
+        </div>
+        <h3 class="practice-card__title">
+            <a href="/learn/practice/{{ problem.slug }}" style="color: inherit; text-decoration: none;">{{ problem.title }}</a>
+        </h3>
+    </header>
+
+    <div class="practice-card__scenario">
+        <p style="margin: 0;">{{ problem.scenario }}</p>
+    </div>
+
+    {% if problem.checks %}
+    {# Answer-check inputs. Client-side JS reads data attributes and shows
+       correct / close / incorrect feedback without touching the server.
+       Inputs sit above the hints so a confident student can answer
+       first; stuck students can still drop down to the hints. #}
+    <div class="practice-checks">
+        {% for check in problem.checks %}
+            {# Capture the outer (check) loop index so the inner choice
+               loop can reference it. All radios within one check must
+               share a `name` attribute to form a true HTML radio group;
+               otherwise the browser leaves every clicked option checked
+               and the user can't change their answer after checking
+               once. The choice index lives in `value`, not `name`. #}
+            {% set check_idx = loop.index0 %}
+            {% if check.choices %}
+            {# Multiple-choice check. `expected` is the 0-based index of
+               the correct option. Each radio carries its index in `value`. #}
+            <fieldset class="practice-check practice-check--mc"
+                      data-expected="{{ check.expected }}"
+                      data-mode="mc">
+                <legend class="practice-check__label">{{ check.label }}</legend>
+                <div class="practice-check__choices">
+                    {% for choice in check.choices %}
+                    <label class="practice-check__choice">
+                        <input type="radio"
+                               name="check-{{ problem.slug }}-{{ check_idx }}"
+                               value="{{ loop.index0 }}">
+                        <span>{{ choice }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <button type="button" class="practice-check__btn">Check</button>
+                <p class="practice-check__feedback" role="status" aria-live="polite"></p>
+            </fieldset>
+            {% else %}
+            {# Numeric input with ±% tolerance. #}
+            <div class="practice-check"
+                 data-expected="{{ check.expected }}"
+                 data-tolerance="{{ check.tolerance_percent }}"
+                 data-mode="numeric">
+                <label class="practice-check__label" for="answer-{{ problem.slug }}-{{ loop.index0 }}">
+                    {{ check.label }}
+                </label>
+                <div class="practice-check__row">
+                    <input
+                        type="number"
+                        inputmode="decimal"
+                        step="any"
+                        class="practice-check__input"
+                        id="answer-{{ problem.slug }}-{{ loop.index0 }}"
+                        placeholder="Enter your answer"
+                        autocomplete="off">
+                    <span class="practice-check__unit">{{ check.unit }}</span>
+                    <button type="button" class="practice-check__btn">Check</button>
+                </div>
+                <p class="practice-check__feedback" role="status" aria-live="polite"></p>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if problem.hints %}
+    <div class="practice-card__hints">
+        {% for hint in problem.hints %}
+        <details class="practice-card__hint">
+            <summary>
+                <span class="practice-card__reveal-label">{% if loop.first %}Hint{% else %}Another hint{% endif %}</span>
+            </summary>
+            <p class="practice-card__hint-body">{{ hint }}</p>
+        </details>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <details class="practice-card__solution">
+        <summary>
+            <span class="practice-card__reveal-label">Show worked answer</span>
+        </summary>
+        <div class="practice-card__solution-body">
+            <ol class="practice-steps">
+                {% for step in problem.steps %}
+                <li class="practice-step">
+                    {% if step.narrative %}
+                    <p class="practice-step__narrative">{{ step.narrative }}</p>
+                    {% endif %}
+                    {% if step.math %}
+                    <div class="practice-step__math">$${{ step.math }}$$</div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ol>
+            <div class="practice-answer">
+                <span class="eyebrow">Answer</span>
+                <p style="margin: 0.25rem 0 0; font-weight: 600;">{{ problem.final_answer }}</p>
+            </div>
+        </div>
+    </details>
+
+    {% if problem.related_calculator_url or problem.related_background_url %}
+    {# Related-links footer. Lives outside the worked-answer <details> so
+       the calculator + clinical-background links are always visible —
+       students can click through to read the background or verify their
+       answer in the calculator without revealing the worked solution. #}
+    <div class="practice-card__refs">
+        {% if problem.related_background_url %}
+        <a class="practice-card__ref" href="{{ problem.related_background_url }}">
+            <span class="practice-card__ref-label">Clinical background</span>
+            <span class="practice-card__ref-name">{{ problem.related_background_name }}</span>
+        </a>
+        {% endif %}
+        {% if problem.related_calculator_url %}
+        <a class="practice-card__ref" href="{{ problem.related_calculator_url }}">
+            <span class="practice-card__ref-label">Related calculator</span>
+            <span class="practice-card__ref-name">{{ problem.related_calculator_name }}</span>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</article>

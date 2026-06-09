@@ -1,0 +1,96 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+    <div class="result__headline">
+        <div class="eyebrow">Infusion rate</div>
+        <div class="result__primary">
+            {{ "%.2f"|format(result.total_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            Deficit {{ "%.3f"|format(result.water_deficit_l) }} L over {{ result.replacement_hours|round(1) }} hr
+            {% if result.maintenance_ml_per_hr > 0 %}
+                · deficit {{ "%.2f"|format(result.deficit_replacement_ml_per_hr) }} + maintenance {{ "%.2f"|format(result.maintenance_ml_per_hr) }}
+            {% endif %}
+        </div>
+    </div>
+
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Weight</dt>
+            <dd>{{ "%.2f"|format(result.weight_kg) }} kg</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Water deficit</dt>
+            <dd>{{ "%.3f"|format(result.water_deficit_l) }} L<br><span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.0f"|format(result.water_deficit_ml) }} mL)</span></dd>
+        </div>
+        <div class="result__detail">
+            <dt>Predicted Na drop</dt>
+            <dd>
+                {{ "%.2f"|format(result.predicted_rate_mEq_per_24hr) }} mEq/L per 24 hr<br>
+                <span style="color: var(--ink-mute); font-size: 0.85em;">
+                    ({{ "%.3f"|format(result.predicted_rate_mEq_per_hr) }} mEq/L/hr · ceiling 12 mEq/L/24hr)
+                </span>
+            </dd>
+        </div>
+    </dl>
+
+    <div class="formula-box">
+        <div class="eyebrow">Formula</div>
+        $$\text{deficit (L)} = 0.6 \times {{ "%.2f"|format(result.weight_kg) }} \times \left( \frac{ {{ result.patient_na }} }{ {{ result.previous_na }} } - 1 \right) = {{ "%.3f"|format(result.water_deficit_l) }}$$
+        <p class="formula-caption">0.6 × weight (kg) × [(patient Na ÷ reference Na) − 1] · TBW factor 0.6 is the fraction of body weight that is total body water in dogs and cats (DiBartola).</p>
+
+        <div style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid var(--line); font-size: 0.85rem; color: var(--ink-soft); line-height: 1.7;">
+            <strong style="color: var(--ink);">Rate derivation:</strong><br>
+            Deficit: {{ "%.3f"|format(result.water_deficit_l) }} L × 1000 = <strong style="color: var(--ink);">{{ "%.0f"|format(result.water_deficit_ml) }} mL</strong><br>
+            Deficit rate: {{ "%.0f"|format(result.water_deficit_ml) }} mL ÷ {{ result.replacement_hours|round(1) }} hr = <strong style="color: var(--ink);">{{ "%.2f"|format(result.deficit_replacement_ml_per_hr) }} mL/hr</strong>
+            {% if result.maintenance_ml_per_hr > 0 %}
+            <br>Total rate: {{ "%.2f"|format(result.deficit_replacement_ml_per_hr) }} + {{ "%.2f"|format(result.maintenance_ml_per_hr) }} maintenance = <strong style="color: var(--ink);">{{ "%.2f"|format(result.total_ml_per_hr) }} mL/hr</strong>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Mechanism: {{ result.profile.name }}</div>
+        <p style="margin: 0.4rem 0 0.75rem; color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55;">
+            {{ result.profile.description }}
+        </p>
+
+        <div class="eyebrow" style="margin-top: 0.75rem;">Strategy</div>
+        <p style="margin: 0.4rem 0 0.75rem; color: var(--ink); font-size: 0.92rem; line-height: 1.55;">
+            {{ result.profile.initial_fluid_strategy }}
+        </p>
+
+        <div class="eyebrow" style="margin-top: 0.75rem;">Recommended fluids</div>
+        <ul style="margin: 0.4rem 0 0; padding-left: 1.3rem; color: var(--ink); font-size: 0.92rem; line-height: 1.55;">
+            {% for f in result.profile.fluids %}<li>{{ f }}</li>{% endfor %}
+        </ul>
+
+        {% if result.profile.caveats %}
+        <div class="eyebrow" style="margin-top: 0.75rem;">Caveats</div>
+        <ul style="margin: 0.4rem 0 0; padding-left: 1.3rem; color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55;">
+            {% for c in result.profile.caveats %}<li>{{ c }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+
+    {% if result.warnings %}
+        {% set ns = namespace(danger=false) %}
+        {% for w in result.warnings %}
+            {% if 'CAUTION' in w %}{% set ns.danger = true %}{% endif %}
+        {% endfor %}
+        <div class="warnings {% if ns.danger %}danger{% endif %}">
+            <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.4rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>

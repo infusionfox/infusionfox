@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Lint with ruff
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Type check with mypy
+        run: mypy app/
+        continue-on-error: true   # mypy is informational for now; tighten later
+
+      - name: Template parse check
+        run: python scripts/check_templates.py
+
+      - name: Alembic schema drift check
+        run: |
+          # Verify the alembic baseline matches the current models.
+          # Any drift here means a model change went in without a migration.
+          # Use a temp file because each alembic invocation makes a fresh
+          # connection, which would lose an in-memory DB.
+          export INFUSIONFOX_DB_URL=sqlite:///$RUNNER_TEMP/ci-alembic.db
+          alembic upgrade head
+          alembic check
+
+      - name: Run tests
+        run: pytest --tb=short
+
+      - name: Run spreadsheet verification
+        run: python scripts/verify_against_spreadsheet.py
+        continue-on-error: true   # legacy script, may need updates

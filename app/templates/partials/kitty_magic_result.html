@@ -1,0 +1,100 @@
+<div id="result-panel">
+
+    <div style="margin-bottom: 1rem; padding: 0.6rem 0.85rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft);">
+        <strong style="color: var(--ink);">{{ result.weight_kg | round(2) }} kg</strong>
+        · {{ result.level.value | capitalize }} sedation
+        · {{ result.opioid.value | capitalize }}
+        · Band: {{ result.nearest_band }}
+    </div>
+
+    {% if not result.in_table %}
+    <div class="warnings danger" style="margin-bottom: 1rem;">
+        <ul><li>Weight outside the published table range (2–8 kg). Use clinical judgment.</li></ul>
+    </div>
+    {% endif %}
+
+    <!-- Draw-up table -->
+    <div class="eyebrow" style="margin-bottom: 0.5rem;">Draw up in one syringe, administer IM</div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem; margin-bottom: 1rem;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--line);">
+                <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Drug</th>
+                <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Stock</th>
+                <th style="text-align: right; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Volume</th>
+                <th style="text-align: right; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Dose</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in result.drugs %}
+            <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 0.55rem 0.5rem; font-weight: 600;">{{ d.name }}</td>
+                <td style="padding: 0.55rem 0.5rem; color: var(--ink-soft); font-size: 0.88rem;">{{ d.stock_label }}</td>
+                <td style="padding: 0.55rem 0.5rem; text-align: right;">
+                    {% if d.vol_low_ml == d.vol_high_ml %}
+                    <strong>{{ "%.3f"|format(d.vol_low_ml) }} mL</strong>
+                    {% else %}
+                    <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                    {% endif %}
+                </td>
+                <td style="padding: 0.55rem 0.5rem; text-align: right; color: var(--ink-soft); font-size: 0.85rem;">
+                    {% if d.dose_low_per_kg == d.dose_high_per_kg %}
+                    {{ d.dose_low_per_kg }}
+                    {% else %}
+                    {{ d.dose_low_per_kg }}–{{ d.dose_high_per_kg }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--line);">
+                <td colspan="4" style="padding: 0 0.5rem 0.5rem; font-size: 0.78rem; color: var(--ink-mute); line-height: 1.5;">
+                    {% if d.vol_low_ml == d.vol_high_ml %}
+                    {{ "%.3f"|format(d.vol_low_ml) }} mL × {{ "%g"|format(d.stock_mg_per_ml) }} mg/mL = {{ "%.4f"|format(d.dose_low_mg) }} mg
+                    · ÷ {{ "%.2f"|format(result.weight_kg) }} kg = {{ d.dose_low_per_kg }}
+                    {% else %}
+                    {{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL × {{ "%g"|format(d.stock_mg_per_ml) }} mg/mL = {{ "%.4f"|format(d.dose_low_mg) }}–{{ "%.4f"|format(d.dose_high_mg) }} mg
+                    · ÷ {{ "%.2f"|format(result.weight_kg) }} kg = {{ d.dose_low_per_kg }}–{{ d.dose_high_per_kg }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            <tr style="border-top: 2px solid var(--line); background: var(--paper-warm);">
+                <td colspan="2" style="padding: 0.55rem 0.5rem; font-weight: 600; color: var(--ink-soft);">Total syringe volume</td>
+                <td colspan="2" style="padding: 0.55rem 0.5rem; text-align: right; font-weight: 700;">
+                    {% if result.total_vol_low_ml == result.total_vol_high_ml %}
+                    {{ "%.3f"|format(result.total_vol_low_ml) }} mL
+                    {% else %}
+                    {{ "%.3f"|format(result.total_vol_low_ml) }}–{{ "%.3f"|format(result.total_vol_high_ml) }} mL
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Reversal -->
+    <div style="padding: 0.75rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--accent); border-radius: var(--radius); font-size: 0.9rem; margin-bottom: 1rem;">
+        <div class="eyebrow" style="margin: 0 0 0.35rem;">Reversal, atipamezole IM</div>
+        <p style="margin: 0; line-height: 1.6;">
+            Same volume as dexmedetomidine dose:
+            {% if result.atipamezole_vol_low_ml == result.atipamezole_vol_high_ml %}
+            <strong>{{ "%.3f"|format(result.atipamezole_vol_low_ml) }} mL</strong>
+            {% else %}
+            <strong>{{ "%.3f"|format(result.atipamezole_vol_low_ml) }}–{{ "%.3f"|format(result.atipamezole_vol_high_ml) }} mL</strong>
+            {% endif %}
+            IM. Reversal also removes alpha-2 analgesia, provide additional analgesia if reversed.
+        </p>
+    </div>
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+</div>

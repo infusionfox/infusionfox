@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Admin · Feedback · InfusionFox{% endblock %}
+
+{% block content %}
+<section class="admin-page">
+    <div class="container">
+        <header class="admin-header">
+            <div class="eyebrow">Admin · signed in as {{ admin_email }}</div>
+            <h1>Feedback</h1>
+            <nav class="admin-nav">
+                <a href="/admin/">Overview</a>
+                <a href="/admin/disclaimer-acceptances">Disclaimer acceptances</a>
+                <a href="/admin/feedback" class="active">Feedback ({{ total }})</a>
+            </nav>
+        </header>
+
+        <form method="get" class="admin-toolbar">
+            <label>
+                Status
+                <select name="status" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == "all" %}selected{% endif %}>All</option>
+                    {% for s in all_statuses %}
+                    <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Kind
+                <select name="kind" onchange="this.form.submit()">
+                    <option value="all" {% if kind_filter == "all" %}selected{% endif %}>All</option>
+                    {% for k in all_kinds %}
+                    <option value="{{ k }}" {% if kind_filter == k %}selected{% endif %}>{{ k }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div style="color: var(--ink-mute, #5c5c5c); font-size: 0.9rem; align-self: center;">
+                {{ rows|length }} of {{ total }} matching.
+            </div>
+            <div class="admin-toolbar__actions">
+                <a href="/admin/feedback/export.csv" class="admin-btn">Export all CSV</a>
+            </div>
+        </form>
+
+        {% if rows %}
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>When (UTC)</th>
+                    <th>Kind</th>
+                    <th>Status</th>
+                    <th>Page</th>
+                    <th>Message preview</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td><code><a href="/admin/feedback/{{ r.id }}">{{ r.id }}</a></code></td>
+                    <td><time datetime="{{ r.created_at.isoformat() if r.created_at else '' }}">
+                        {{ r.created_at.strftime("%Y-%m-%d %H:%M") if r.created_at else "—" }}
+                    </time></td>
+                    <td>
+                        {% if r.kind.value == "dose_concern" %}
+                        <strong style="color: var(--sev-critical, #b8131b);">{{ r.kind.value }}</strong>
+                        {% else %}
+                        {{ r.kind.value }}
+                        {% endif %}
+                    </td>
+                    <td>{{ r.status.value }}</td>
+                    <td class="admin-table__truncate" style="max-width: 200px;">
+                        <code style="font-size: 0.78rem;">{{ r.page_url or "—" }}</code>
+                    </td>
+                    <td class="admin-table__truncate" style="max-width: 400px;">
+                        <a href="/admin/feedback/{{ r.id }}">
+                            {{ (r.message[:80] + "…") if r.message and r.message|length > 80 else (r.message or "—") }}
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if total_pages > 1 %}
+        <div class="admin-pagination">
+            {% if page > 1 %}
+                <a href="?page={{ page - 1 }}&per_page={{ per_page }}&status={{ status_filter }}&kind={{ kind_filter }}">← Prev</a>
+            {% else %}
+                <span class="disabled">← Prev</span>
+            {% endif %}
+            <span class="current">{{ page }} / {{ total_pages }}</span>
+            {% if page < total_pages %}
+                <a href="?page={{ page + 1 }}&per_page={{ per_page }}&status={{ status_filter }}&kind={{ kind_filter }}">Next →</a>
+            {% else %}
+                <span class="disabled">Next →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="admin-empty">No feedback matches the current filters.</p>
+        {% endif %}
+    </div>
+</section>
+
+{% include "admin/_admin_styles.html" %}
+{% endblock %}

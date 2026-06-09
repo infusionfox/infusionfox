@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}IRIS CKD staging | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+
+            <div>
+
+                <div class="eyebrow">Calculator</div>
+
+                <h1>IRIS CKD staging</h1>
+
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    IRIS staging system for chronic kidney disease in
+                    dogs and cats. Stages by creatinine and SDMA
+                    (worst of the two), then substages by UPC
+                    (proteinuria) and systolic blood pressure
+                    (hypertension), each of which independently
+                    drives treatment decisions.
+                </p>
+
+            </div>
+
+        </div>
+        <div class="calc-grid" style="margin-top: 1.5rem;">
+            <form
+                hx-post="/iris-staging/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:200ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="iris-dog" {% if inputs.species == "dog" %}checked{% endif %}>
+                        <label for="iris-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="iris-cat" {% if inputs.species == "cat" %}checked{% endif %}>
+                        <label for="iris-cat">Cat</label>
+                    </div>
+
+        <nav class="calc-tabs" style="margin-top: 2.5rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/iris-staging">Clinical background</a>
+        </nav>
+                </div>
+
+                <div class="field">
+                    <label for="creatinine_mg_dl">Creatinine (mg/dL)</label>
+                    <input type="number" step="0.01" min="0" id="creatinine_mg_dl" name="creatinine_mg_dl" value="{{ inputs.creatinine_mg_dl if inputs.creatinine_mg_dl > 0 else '' }}" required>
+                </div>
+
+                <div class="field">
+                    <label for="sdma_ug_dl">SDMA (µg/dL) <span style="color: var(--ink-mute); font-weight: 400;">— optional</span></label>
+                    <input type="number" step="any" min="0" id="sdma_ug_dl" name="sdma_ug_dl" value="{{ inputs.sdma_ug_dl if inputs.sdma_ug_dl > 0 else '' }}">
+                </div>
+
+                <div class="field">
+                    <label for="upc">UPC ratio <span style="color: var(--ink-mute); font-weight: 400;">— optional</span></label>
+                    <input type="number" step="0.01" min="0" id="upc" name="upc" value="{{ inputs.upc if inputs.upc > 0 else '' }}">
+                </div>
+
+                <div class="field">
+                    <label for="sbp_mmhg">Systolic BP (mmHg) <span style="color: var(--ink-mute); font-weight: 400;">— optional</span></label>
+                    <input type="number" step="1" min="0" id="sbp_mmhg" name="sbp_mmhg" value="{{ inputs.sbp_mmhg if inputs.sbp_mmhg > 0 else '' }}">
+                </div>
+            </form>
+
+            {% include "partials/iris_staging_result.html" %}
+        </div>
+    </div>
+</section>
+{% endblock %}

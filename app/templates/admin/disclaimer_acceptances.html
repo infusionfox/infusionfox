@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Admin · Disclaimer acceptances · InfusionFox{% endblock %}
+
+{% block content %}
+<section class="admin-page">
+    <div class="container">
+        <header class="admin-header">
+            <div class="eyebrow">Admin · signed in as {{ admin_email }}</div>
+            <h1>Disclaimer acceptances</h1>
+            <nav class="admin-nav">
+                <a href="/admin/">Overview</a>
+                <a href="/admin/disclaimer-acceptances" class="active">Disclaimer acceptances ({{ total }})</a>
+                <a href="/admin/feedback">Feedback</a>
+            </nav>
+        </header>
+
+        <div class="admin-toolbar">
+            <div style="color: var(--ink-mute, #5c5c5c); font-size: 0.9rem;">
+                Showing {{ rows|length }} of {{ total }} acceptances.
+            </div>
+            <div class="admin-toolbar__actions">
+                <a href="/admin/disclaimer-acceptances/export.csv" class="admin-btn">Export CSV</a>
+            </div>
+        </div>
+
+        {% if rows %}
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>When (UTC)</th>
+                    <th>Version</th>
+                    <th>IP</th>
+                    <th>Session token</th>
+                    <th>User agent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td><code>{{ r.id }}</code></td>
+                    <td><time datetime="{{ r.accepted_at.isoformat() if r.accepted_at else '' }}">
+                        {{ r.accepted_at.strftime("%Y-%m-%d %H:%M:%S") if r.accepted_at else "—" }}
+                    </time></td>
+                    <td><code>{{ r.disclaimer_version }}</code></td>
+                    <td><code>{{ r.ip_address or "—" }}</code></td>
+                    <td><code>{{ (r.session_token[:16] + "…") if r.session_token and r.session_token|length > 16 else (r.session_token or "—") }}</code></td>
+                    <td class="admin-table__truncate" title="{{ r.user_agent or '' }}">
+                        {{ (r.user_agent[:80] + "…") if r.user_agent and r.user_agent|length > 80 else (r.user_agent or "—") }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if total_pages > 1 %}
+        <div class="admin-pagination">
+            {% if page > 1 %}
+                <a href="?page={{ page - 1 }}&per_page={{ per_page }}">← Prev</a>
+            {% else %}
+                <span class="disabled">← Prev</span>
+            {% endif %}
+            <span class="current">{{ page }} / {{ total_pages }}</span>
+            {% if page < total_pages %}
+                <a href="?page={{ page + 1 }}&per_page={{ per_page }}">Next →</a>
+            {% else %}
+                <span class="disabled">Next →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="admin-empty">No acceptances recorded yet.</p>
+        {% endif %}
+    </div>
+</section>
+
+{% include "admin/_admin_styles.html" %}
+{% endblock %}

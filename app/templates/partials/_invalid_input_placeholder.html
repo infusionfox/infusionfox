@@ -1,0 +1,16 @@
+{# Rendered by a calculator route when any required input is unparseable
+   (empty field, partial decimal like "4.", non-numeric, or non-positive).
+
+   Intentional: looks like a calculator waiting for input, NOT like a
+   broken page. Replaces the previous result so the user is never
+   misled by stale numbers from a prior patient.
+
+   Caller passes `placeholder_id` — must match the route's hx-target
+   so the placeholder is replaced as soon as input becomes valid.
+   Defaults to "result-panel" which is the common case. #}
+<div id="{{ placeholder_id|default('result-panel') }}" class="result-panel-placeholder">
+    <div class="eyebrow">Awaiting input</div>
+    <p class="result-placeholder-text">
+        {{ placeholder_message|default('Enter a patient weight to see the result.') }}
+    </p>
+</div>

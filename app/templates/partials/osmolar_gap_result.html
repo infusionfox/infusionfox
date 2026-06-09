@@ -1,0 +1,111 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+        {% include "partials/_invalid_result.html" %}
+    {% else %}
+
+    {# Headline: gap if measured, else calculated osm. #}
+    <div class="result__headline">
+        {% if result.osmolar_gap is not none %}
+            <div class="eyebrow">Osmolar gap</div>
+            <div class="result__primary" style="font-size: 1.5rem; line-height: 1.3;">
+                {{ "%.1f"|format(result.osmolar_gap) }} mOsm/kg
+                {% if result.gap_elevated %}
+                    <span style="color: var(--danger); font-size: 0.85em;">· elevated</span>
+                {% elif result.gap_classification == "borderline" %}
+                    <span style="color: var(--ink-mute); font-size: 0.85em;">· borderline</span>
+                {% else %}
+                    <span style="color: var(--ink-mute); font-size: 0.85em;">· within normal limits</span>
+                {% endif %}
+            </div>
+            <div class="result__secondary">
+                Measured {{ "%.0f"|format(result.inputs.measured_osm_mosm_per_kg) }} − calculated {{ "%.0f"|format(result.calculated_osm_mosm_per_kg) }}
+            </div>
+        {% else %}
+            <div class="eyebrow">Calculated osmolality</div>
+            <div class="result__primary" style="font-size: 1.5rem; line-height: 1.3;">
+                {{ "%.0f"|format(result.calculated_osm_mosm_per_kg) }} mOsm/kg
+            </div>
+            <div class="result__secondary">
+                Reference 290–310 mOsm/kg. Add a measured osmolality to compute the gap.
+            </div>
+        {% endif %}
+    </div>
+
+    {# Contribution breakdown. #}
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Na contribution</dt>
+            <dd>{{ "%.0f"|format(result.na_contribution) }} mOsm/kg
+                <span style="color: var(--ink-mute); font-size: 0.85em;">(2 × {{ "%.0f"|format(result.inputs.na_meq_per_l) }})</span>
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>Glucose contribution</dt>
+            <dd>{{ "%.1f"|format(result.glucose_mmol_per_l) }} mOsm/kg
+                <span style="color: var(--ink-mute); font-size: 0.85em;">
+                {% if result.inputs.glucose_unit.value == 'mg_dl' %}
+                    ({{ "%.0f"|format(result.inputs.glucose_value) }} mg/dL ÷ 18)
+                {% else %}
+                    ({{ "%.1f"|format(result.inputs.glucose_value) }} mmol/L)
+                {% endif %}
+                </span>
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>BUN/urea contribution</dt>
+            <dd>{{ "%.1f"|format(result.urea_mmol_per_l) }} mOsm/kg
+                <span style="color: var(--ink-mute); font-size: 0.85em;">
+                {% if result.inputs.bun_unit.value == 'mg_dl' %}
+                    ({{ "%.0f"|format(result.inputs.bun_value) }} mg/dL ÷ 2.8)
+                {% else %}
+                    ({{ "%.1f"|format(result.inputs.bun_value) }} mmol/L)
+                {% endif %}
+                </span>
+            </dd>
+        </div>
+        {% if result.ethanol_contribution_mosm > 0 %}
+        <div class="result__detail">
+            <dt>Ethanol contribution</dt>
+            <dd>{{ "%.1f"|format(result.ethanol_contribution_mosm) }} mOsm/kg
+                <span style="color: var(--ink-mute); font-size: 0.85em;">({{ "%.0f"|format(result.inputs.ethanol_mg_per_dl) }} mg/dL ÷ 4.6)</span>
+            </dd>
+        </div>
+        {% endif %}
+    </dl>
+
+    {# Worked formula. #}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Math</div>
+        <div class="formula-box" style="margin-top: 0.6rem;">
+            {% if result.ethanol_contribution_mosm > 0 %}
+            $$\text{Osm}_{\text{calc}} = 2 \times {{ "%.0f"|format(result.inputs.na_meq_per_l) }} + {{ "%.1f"|format(result.glucose_mmol_per_l) }} + {{ "%.1f"|format(result.urea_mmol_per_l) }} + {{ "%.1f"|format(result.ethanol_contribution_mosm) }} = {{ "%.0f"|format(result.calculated_osm_mosm_per_kg) }} \,\text{mOsm/kg}$$
+            {% else %}
+            $$\text{Osm}_{\text{calc}} = 2 \times {{ "%.0f"|format(result.inputs.na_meq_per_l) }} + {{ "%.1f"|format(result.glucose_mmol_per_l) }} + {{ "%.1f"|format(result.urea_mmol_per_l) }} = {{ "%.0f"|format(result.calculated_osm_mosm_per_kg) }} \,\text{mOsm/kg}$$
+            {% endif %}
+            {% if result.osmolar_gap is not none %}
+            $$\text{Gap} = {{ "%.0f"|format(result.inputs.measured_osm_mosm_per_kg) }} - {{ "%.0f"|format(result.calculated_osm_mosm_per_kg) }} = {{ "%.1f"|format(result.osmolar_gap) }} \,\text{mOsm/kg}$$
+            {% endif %}
+        </div>
+    </div>
+
+    {# Interpretation. #}
+    {% if result.interpretation %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Interpretation</div>
+        <ul style="margin: 0.4rem 0 0; padding-left: 1.3rem; color: var(--ink); font-size: 0.92rem; line-height: 1.6;">
+            {% for line in result.interpretation %}<li style="margin-bottom: 0.4rem;">{{ line }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# Warnings — elevated gap with toxicosis differential. #}
+    {% if result.warnings %}
+        <div class="warnings {% if result.gap_elevated %}danger{% endif %}" style="margin-top: 1.25rem;">
+            <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+    {% endif %}
+</div>

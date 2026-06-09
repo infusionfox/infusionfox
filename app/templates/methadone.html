@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Methadone | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Analgesia</div>
+                <h1>Methadone</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Full µ-opioid agonist with additional NMDA-receptor antagonism,
+                    useful for moderate-to-severe acute pain and for premedication
+                    where opioid analgesia is desired without the histamine release
+                    of morphine. Weight-based bolus, premedication, and CRI dosing
+                    for dogs and cats (extra-label). Stock 10 mg/mL (no US
+                    veterinary product; human-labeled vials).
+                </p>
+            </div>
+            <div class="stock">Stock: 10 mg/mL · Schedule II</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>No US veterinary product.</strong> Use human methadone HCl injection
+                    10 mg/mL (Dolophine® or generic). Verify label, concentration errors are
+                    high-stakes. DEA Schedule II, record all use.
+                </li>
+                <li>
+                    <strong>Bradycardia risk.</strong> Methadone has greater cardiodepressant
+                    effect than morphine. Monitor HR and blood pressure. Use caution
+                    with pre-existing bradyarrhythmias or when combined with alpha-2 agonists.
+                </li>
+                <li>
+                    <strong>Incompatible with meloxicam</strong> at Y-sites. Do not run in
+                    the same line as NSAIDs. Compatible in syringe with acepromazine.
+                </li>
+            </ul>
+        </div>
+
+        <div class="calc-grid">
+            <div class="calc-form-col">
+                <form
+                    hx-post="/methadone/compute"
+                    hx-target="#result-panel"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:250ms, change, load"
+                >
+                    <fieldset>
+                        <legend>Patient</legend>
+                        <div class="field field--inline">
+                            <label for="weight_value">Weight</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="weight_value" name="weight_value"
+                                    value="{{ weight_value }}" min="0.5" max="150" step="any"
+                                    required style="width: 8rem;">
+                                <div class="segmented">
+                                    <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                                    <label for="wu-lb">lb</label>
+                                    <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                                    <label for="wu-kg">kg</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-top: 1rem;">
+                            <label>Species</label>
+                            <div class="segmented">
+                                <input type="radio" name="species" value="dog" id="species-dog"
+                                    {% if (result.species.value if result else species|default('dog')) == 'dog' %}checked{% endif %}>
+                                <label for="species-dog">Dog</label>
+                                <input type="radio" name="species" value="cat" id="species-cat"
+                                    {% if (result.species.value if result else species|default('dog')) == 'cat' %}checked{% endif %}>
+                                <label for="species-cat">Cat</label>
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="calc-result-col">
+                {% if result %}
+                    {% include "partials/methadone_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 3rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/methadone">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <h2>Formula</h2>
+            <p>All three use cases follow the same relationship: dose × weight ÷ stock = volume.</p>
+
+            <h3>Bolus / premedication</h3>
+            <div class="formula-display">
+                $$\text{volume}_{\text{mL}} = \frac{\text{dose}_{\text{mg/kg}} \times \text{weight}_{\text{kg}}}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            <div class="formula-display">
+                {% if result %}
+                $$\text{premed low} = \frac{ {{ "%.2f"|format(result.premed_low_mg_per_kg) }}_{\text{mg/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{ {{ result.stock_mg_per_ml }}_{\text{mg/mL}} } = {{ "%.3f"|format(result.premed_low_ml) }}\,\text{mL}$$
+                $$\text{premed high} = \frac{ {{ "%.2f"|format(result.premed_high_mg_per_kg) }}_{\text{mg/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{ {{ result.stock_mg_per_ml }}_{\text{mg/mL}} } = {{ "%.3f"|format(result.premed_high_ml) }}\,\text{mL}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+
+            <h3>CRI maintenance (undiluted from vial)</h3>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{\text{weight}_{\text{kg}} \times \text{rate}_{\text{mg/kg/hr}}}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ result.cri_rate_mg_per_kg_per_hr }}_{\text{mg/kg/hr}} }{ {{ result.stock_mg_per_ml }}_{\text{mg/mL}} } = {{ "%.3f"|format(result.cri_pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+
+            <h3>CRI bag prep</h3>
+            <div class="formula-display">
+                {% if result %}
+                $$60\,\text{mg} \div 500\,\text{mL} = 0.12\,\text{mg/mL} \rightarrow \text{run at } 1\,\text{mL/kg/hr} = {{ "%.1f"|format(result.bag_pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Plumb DC. <em>Plumb's Veterinary Drugs.</em> Methadone monograph (current edition).
+                    All dosages extra-label in dogs and cats. Bolus: 0.1–0.5 mg/kg IV/IM/SC q4–8h (dogs),
+                    0.1–0.6 mg/kg q4–6h (cats). CRI: 0.1–0.2 mg/kg IV loading, then 0.12 mg/kg/hr.
+                    Bag prep: 60 mg / 500 mL IV fluid at 1 mL/kg/hr.
+                    <a href="https://plumbs.com" target="_blank" rel="noopener" style="color: var(--accent);">plumbs.com</a>
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    No US veterinary-labeled product. Use human methadone HCl injection 10 mg/mL.
+                    DEA Schedule II controlled substance, follow applicable federal, state, and local
+                    controlled substance regulations. NMDA antagonist activity (both isomers) distinguishes
+                    methadone from other mu-agonists.
+                </li>
+            </ul>
+        </section>
+
+    </div>
+</section>
+{% endblock %}

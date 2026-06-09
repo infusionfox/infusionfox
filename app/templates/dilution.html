@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Dilution helper | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container" style="max-width: 820px;">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Tool</div>
+                <h1>Dilution helper</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Given a stock concentration, target concentration, and final volume, calculates the
+                    volume of stock drug and diluent you need. Works for any drug.
+                </p>
+            </div>
+        </div>
+
+        {# Render the helper open, with no drug-specific prefill #}
+        {% with dilution_prefill_stock=dilution_inputs.stock_concentration_ug_per_ml,
+                dilution_prefill_label="standalone",
+                dilution_open=true %}
+            {% include "partials/dilution_helper.html" %}
+        {% endwith %}
+    </div>
+</section>
+{% endblock %}

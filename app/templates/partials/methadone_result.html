@@ -1,0 +1,111 @@
+<div id="result-panel">
+
+    {# Methadone has three distinct clinical use cases that must read
+       as distinct on the page — intermittent bolus, premedication,
+       and the CRI workflow (loading + maintenance). Grouping into
+       two top-level sections keeps the bolus/premed (single-dose
+       workflows) visually separate from the CRI workflow (continuous
+       infusion). #}
+
+    {# ───────────────────────── INTERMITTENT DOSING ──────────────── #}
+    <div class="result-section-header" style="display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.5rem; padding: 0; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-mute);">
+        <span>Intermittent dosing</span>
+        <span style="flex: 1; height: 1px; background: var(--rule);"></span>
+    </div>
+
+    <!-- Intermittent bolus, primary output -->
+    <div class="result__headline">
+        <div class="eyebrow">Bolus (q {{ result.bolus_interval }})</div>
+        <div class="result__primary">
+            {{ "%.3f"|format(result.bolus_low_ml) }}–{{ "%.3f"|format(result.bolus_high_ml) }}<span class="unit">mL</span>
+        </div>
+        <div class="result__secondary">
+            {{ result.bolus_low_mg_per_kg }}–{{ result.bolus_high_mg_per_kg }} mg/kg
+            × {{ "%.2f"|format(result.weight_kg) }} kg
+            ÷ {{ result.stock_mg_per_ml }} mg/mL
+            = {{ "%.3f"|format(result.bolus_low_mg) }}–{{ "%.3f"|format(result.bolus_high_mg) }} mg
+            IV/IM/SC q {{ result.bolus_interval }}
+        </div>
+    </div>
+
+    <!-- Premedication -->
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Premedication (single-shot IM/IV)</div>
+        <table style="width: 100%; font-size: 0.93rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Dose range:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ result.premed_low_mg_per_kg }}–{{ result.premed_high_mg_per_kg }} mg/kg IM or IV
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">For {{ "%.2f"|format(result.weight_kg) }} kg:</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.05rem;">
+                    {{ "%.3f"|format(result.premed_low_mg) }}–{{ "%.3f"|format(result.premed_high_mg) }} mg
+                    = {{ "%.3f"|format(result.premed_low_ml) }}–{{ "%.3f"|format(result.premed_high_ml) }} mL
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {# ───────────────────────── CRI ──────────────────────────────── #}
+    <div class="result-section-header" style="display: flex; align-items: center; gap: 0.6rem; margin: 2rem 0 0.5rem; padding: 0; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-mute);">
+        <span>CRI</span>
+        <span style="flex: 1; height: 1px; background: var(--rule);"></span>
+    </div>
+
+    <!-- CRI loading -->
+    <div style="padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">IV loading dose (one-time, before CRI)</div>
+        <table style="width: 100%; font-size: 0.93rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Dose range:</td>
+                <td style="text-align: right; font-weight: 600;">
+                    {{ result.cri_load_low_mg_per_kg }}–{{ result.cri_load_high_mg_per_kg }} mg/kg IV
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">For {{ "%.2f"|format(result.weight_kg) }} kg:</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.05rem;">
+                    {{ "%.3f"|format(result.cri_load_low_mg) }}–{{ "%.3f"|format(result.cri_load_high_mg) }} mg
+                    = {{ "%.3f"|format(result.cri_load_low_ml) }}–{{ "%.3f"|format(result.cri_load_high_ml) }} mL
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- CRI maintenance -->
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Maintenance rate ({{ result.cri_rate_mg_per_kg_per_hr }} mg/kg/hr, continuous)</div>
+        <table style="width: 100%; font-size: 0.93rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Undiluted from stock vial (syringe pump):</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.05rem;">
+                    {{ "%.3f"|format(result.cri_pump_rate_ml_per_hr) }} mL/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.2rem 0;">Bag prep (60 mg / 500 mL):</td>
+                <td style="text-align: right; font-weight: 700; font-size: 1.05rem;">
+                    {{ "%.1f"|format(result.bag_pump_rate_ml_per_hr) }} mL/hr
+                    <span style="font-weight: 400; font-size: 0.85rem;">(1 mL/kg/hr)</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {% if result.warnings %}
+    <div class="warnings danger" style="margin-top: 1rem;">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+</div>

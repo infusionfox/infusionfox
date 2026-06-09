@@ -1,0 +1,403 @@
+{# Preoperative drug sheet — premedication + induction (+ DKB for cats).
+   Fluids, emergency drugs, vasopressors live on the intraoperative sheet. #}
+
+{#
+    Per-drug concentration sub-selector macro. Renders nothing for drugs
+    whose stock_options dict entry is missing (single-concentration drugs
+    that don't need a picker). Used by all three picker sections so the
+    selector markup is defined once and stays consistent.
+
+    The drug_key is derived from `d.name.lower()` to match how the form
+    field naming for doses already works (`dose_{name}`). The chosen
+    concentration round-trips through `stock_{name}` → router parsing →
+    `chosen_stocks` dict → ContextVar → `_drug()` → `d.stock_mg_per_ml`.
+
+    The `selected` flag matches the value on the rendered DrugLine, so
+    after a recompute the dropdown stays in sync with what the user picked.
+#}
+{% macro stock_selector(d) %}
+    {% set drug_key = d.name.lower() %}
+    {% if drug_key in stock_options %}
+    <div class="check-dose-row__stock">
+        <label class="check-dose-row__stock-label" for="stock_{{ drug_key }}">Stock</label>
+        <select name="stock_{{ drug_key }}" id="stock_{{ drug_key }}" class="check-dose-row__stock-select">
+            {% for value, label in stock_options[drug_key] %}
+            <option value="{{ value }}"{% if value == d.stock_mg_per_ml %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+{% endmacro %}
+
+<div id="anesthesia-sheet-preop" class="anesthesia-tab-pane{% if active_tab == 'preop' %} is-active{% endif %}" data-tab="preop">
+
+    {% with sheet_kind="preop" %}
+    {% include "partials/_anesthesia_sheet_header.html" %}
+    {% endwith %}
+
+    <div class="sheet-warning-banner">
+        <strong>Verify all concentrations against each vial.</strong> Titrate induction agents to effect, never bolus full dose. Premed before induction unless contraindicated.
+    </div>
+
+    <!-- Drug-selection picker. hx-preserve tells HTMX to leave this
+         element alone across swaps — its open/closed state, dose inputs,
+         and checkboxes are all browser-native UI state that should never
+         be replaced. Count badges inside refresh via OOB swaps emitted
+         alongside the main response. -->
+    <section id="preop-picker" class="preop-picker no-print" hx-preserve="true" aria-label="Customize preop sheet">
+        <header class="preop-picker__header">
+            <h2 class="preop-picker__title">Customize your protocol</h2>
+            <p class="preop-picker__hint">Select which drugs appear on the printed preop sheet, and tune individual doses. Not every clinical scenario can be accounted for; review and adjust as needed for the patient in front of you.</p>
+        </header>
+<details class="drug-picker" data-category="opioids">
+                <summary>
+                    <span class="drug-picker__label">Premed opioids</span>
+                    <span class="drug-picker__count">{{ selected_opioids|length }} of {{ result.premed_opioids|length }}</span>
+                </summary>
+                {% for d in result.premed_opioids %}
+                <div class="check-dose-row">
+                    <input type="checkbox" name="sel_opioid" value="{{ d.name }}"
+                        {% if d.name in selected_opioids %}checked{% endif %}>
+                    <div class="dose-drug-col">
+                        <span class="dose-drug-name">{{ d.name }}</span>
+                        <div class="dose-input-group">
+                            <input type="number"
+                                name="dose_{{ d.name.lower().replace(' ', '_') }}"
+                                value="{{ '%.3g'|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }}"
+                                min="{{ '%.3g'|format(d.dose_mg_per_kg_low * d.dose_display_multiplier) }}"
+                                max="{{ '%.3g'|format(d.dose_mg_per_kg_high * d.dose_display_multiplier) }}"
+                                step="{{ d.dose_input_step }}"
+                                style="width: 5.5rem;">
+                            <span class="dose-unit">{{ d.dose_display_unit }}</span>
+                            <span class="dose-range">({{ d.dose_label }})</span>
+                        </div>
+                        {{ stock_selector(d) }}
+                    </div>
+                </div>
+                {% endfor %}
+            </details>
+
+            <details class="drug-picker" data-category="sedatives">
+                <summary>
+                    <span class="drug-picker__label">Premed sedatives</span>
+                    <span class="drug-picker__count">{{ selected_sedatives|length }} of {{ result.premed_sedatives|length }}</span>
+                </summary>
+                {% for d in result.premed_sedatives %}
+                <div class="check-dose-row">
+                    <input type="checkbox" name="sel_sedative" value="{{ d.name }}"
+                        {% if d.name in selected_sedatives %}checked{% endif %}>
+                    <div class="dose-drug-col">
+                        <span class="dose-drug-name">{{ d.name }}</span>
+                        <div class="dose-input-group">
+                            <input type="number"
+                                name="dose_{{ d.name.lower().replace(' ', '_') }}"
+                                value="{{ '%.3g'|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }}"
+                                min="{{ '%.3g'|format(d.dose_mg_per_kg_low * d.dose_display_multiplier) }}"
+                                max="{{ '%.3g'|format(d.dose_mg_per_kg_high * d.dose_display_multiplier) }}"
+                                step="{{ d.dose_input_step }}"
+                                style="width: 5.5rem;">
+                            <span class="dose-unit">{{ d.dose_display_unit }}</span>
+                            <span class="dose-range">({{ d.dose_label }})</span>
+                        </div>
+                        {{ stock_selector(d) }}
+                    </div>
+                </div>
+                {% endfor %}
+            </details>
+
+            <details class="drug-picker" data-category="induction">
+                <summary>
+                    <span class="drug-picker__label">Induction</span>
+                    <span class="drug-picker__count">{{ selected_induction|length }} of {{ result.induction_drugs|length }}</span>
+                </summary>
+                {% for d in result.induction_drugs %}
+                <div class="check-dose-row">
+                    <input type="checkbox" name="sel_induction" value="{{ d.name }}"
+                        {% if d.name in selected_induction %}checked{% endif %}>
+                    <div class="dose-drug-col">
+                        <span class="dose-drug-name">{{ d.name }}</span>
+                        <div class="dose-input-group">
+                            <input type="number"
+                                name="dose_{{ d.name.lower().replace(' ', '_') }}"
+                                value="{{ '%.3g'|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }}"
+                                min="{{ '%.3g'|format(d.dose_mg_per_kg_low * d.dose_display_multiplier) }}"
+                                max="{{ '%.3g'|format(d.dose_mg_per_kg_high * d.dose_display_multiplier) }}"
+                                step="{{ d.dose_input_step }}"
+                                style="width: 5.5rem;">
+                            <span class="dose-unit">{{ d.dose_display_unit }}</span>
+                            <span class="dose-range">({{ d.dose_label }})</span>
+                        </div>
+                        {{ stock_selector(d) }}
+                    </div>
+                </div>
+                {% endfor %}
+            </details>
+
+            {#
+                Emergency-drug concentration overrides. Atropine and
+                naloxone appear in the emergency drugs section of the
+                printed sheet (they're always on, not user-selected
+                like opioids/sedatives/induction). The customization
+                is concentration-only — no checkbox, no dose input,
+                no behavior change beyond picking which stocked vial
+                concentration the volumes get computed against.
+
+                Drugs are pulled from result.emergency_drugs so the
+                printed stock_label matches the user's pick (after
+                round-trip through _stock_label_for in calculate()).
+            #}
+            {% set emergency_overridable = result.emergency_drugs
+                | selectattr('name', 'in', ['Atropine', 'Naloxone'])
+                | list %}
+            {% if emergency_overridable %}
+            <details class="drug-picker" data-category="emergency-stocks">
+                <summary>
+                    <span class="drug-picker__label">Emergency drug concentrations</span>
+                    <span class="drug-picker__count">{{ emergency_overridable|length }} drug(s)</span>
+                </summary>
+                <p class="drug-picker-hint" style="margin: 0.5rem 0;">
+                    These drugs are always on the printed sheet. Pick the
+                    concentration your hospital stocks; volumes recompute
+                    automatically.
+                </p>
+                {% for d in emergency_overridable %}
+                <div class="check-dose-row">
+                    {# No checkbox: emergency drugs are non-optional. Empty
+                       slot keeps the row alignment consistent with
+                       opioid/sedative/induction rows above. #}
+                    <span style="width: 1.25rem; flex-shrink: 0;"></span>
+                    <div class="dose-drug-col">
+                        <span class="dose-drug-name">{{ d.name }}</span>
+                        {{ stock_selector(d) }}
+                    </div>
+                </div>
+                {% endfor %}
+            </details>
+            {% endif %}
+</section>
+
+    <!-- ANESTHESIA CIRCUIT SETUP -->
+    <div class="sheet-section">
+        <div class="sheet-section-title">Circuit setup</div>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Value</th>
+                    <th>Formula / note</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Rebreathing bag</strong></td>
+                    <td>
+                        {% if result.circuit_use_nonrebreathing %}
+                        <strong>Use non-rebreathing circuit</strong>
+                        {% else %}
+                        <strong>{{ "%g"|format(result.circuit_bag_recommended_l) }} L</strong>
+                        <span style="color: var(--ink-mute); font-size: 0.82rem;">
+                            (calculated {{ "%.2f"|format(result.circuit_bag_calculated_l) }} L)
+                        </span>
+                        {% if result.circuit_bag_exceeds_max %}
+                        <div style="color: var(--signal); font-size: 0.82rem; margin-top: 0.2rem;">
+                            ⚠ Calculated volume exceeds 5 L. Patient needs a larger reservoir or non-rebreathing setup; the 5 L bag is the largest stocked recommendation but is undersized for this patient.
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        Bag (L) = (weight × tidal volume × 6) / 1000, using tidal volume 15 mL/kg.
+                        Pick the next standard bag size up (0.5 / 1 / 2 / 3 / 5 L).
+                        {% if result.circuit_use_nonrebreathing %}
+                        Patients under 3 kg should use a non-rebreathing circuit (Bain, T-piece,
+                        Mapleson D) regardless of bag math.
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PREMEDICATION OPIOIDS -->
+    <div class="sheet-section">
+        <div class="sheet-section-title">Premedication. Opioids <span style="font-weight: 400; font-size: 0.75rem;">(choose one)</span></div>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Drug</th>
+                    <th>Dose</th>
+                    <th>Stock</th>
+                    <th class="col-vol">Volume</th>
+                    <th>Route</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in result.premed_opioids %}{% if not selected_opioids or d.name in selected_opioids %}
+                <tr>
+                    <td><strong>{{ d.name }}</strong></td>
+                    <td>{{ d.dose_label }}</td>
+                    <td style="color: var(--ink-mute);">{{ d.stock_label }}</td>
+                    <td class="col-vol">
+                        {% if d.chosen_dose_mg_per_kg > 0 %}
+                        <strong>{{ "%.3f"|format(d.chosen_vol_ml) }} mL</strong>
+                        <div style="font-size: 0.78rem; color: var(--ink-mute);">{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</div>
+                        {% elif d.vol_low_ml == d.vol_high_ml %}
+                        <strong>{{ "%.3f"|format(d.vol_low_ml) }} mL</strong>
+                        {% else %}
+                        <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                        {% endif %}
+                    </td>
+                    <td>{{ d.route }}</td>
+                    <td>{{ d.note }}</td>
+                </tr>
+                {% endif %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PREMEDICATION SEDATIVES -->
+    <div class="sheet-section">
+        <div class="sheet-section-title">Premedication. Sedatives <span style="font-weight: 400; font-size: 0.75rem;">(choose one, or combine with opioid)</span></div>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Drug</th>
+                    <th>Dose</th>
+                    <th>Stock</th>
+                    <th class="col-vol">Volume</th>
+                    <th>Route</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in result.premed_sedatives %}{% if not selected_sedatives or d.name in selected_sedatives %}
+                <tr>
+                    <td><strong>{{ d.name }}</strong></td>
+                    <td>{{ d.dose_label }}</td>
+                    <td style="color: var(--ink-mute);">{{ d.stock_label }}</td>
+                    <td class="col-vol">
+                        {% if d.chosen_dose_mg_per_kg > 0 %}
+                        <strong>{{ "%.3f"|format(d.chosen_vol_ml) }} mL</strong>
+                        <div style="font-size: 0.78rem; color: var(--ink-mute);">{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</div>
+                        {% elif d.vol_low_ml == d.vol_high_ml %}
+                        <strong>{{ "%.3f"|format(d.vol_low_ml) }} mL</strong>
+                        {% else %}
+                        <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                        {% endif %}
+                    </td>
+                    <td>{{ d.route }}</td>
+                    <td>{{ d.note }}</td>
+                </tr>
+                {% endif %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- INDUCTION -->
+    <div class="sheet-section">
+        <div class="sheet-section-title">Induction <span style="font-weight: 400; font-size: 0.75rem;">(titrate slowly IV to effect, never full bolus)</span></div>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Drug</th>
+                    <th>Dose range</th>
+                    <th>Stock</th>
+                    <th class="col-vol">Volume</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in result.induction_drugs %}{% if not selected_induction or d.name in selected_induction %}
+                <tr>
+                    <td><strong>{{ d.name }}</strong></td>
+                    <td>{{ d.dose_label }}</td>
+                    <td style="color: var(--ink-mute);">{{ d.stock_label }}</td>
+                    <td class="col-vol">
+                        {% if d.chosen_dose_mg_per_kg > 0 %}
+                        <strong>{{ "%.2f"|format(d.chosen_vol_ml) }} mL</strong>
+                        <div style="font-size: 0.78rem; color: var(--ink-mute);">{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</div>
+                        {% else %}
+                        <strong>{{ "%.2f"|format(d.vol_low_ml) }}–{{ "%.2f"|format(d.vol_high_ml) }} mL</strong>
+                        {% endif %}
+                    </td>
+                    <td>{{ d.note }}</td>
+                </tr>
+                {% endif %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- DKB (cats only) -->
+    {% if result.dkb_protocols %}
+    <div class="sheet-section">
+        <div class="sheet-section-title">DKB. Kitty Magic (Dex + Ketamine + Opioid IM) <span style="font-weight: 400; font-size: 0.75rem;">Stocks: Dex 0.5 mg/mL · Ket 100 mg/mL · But 10 mg/mL · Bup 0.3 mg/mL</span></div>
+        <p style="font-size: 0.85rem; color: var(--ink-soft); margin: 0.25rem 0 0.6rem; line-height: 1.5;">
+            <strong>How to give:</strong> Draw the listed volume of each drug into one syringe and give the combined total IM.
+            Atipamezole reversal is the same volume as the dex dose, given separately. Extra-label use.
+        </p>
+        <table class="sheet-table">
+            <thead>
+                <tr>
+                    <th>Level</th>
+                    <th class="col-vol">Vol / drug</th>
+                    <th class="col-vol">Total</th>
+                    <th>Dex</th>
+                    <th>Ketamine</th>
+                    <th>Butorphanol</th>
+                    <th>Buprenorphine</th>
+                    <th>Atipamezole</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in result.dkb_protocols %}
+                <tr>
+                    <td style="white-space: nowrap;"><strong>{{ p.label.split(':')[0].strip() }}</strong><br><span style="font-size: 0.75rem; color: var(--ink-mute);">{{ p.label.split(':')[1].strip() if ':' in p.label else '' }}</span></td>
+                    <td class="col-vol">
+                        {% if p.vol_low == p.vol_high %}
+                        <strong>{{ "%.3f"|format(p.vol_low) }} mL</strong>
+                        {% else %}
+                        <strong>{{ "%.3f"|format(p.vol_low) }}–{{ "%.3f"|format(p.vol_high) }} mL</strong>
+                        {% endif %}
+                    </td>
+                    <td class="col-vol">
+                        {% if p.total_low == p.total_high %}
+                        <strong>{{ "%.3f"|format(p.total_low) }} mL</strong>
+                        {% else %}
+                        <strong>{{ "%.3f"|format(p.total_low) }}–{{ "%.3f"|format(p.total_high) }} mL</strong>
+                        {% endif %}
+                    </td>
+                    <td>{{ p.dex_label }}<br><span style="font-size: 0.75rem; color: var(--ink-mute);">{{ p.dex_per_kg }}</span></td>
+                    <td>{{ p.ket_label }}<br><span style="font-size: 0.75rem; color: var(--ink-mute);">{{ p.ket_per_kg }}</span></td>
+                    <td>{{ p.but_label }}<br><span style="font-size: 0.75rem; color: var(--ink-mute);">{{ p.but_per_kg }}</span></td>
+                    <td>{{ p.bup_label }}<br><span style="font-size: 0.75rem; color: var(--ink-mute);">{{ p.bup_per_kg }}</span></td>
+                    <td>
+                        {% if p.atipa_vol_low == p.atipa_vol_high %}
+                        {{ "%.3f"|format(p.atipa_vol_low) }} mL IM
+                        {% else %}
+                        {{ "%.3f"|format(p.atipa_vol_low) }}–{{ "%.3f"|format(p.atipa_vol_high) }} mL IM
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="anesthesia-tab-next no-print" aria-label="Continue to the intraoperative phase">
+        <div>
+            <div class="anesthesia-tab-next__label">Next phase</div>
+            <div class="anesthesia-tab-next__title">Intraoperative: fluids, bolus pressors, CRIs, and emergency drugs</div>
+        </div>
+        <button type="button" class="anesthesia-tab-next__btn"
+            onclick="infusionfox_anesthesia_activateTab('intraop')">
+            Open intraoperative sheet →
+        </button>
+    </div>
+
+    <div class="sheet-footer">
+        Preoperative sheet · infusionfox.com · For use by licensed veterinary professionals only.
+        Verify all doses and concentrations independently. Not a substitute for clinical judgment.
+    </div>
+</div>

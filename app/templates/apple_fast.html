@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}APPLE-fast illness severity score | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">ICU severity score · Dogs</div>
+                <h1>APPLE-fast illness severity</h1>
+                <p style="color: var(--ink-soft); max-width: 64ch; margin: 0.25rem 0 0;">
+                    5-variable Acute Patient Physiologic and Laboratory
+                    Evaluation score for hospitalized dogs (Hayes 2010).
+                    Glucose, albumin, lactate, platelet count, and
+                    mentation produce a 0–50 score that maps to predicted
+                    hospital mortality. Externally validated cutoff &gt;25 →
+                    specificity 85%, sensitivity 67% for mortality
+                    (Le Gal 2021).
+                </p>
+                <p style="color: var(--ink-mute); max-width: 64ch; margin: 0.75rem 0 0; font-size: 0.88rem;">
+                    Have the full lab block (chem panel, CBC, blood gas,
+                    FAST/TFAST)? The 10-variable
+                    <a href="/apple-full">APPLE-full</a> score delivers
+                    better discrimination (AUROC 0.93 vs 0.87).
+                </p>
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 1.5rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/apple-fast">Clinical background</a>
+        </nav>
+
+        <div class="calc-grid" style="margin-top: 1.5rem;">
+            <form
+                hx-post="/apple-fast/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:200ms, change"
+            >
+                <div class="field">
+                    <label>Units</label>
+                    <div class="segmented">
+                        <input type="radio" name="units" value="si" id="u-si" {% if inputs.units == "si" %}checked{% endif %}>
+                        <label for="u-si">SI (mmol/L, g/L)</label>
+                        <input type="radio" name="units" value="us" id="u-us" {% if inputs.units == "us" %}checked{% endif %}>
+                        <label for="u-us">US (mg/dL, g/dL)</label>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Laboratory values</h3>
+                <p style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0;">
+                    Use the <strong>most abnormal</strong> value in the first
+                    24 h after admission. Leave at 0 to skip.
+                </p>
+
+                <div class="field">
+                    <label for="glucose">
+                        Glucose ({% if inputs.units == "si" %}mmol/L{% else %}mg/dL{% endif %})
+                    </label>
+                    <input type="number" step="any" min="0" id="glucose" name="glucose" value="{% if inputs.glucose %}{{ inputs.glucose }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="albumin">
+                        Albumin ({% if inputs.units == "si" %}g/L{% else %}g/dL{% endif %})
+                    </label>
+                    <input type="number" step="any" min="0" id="albumin" name="albumin" value="{% if inputs.albumin %}{{ inputs.albumin }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="lactate">
+                        Lactate ({% if inputs.units == "si" %}mmol/L{% else %}mg/dL{% endif %})
+                    </label>
+                    <input type="number" step="any" min="0" id="lactate" name="lactate" value="{% if inputs.lactate %}{{ inputs.lactate }}{% endif %}">
+                </div>
+
+                <div class="field">
+                    <label for="platelets">Platelet count (×10⁹/L or K/µL)</label>
+                    <input type="number" step="any" min="0" id="platelets" name="platelets" value="{% if inputs.platelets %}{{ inputs.platelets }}{% endif %}">
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Mentation</h3>
+                <p style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0;">
+                    Assessed at admission, <strong>before</strong> sedation or analgesia.
+                </p>
+
+                <div class="field">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        {% for m in [0, 1, 2, 3, 4] %}
+                        <label style="display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer; padding: 0.4rem 0.5rem; border: 1px solid var(--line); border-radius: var(--radius); {% if inputs.mentation == m %}background: var(--paper-warm); border-color: var(--ink-soft);{% endif %}">
+                            <input type="radio" name="mentation" value="{{ m }}" {% if inputs.mentation == m %}checked{% endif %} style="margin-top: 0.2rem;">
+                            <span>
+                                <strong style="font-variant-numeric: tabular-nums;">{{ m }}.</strong>
+                                {% if m == 0 %}Normal
+                                {% elif m == 1 %}Able to stand unassisted, responsive but dull
+                                {% elif m == 2 %}Can stand only when assisted, responsive but dull
+                                {% elif m == 3 %}Unable to stand, responsive
+                                {% else %}Unable to stand, unresponsive
+                                {% endif %}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <details style="margin-top: 1.75rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--ink-soft); border-radius: var(--radius); font-size: 0.88rem; line-height: 1.55;">
+                    <summary style="cursor: pointer; font-weight: 600; color: var(--ink-soft);">Scoring notes — counterintuitive items</summary>
+                    <div style="margin-top: 0.75rem; color: var(--ink-soft);">
+                        <p style="margin: 0 0 0.5rem;">
+                            Three scoring quirks Hayes 2010 explicitly flags. They are
+                            preserved here exactly as published. The multivariable
+                            regression captures the mortality risk <em>not already
+                            explained</em> by the other variables, so individual
+                            bands need not look clinically intuitive.
+                        </p>
+                        <ul style="margin: 0; padding-left: 1.2rem;">
+                            <li><strong>Glucose &gt;15 mmol/L (&gt;273 mg/dL) → 0 pts.</strong>
+                                Referent group in the original cohort; dominated by
+                                treated diabetics + transient stress hyperglycemia,
+                                which carried lowest mortality in that population.</li>
+                            <li><strong>Platelets 151–200 → 6 pts (higher than &lt;151 → 5 pts).</strong>
+                                Artifact of the multivariable model captured at
+                                publication and retained here verbatim.</li>
+                            <li><strong>Albumin &gt;35 g/L (&gt;3.5 g/dL) → 2 pts.</strong>
+                                After adjusting for the other variables, high
+                                albumin tracked with slightly increased mortality
+                                risk.</li>
+                        </ul>
+                    </div>
+                </details>
+            </form>
+
+            {% if result %}
+                {% include "partials/apple_fast_result.html" %}
+            {% else %}
+                {% with placeholder_message="Enter glucose, albumin, lactate, platelet count, and the mentation score to compute the APPLE-fast score." %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

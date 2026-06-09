@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_name }}{% endblock %}</title>
+    <meta name="description" content="{% block description %}{{ tagline }}{% endblock %}">
+
+    <!-- Favicons & PWA manifest -->
+    <link rel="icon" type="image/svg+xml" href="/static/brand/favicons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicons/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/brand/favicons/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/brand/favicons/apple-touch-icon.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <meta name="theme-color" content="#1C3A57">
+
+    <!-- IBM Plex fonts, self-hosted (no third-party CDN). -->
+    <link rel="stylesheet" href="/static/css/fonts.css?v={{ css_version }}">
+
+    <link rel="stylesheet" href="/static/css/app.css?v={{ css_version }}">
+
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <script>
+    // KaTeX + worked-example handler. Runs after auto-render.min.js loads
+    // (which is itself deferred, so DOM is ready). The katex-auto-render
+    // script defines window.renderMathInElement.
+    (function() {
+        function renderAll(root) {
+            if (typeof renderMathInElement !== 'function') return;
+            renderMathInElement(root, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$',  right: '$',  display: false}
+                ],
+                throwOnError: false
+            });
+        }
+
+        // Worked-example mechanism. Calculator result partials include one
+        // or more hidden <template id="worked-example-source..."> elements
+        // with LaTeX; the static page has a matching <div> for each
+        // (id="worked-example" for the primary, plus optional
+        // id="worked-example-<suffix>" for additional formula steps). The
+        // handler matches templates to targets by suffix, copies markup
+        // over, and KaTeX-renders. Running globally on htmx:afterSettle is
+        // more reliable than inline scripts in HTMX-swapped content.
+        function syncWorkedExample() {
+            var sources = document.querySelectorAll('template[id^="worked-example-source"]');
+            sources.forEach(function(src) {
+                var targetId = src.id === 'worked-example-source'
+                    ? 'worked-example'
+                    : 'worked-example-' + src.id.substring('worked-example-source-'.length);
+                var target = document.getElementById(targetId);
+                if (!target) return;
+                target.classList.add('formula-display');
+                target.innerHTML = src.innerHTML.trim();
+                renderAll(target);
+            });
+        }
+
+        function init() {
+            renderAll(document.body);
+            syncWorkedExample();
+            document.body.addEventListener('htmx:afterSettle', function() {
+                syncWorkedExample();
+                renderAll(document.body);
+            });
+        }
+
+        // If renderMathInElement is already defined, fire immediately;
+        // otherwise wait for DOMContentLoaded so the deferred auto-render
+        // script has had a chance to load.
+        if (typeof renderMathInElement === 'function') {
+            init();
+        } else if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+
+    <script src="https://unpkg.com/htmx.org@2.0.2" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-frame site-header__inner">
+            <div class="site-header__brand-cluster">
+                <button
+                    type="button"
+                    class="drawer-toggle"
+                    aria-label="Open menu"
+                    aria-controls="site-drawer"
+                    aria-expanded="false"
+                    id="drawer-toggle-btn">
+                    <span class="drawer-toggle__bar"></span>
+                    <span class="drawer-toggle__bar"></span>
+                    <span class="drawer-toggle__bar"></span>
+                </button>
+                <a href="/" class="brand" aria-label="InfusionFox">
+                    <img src="/static/brand/logos/mark.png" alt="" class="brand__mark-tile">
+                    <picture>
+                        <source srcset="/static/brand/logos/wordmark-white.svg" media="(prefers-color-scheme: dark)">
+                        <img src="/static/brand/logos/wordmark-text.svg" alt="InfusionFox" class="brand__wordmark">
+                    </picture>
+                </a>
+            </div>
+            <nav class="site-nav">
+                <a href="/calculators">Calculators</a>
+                <a href="/hubs">Reference</a>
+                <a href="/learn">Learn</a>
+            </nav>
+            {% include "partials/search_widget.html" %}
+        </div>
+    </header>
+
+    {# Slide-in drawer holding the full categorized inventory. Rendered on
+       every page via base.html so it's always available from the
+       hamburger. Closed by default; toggle wires up via the small
+       inline script at the bottom. The dark overlay sibling is what the
+       user clicks to dismiss; clicking the drawer itself doesn't close it. #}
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <aside class="drawer" id="site-drawer" aria-hidden="true" aria-labelledby="drawer-title">
+        <div class="drawer__inner">
+            <div class="drawer__header">
+                <a href="/" class="brand drawer__brand" aria-labelledby="drawer-title">
+                    <img src="/static/brand/logos/mark.png" alt="" class="brand__mark-tile">
+                    <picture>
+                        <source srcset="/static/brand/logos/wordmark-white.svg" media="(prefers-color-scheme: dark)">
+                        <img src="/static/brand/logos/wordmark-text.svg" alt="InfusionFox" class="brand__wordmark">
+                    </picture>
+                </a>
+                <h2 id="drawer-title" class="visually-hidden">In the app</h2>
+                <button type="button" class="drawer__close" aria-label="Close menu" id="drawer-close-btn">
+                    &times;
+                </button>
+            </div>
+            <div class="drawer__content">
+                <div class="drawer-filter">
+                    <svg class="drawer-filter__icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <circle cx="7" cy="7" r="5"></circle>
+                        <line x1="11" y1="11" x2="14" y2="14"></line>
+                    </svg>
+                    <input
+                        type="search"
+                        class="drawer-filter__input"
+                        placeholder="Filter…"
+                        autocomplete="off"
+                        spellcheck="false"
+                        aria-label="Filter drawer entries"
+                        data-drawer-filter-input
+                    >
+                    <button
+                        type="button"
+                        class="drawer-filter__clear"
+                        aria-label="Clear filter"
+                        data-drawer-filter-clear
+                        hidden
+                    >&times;</button>
+                </div>
+                <div class="drawer__section-label">In the app</div>
+                {% set _nav = drawer_nav_groups() %}
+                {% for category, entries in _nav.items() %}
+                    <div class="drawer-group" data-drawer-group>
+                        <h4 class="drawer-group__title">{{ category }}</h4>
+                        <ul class="drawer-group__list">
+                            {% for entry in entries %}
+                                <li data-search="{{ (entry.title ~ ' ' ~ entry.short)|lower }} {{ ((entry.title ~ entry.short)|lower).replace('-', '') }}">
+                                    <a href="{{ entry.href }}">{{ entry.title }}</a>
+                                    {% if entry.short %}<span class="drawer-group__short">{{ entry.short }}</span>{% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+
+                {# Site-level navigation — not part of the clinical inventory.
+                   Install instructions live here so the option is discoverable
+                   when users open the drawer on a new device. #}
+                <div class="drawer-group" data-drawer-group>
+                    <h4 class="drawer-group__title">Site</h4>
+                    <ul class="drawer-group__list">
+                        <li data-search="install phone"><a href="/install">Install on your phone</a></li>
+                        <li data-search="disclaimer"><a href="/disclaimer">Disclaimer</a></li>
+                    </ul>
+                </div>
+
+                <div class="drawer-filter__empty" data-drawer-filter-empty hidden>
+                    <p>No drawer entries match <strong data-drawer-filter-query>your filter</strong>.</p>
+                    <a href="/search" data-drawer-filter-fallback class="drawer-filter__fallback-link">
+                        Search all of InfusionFox →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-frame">
+            <div class="site-footer__columns">
+                <div>
+                    <strong>InfusionFox</strong>
+                    <p>{{ tagline }}</p>
+                </div>
+                <div>
+                    <a href="/install">Install on your phone</a>
+                    <a href="/disclaimer">Disclaimer</a>
+                    <a href="mailto:support@infusionfox.com">support@infusionfox.com</a>
+                </div>
+            </div>
+            <p class="site-footer__fineprint">
+                For veterinary professionals. Educational use only. Verify every dose before administration.
+                The practitioner is responsible for all clinical decisions.
+                <strong>Free for clinical use.</strong>
+            </p>
+            <p class="site-footer__meta">
+                v{{ app_version }} · {{ license_spdx }} ·
+                <a href="{{ source_url }}" target="_blank" rel="noopener">source on GitHub</a>
+            </p>
+        </div>
+    </footer>
+
+    {% include "partials/feedback_widget.html" %}
+
+    {# Drawer filter behavior. Live, client-side substring filter of the
+       drawer's existing DOM — no network, no FTS. Searches `data-search`
+       on each <li>, hides non-matching <li> elements, hides whole groups
+       whose entries are all filtered out, and surfaces an empty state
+       with a one-click escape to the full /search page if nothing in
+       the drawer matches. Filter clears when the drawer closes so
+       reopening starts fresh. #}
+    <script>
+    (function () {
+        const drawer = document.getElementById("site-drawer");
+        if (!drawer) return;
+        const input = drawer.querySelector("[data-drawer-filter-input]");
+        const clearBtn = drawer.querySelector("[data-drawer-filter-clear]");
+        const emptyState = drawer.querySelector("[data-drawer-filter-empty]");
+        const queryEcho = drawer.querySelector("[data-drawer-filter-query]");
+        const fallbackLink = drawer.querySelector("[data-drawer-filter-fallback]");
+        if (!input) return;
+
+        const groups = drawer.querySelectorAll("[data-drawer-group]");
+        const items = drawer.querySelectorAll("[data-drawer-group] li[data-search]");
+
+        function normalize(s) {
+            // Lowercase + strip hyphens so "applefast" matches "apple-fast".
+            return (s || "").toLowerCase().replace(/-/g, "");
+        }
+
+        function applyFilter() {
+            const raw = input.value.trim();
+            const q = normalize(raw);
+
+            // Toggle clear button visibility based on whether there's a query.
+            if (clearBtn) clearBtn.hidden = raw.length === 0;
+
+            if (!q) {
+                // No filter: show everything, hide empty state.
+                items.forEach((li) => li.classList.remove("drawer-item--hidden"));
+                groups.forEach((g) => g.classList.remove("drawer-group--hidden"));
+                if (emptyState) emptyState.hidden = true;
+                return;
+            }
+
+            // Tokenize the query; an item must match ALL tokens (AND).
+            const tokens = q.split(/\s+/).filter(Boolean);
+
+            let anyVisible = false;
+            items.forEach((li) => {
+                const hay = li.getAttribute("data-search") || "";
+                const matches = tokens.every((t) => hay.includes(t));
+                if (matches) {
+                    li.classList.remove("drawer-item--hidden");
+                    anyVisible = true;
+                } else {
+                    li.classList.add("drawer-item--hidden");
+                }
+            });
+
+            // Hide entire groups whose every <li> is hidden.
+            groups.forEach((g) => {
+                const visibleInGroup = g.querySelectorAll(
+                    "li[data-search]:not(.drawer-item--hidden)"
+                ).length;
+                if (visibleInGroup === 0) {
+                    g.classList.add("drawer-group--hidden");
+                } else {
+                    g.classList.remove("drawer-group--hidden");
+                }
+            });
+
+            // Empty-state visibility + dynamic fallback link.
+            if (emptyState) {
+                emptyState.hidden = anyVisible;
+                if (!anyVisible) {
+                    if (queryEcho) queryEcho.textContent = raw;
+                    if (fallbackLink) {
+                        fallbackLink.href = "/search?q=" + encodeURIComponent(raw);
+                    }
+                }
+            }
+        }
+
+        function clearFilter() {
+            if (!input.value) return;
+            input.value = "";
+            applyFilter();
+        }
+
+        input.addEventListener("input", applyFilter);
+        if (clearBtn) {
+            clearBtn.addEventListener("click", function () {
+                clearFilter();
+                input.focus();
+            });
+        }
+
+        // Esc inside the input clears (one press); a second Esc lets
+        // the existing drawer-toggle handler close the drawer.
+        input.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && input.value) {
+                e.stopPropagation();
+                clearFilter();
+            }
+        });
+
+        // Watch the drawer's class for state changes; clear filter when
+        // it closes so reopening doesn't show a stale half-filtered list.
+        const observer = new MutationObserver(function (mutations) {
+            for (const m of mutations) {
+                if (m.attributeName !== "class") continue;
+                if (!drawer.classList.contains("drawer--open")) {
+                    clearFilter();
+                }
+            }
+        });
+        observer.observe(drawer, { attributes: true, attributeFilter: ["class"] });
+    })();
+    </script>
+
+    {# Search widget behavior.
+       - Press "/" anywhere (except when typing in a form field) to focus
+         the header search input.
+       - As the user types, HTMX (declared inline on the input) fetches
+         /search/dropdown and swaps its result into #search-dropdown.
+       - This script handles the IS-OPEN visibility toggle, keyboard
+         navigation through results, Escape to close, and click-outside
+         to close. The visible/hidden state is driven by the value of
+         the input + presence of results; the dropdown stays hidden when
+         the input is empty.
+    #}
+    <script>
+    (function () {
+        const widget = document.querySelector("[data-search-widget]");
+        if (!widget) return;
+        const input = widget.querySelector("[data-search-input]");
+        const dropdown = widget.querySelector("[data-search-dropdown]");
+        if (!input || !dropdown) return;
+
+        let activeIndex = -1;
+
+        function isOpen() {
+            return !dropdown.hidden;
+        }
+
+        function openDropdown() {
+            if (!input.value.trim()) return;
+            dropdown.hidden = false;
+            input.setAttribute("aria-expanded", "true");
+        }
+
+        function closeDropdown() {
+            dropdown.hidden = true;
+            input.setAttribute("aria-expanded", "false");
+            activeIndex = -1;
+            clearActive();
+        }
+
+        function currentResults() {
+            return dropdown.querySelectorAll('[role="option"]');
+        }
+
+        function clearActive() {
+            currentResults().forEach((el) => el.classList.remove("search-result--active"));
+        }
+
+        function setActive(idx) {
+            const items = currentResults();
+            if (!items.length) return;
+            clearActive();
+            if (idx < 0) idx = items.length - 1;
+            if (idx >= items.length) idx = 0;
+            activeIndex = idx;
+            const el = items[idx];
+            el.classList.add("search-result--active");
+            el.scrollIntoView({ block: "nearest" });
+        }
+
+        // Open the dropdown after HTMX swaps in new results.
+        dropdown.addEventListener("htmx:afterSwap", function () {
+            const hasResults = dropdown.querySelector('[role="option"]') !== null;
+            const hasContent = dropdown.querySelector(".search-dropdown__inner > *") !== null;
+            if (input.value.trim() && (hasResults || hasContent)) {
+                openDropdown();
+            } else {
+                closeDropdown();
+            }
+            activeIndex = -1;
+        });
+
+        // Hide dropdown when the input goes empty.
+        input.addEventListener("input", function () {
+            if (!input.value.trim()) closeDropdown();
+        });
+
+        // Keyboard navigation within the input.
+        input.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                closeDropdown();
+                input.blur();
+                e.preventDefault();
+                return;
+            }
+            if (!isOpen()) return;
+            const items = currentResults();
+            if (!items.length) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActive(activeIndex + 1);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setActive(activeIndex - 1);
+            } else if (e.key === "Enter") {
+                if (activeIndex >= 0 && activeIndex < items.length) {
+                    e.preventDefault();
+                    const url = items[activeIndex].getAttribute("data-url");
+                    if (url) window.location.href = url;
+                }
+                // Otherwise let the form submit naturally → /search?q=...
+            }
+        });
+
+        // Click outside closes.
+        document.addEventListener("click", function (e) {
+            if (!widget.contains(e.target)) closeDropdown();
+        });
+
+        // Global "/" shortcut: focus the search input from anywhere
+        // except when the user is already typing in a form field.
+        document.addEventListener("keydown", function (e) {
+            if (e.key !== "/") return;
+            const t = e.target;
+            const tag = (t && t.tagName) || "";
+            if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable)) {
+                return;
+            }
+            e.preventDefault();
+            input.focus();
+            input.select();
+        });
+    })();
+    </script>
+
+
+    {# Drawer toggle script. Lives in base.html so the drawer works on
+       every page. Wires up hamburger → open, close button → close,
+       backdrop click → close, Escape → close. Manages aria-expanded
+       and aria-hidden so screen readers track the state. #}
+    <script>
+    (function () {
+        const toggle = document.getElementById("drawer-toggle-btn");
+        const drawer = document.getElementById("site-drawer");
+        const backdrop = document.getElementById("drawer-backdrop");
+        const closeBtn = document.getElementById("drawer-close-btn");
+        if (!toggle || !drawer || !backdrop) return;
+
+        function open() {
+            drawer.classList.add("drawer--open");
+            backdrop.hidden = false;
+            // The hidden attribute switch is what triggers the CSS
+            // fade-in; force a reflow before adding the visible class
+            // so the transition runs.
+            void backdrop.offsetWidth;
+            backdrop.classList.add("drawer-backdrop--visible");
+            toggle.setAttribute("aria-expanded", "true");
+            drawer.setAttribute("aria-hidden", "false");
+            // Prevent body scroll behind the drawer.
+            document.body.style.overflow = "hidden";
+        }
+
+        function close() {
+            drawer.classList.remove("drawer--open");
+            backdrop.classList.remove("drawer-backdrop--visible");
+            toggle.setAttribute("aria-expanded", "false");
+            drawer.setAttribute("aria-hidden", "true");
+            document.body.style.overflow = "";
+            // Wait for the transition to finish before re-hiding the
+            // backdrop so it can fade out cleanly.
+            setTimeout(function () {
+                if (!drawer.classList.contains("drawer--open")) {
+                    backdrop.hidden = true;
+                }
+            }, 200);
+        }
+
+        toggle.addEventListener("click", function () {
+            if (drawer.classList.contains("drawer--open")) close();
+            else open();
+        });
+        if (closeBtn) closeBtn.addEventListener("click", close);
+        backdrop.addEventListener("click", close);
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && drawer.classList.contains("drawer--open")) {
+                close();
+            }
+        });
+    })();
+    </script>
+
+    {# Global Enter-in-form handler.
+
+       Calculator forms throughout the site use HTMX with
+       hx-trigger="input changed delay:250ms, change, load". That works
+       for typing (input event) and for tabbing/clicking out (change
+       event), but Enter inside a single-input form historically caused
+       a confusing behavior: some forms recomputed, some didn't, and a
+       few would attempt a full page navigation depending on which
+       browser and which form structure was rendered.
+
+       This shim normalizes Enter across every form on the site:
+         (1) prevent the browser's default submit (no page reload),
+         (2) blur the active field so its change event fires (which
+             HTMX is already listening for), and
+         (3) explicitly trigger HTMX's change on the form as a
+             belt-and-suspenders measure in case (2) didn't fire.
+
+       The result: Enter behaves the same as Tab — instant compute,
+       no page reload, regardless of which calculator the user is in.
+       Forms that don't use HTMX (none currently, but a defensive
+       check) fall through to the browser's normal submit. #}
+    <script>
+    (function () {
+        document.addEventListener("keydown", function (e) {
+            if (e.key !== "Enter") return;
+            const t = e.target;
+            if (!t || !t.matches) return;
+            // Only intercept Enter inside text-like inputs (not
+            // textareas, where Enter inserts a newline, and not buttons
+            // where Enter should fire the click).
+            if (!t.matches('input[type="text"], input[type="number"], input[type="search"], input[type="tel"], input[type="email"], input[type="url"]')) {
+                return;
+            }
+            const form = t.form;
+            if (!form) return;
+            // If the form is HTMX-bound, intercept. Otherwise let it
+            // submit normally.
+            const hasHtmx = form.hasAttribute("hx-post") ||
+                            form.hasAttribute("hx-get") ||
+                            form.hasAttribute("hx-put") ||
+                            form.hasAttribute("hx-delete");
+            if (!hasHtmx) return;
+            e.preventDefault();
+            // Blur first — fires change, which is already listed in
+            // every form's hx-trigger.
+            t.blur();
+            // And explicitly trigger HTMX in case the change event
+            // didn't actually transition (e.g. value didn't change).
+            if (window.htmx) {
+                window.htmx.trigger(form, "change");
+            }
+            // Restore focus so the user can keep typing in the same
+            // field if they want to.
+            t.focus();
+        });
+    })();
+    </script>
+
+    {# ===== Hard-block disclaimer modal =====================================
+       Shown on first visit and after every DISCLAIMER_VERSION bump. Blocks
+       all interaction until accepted. On accept: POST /api/disclaimer/accept,
+       set localStorage flag, dismiss the overlay. The disclaimer text and
+       version come from app/disclaimer.py via templates.env.globals.
+       ===================================================================== #}
+    <div id="disclaimer-overlay" hidden aria-hidden="true">
+        <div
+            id="disclaimer-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="disclaimer-title"
+            aria-describedby="disclaimer-body"
+        >
+            <h2 id="disclaimer-title">Before you use InfusionFox</h2>
+            <div id="disclaimer-body">
+                {% for paragraph in disclaimer_text.split("\n\n") %}
+                <p>{{ paragraph }}</p>
+                {% endfor %}
+            </div>
+            <label id="disclaimer-confirm-row">
+                <input type="checkbox" id="disclaimer-confirm">
+                <span>I am a licensed veterinary professional or a supervised member of a clinical team, and I accept these terms.</span>
+            </label>
+            <div id="disclaimer-actions">
+                <button
+                    type="button"
+                    id="disclaimer-accept"
+                    disabled
+                >
+                    Accept and continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Disclaimer modal — uses infusionfox paper/ink palette via CSS vars
+           defined in app.css. Hard-block means: full-viewport opaque
+           overlay, no escape, scroll disabled on body. */
+        #disclaimer-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(28, 58, 87, 0.94); /* theme blue, very opaque */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        #disclaimer-overlay[hidden] { display: none; }
+        body.disclaimer-locked { overflow: hidden; }
+
+        #disclaimer-modal {
+            background: var(--paper, #f8f5f0);
+            color: var(--ink, #1c1c1c);
+            border-radius: 8px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+            max-width: 640px;
+            width: 100%;
+            padding: 1.75rem 1.75rem 1.5rem;
+            font-family: var(--font-prose, "IBM Plex Serif", Georgia, serif);
+            line-height: 1.55;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+        #disclaimer-title {
+            margin: 0 0 1rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--ink, #1c1c1c);
+        }
+        #disclaimer-body p {
+            margin: 0 0 0.85rem;
+            font-size: 0.96rem;
+        }
+        #disclaimer-body p:last-child {
+            margin-bottom: 1.25rem;
+        }
+        #disclaimer-confirm-row {
+            display: flex;
+            gap: 0.6rem;
+            align-items: flex-start;
+            padding: 0.7rem 0.85rem;
+            border: 1px solid var(--line, #d8d3c8);
+            border-radius: 6px;
+            margin: 0 0 1rem;
+            cursor: pointer;
+            font-size: 0.92rem;
+            background: var(--paper-warm, #f0ebe0);
+        }
+        #disclaimer-confirm-row input { margin-top: 0.2rem; }
+        #disclaimer-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        #disclaimer-accept {
+            background: var(--ink, #1c1c1c);
+            color: var(--paper, #f8f5f0);
+            border: none;
+            padding: 0.65rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        #disclaimer-accept:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        #disclaimer-accept:not(:disabled):hover {
+            background: var(--ink-soft, #2a2a2a);
+        }
+        @media (max-width: 480px) {
+            #disclaimer-modal {
+                padding: 1.25rem;
+                font-size: 0.93rem;
+            }
+            #disclaimer-title { font-size: 1.1rem; }
+        }
+    </style>
+
+    <script>
+    (function () {
+        "use strict";
+        var CURRENT_VERSION = {{ disclaimer_version | tojson }};
+        var LS_VERSION_KEY = "infusionfox.disclaimer.version";
+        var LS_TOKEN_KEY = "infusionfox.disclaimer.session_token";
+
+        function getOrCreateSessionToken() {
+            var token = null;
+            try { token = localStorage.getItem(LS_TOKEN_KEY); } catch (e) {}
+            if (token) return token;
+            // Token = 16 random bytes hex. crypto.randomUUID() exists in
+            // modern browsers but isn't strictly needed; this is an opaque
+            // correlation key, not a security primitive.
+            var bytes = new Uint8Array(16);
+            (window.crypto || window.msCrypto).getRandomValues(bytes);
+            token = Array.prototype.map.call(bytes, function (b) {
+                return ("0" + b.toString(16)).slice(-2);
+            }).join("");
+            try { localStorage.setItem(LS_TOKEN_KEY, token); } catch (e) {}
+            return token;
+        }
+
+        function alreadyAccepted() {
+            try {
+                return localStorage.getItem(LS_VERSION_KEY) === CURRENT_VERSION;
+            } catch (e) {
+                // localStorage unavailable (private mode in some browsers,
+                // or disabled): default to showing the modal every visit
+                // so we never silently skip the legal block.
+                return false;
+            }
+        }
+
+        function showModal() {
+            var overlay = document.getElementById("disclaimer-overlay");
+            if (!overlay) return;
+            overlay.hidden = false;
+            overlay.setAttribute("aria-hidden", "false");
+            document.body.classList.add("disclaimer-locked");
+            // Focus the checkbox to start the keyboard path.
+            setTimeout(function () {
+                var cb = document.getElementById("disclaimer-confirm");
+                if (cb) cb.focus();
+            }, 0);
+        }
+
+        function hideModal() {
+            var overlay = document.getElementById("disclaimer-overlay");
+            if (!overlay) return;
+            overlay.hidden = true;
+            overlay.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("disclaimer-locked");
+        }
+
+        function trapKeydown(e) {
+            if (!document.body.classList.contains("disclaimer-locked")) return;
+            // Disable ESC (would otherwise dismiss in some browsers via
+            // user agent shortcuts on dialogs).
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            // Trap Tab inside the modal.
+            if (e.key === "Tab") {
+                var modal = document.getElementById("disclaimer-modal");
+                if (!modal) return;
+                var focusable = modal.querySelectorAll(
+                    "input, button:not([disabled])"
+                );
+                if (!focusable.length) return;
+                var first = focusable[0];
+                var last = focusable[focusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        }
+
+        function wireUp() {
+            var cb = document.getElementById("disclaimer-confirm");
+            var btn = document.getElementById("disclaimer-accept");
+            if (!cb || !btn) return;
+
+            cb.addEventListener("change", function () {
+                btn.disabled = !cb.checked;
+            });
+
+            btn.addEventListener("click", function () {
+                if (btn.disabled) return;
+                btn.disabled = true;
+                btn.textContent = "Recording...";
+
+                var sessionToken = getOrCreateSessionToken();
+                fetch("/api/disclaimer/accept", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        version: CURRENT_VERSION,
+                        session_token: sessionToken,
+                    }),
+                    // We don't want to leak the user's session via Referer
+                    // for this particular call; default fetch behavior is
+                    // fine, but keep credentials off for cleanliness.
+                    credentials: "same-origin",
+                }).then(function (resp) {
+                    if (resp.ok || resp.status === 204) {
+                        try {
+                            localStorage.setItem(LS_VERSION_KEY, CURRENT_VERSION);
+                        } catch (e) {}
+                        hideModal();
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = "Accept and continue";
+                        alert(
+                            "Could not record your acceptance. Please " +
+                            "check your connection and try again."
+                        );
+                    }
+                }).catch(function () {
+                    btn.disabled = false;
+                    btn.textContent = "Accept and continue";
+                    alert(
+                        "Could not record your acceptance. Please " +
+                        "check your connection and try again."
+                    );
+                });
+            });
+
+            document.addEventListener("keydown", trapKeydown, true);
+        }
+
+        function init() {
+            if (alreadyAccepted()) return;
+            wireUp();
+            showModal();
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<div class="result" id="weight-result">
+    <dl class="result__details" style="grid-template-columns: 1fr;">
+        <div class="result__detail">
+            <dt>Pounds (lb)</dt>
+            <dd>{{ "%.3f"|format(result.lb) }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Kilograms (kg)</dt>
+            <dd>{{ "%.3f"|format(result.kg) }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Grams (g)</dt>
+            <dd>{{ "%.1f"|format(result.g) }}</dd>
+        </div>
+        <div class="result__detail">
+            <dt>Ounces (oz)</dt>
+            <dd>{{ "%.2f"|format(result.oz) }}</dd>
+        </div>
+        {% if bsa is defined and bsa %}
+        <div class="result__detail" style="border-top: 1px solid var(--border); padding-top: 0.6rem; margin-top: 0.4rem;">
+            <dt>Body surface area ({{ bsa.species }})</dt>
+            <dd>{{ "%.3f"|format(bsa.bsa_m2) }} m²</dd>
+        </div>
+        {% endif %}
+    </dl>
+
+    {% if bsa is defined and bsa %}
+    <p style="margin-top: 1rem; color: var(--ink-mute); font-size: 0.8rem; line-height: 1.5;">
+        BSA-based dosing has fallen out of favor for some agents in cats and small dogs (under 10 kg) because drug clearance does not scale linearly with surface area in those weight ranges. Verify the dosing convention specified for the agent before using this BSA value.
+    </p>
+    {% endif %}
+</div>

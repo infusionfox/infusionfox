@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Alfaxalone | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Anesthesia &amp; Sedation</div>
+                <h1>Alfaxalone</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Neuroactive steroid IV anesthetic with rapid onset and a
+                    favorable cardiovascular profile, used for induction of
+                    general anesthesia (with or without an inhalant carrier)
+                    and as a TIVA maintenance CRI for short procedures. Does
+                    NOT provide analgesia, pair with an opioid or other
+                    analgesic for any painful procedure. Stock 10 mg/mL
+                    (Alfaxan®).
+                </p>
+            </div>
+            <div class="stock">Stock: 10 mg/mL · Schedule IV · No analgesia</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Titrate slowly to effect, never rapid bolus.</strong>
+                    Administer IV over ~60 seconds. Rapid administration causes
+                    apnea, occurred in 40% of unpremedicated dogs and 16% of cats
+                    in field studies. Intubation, O₂, and IPPV must be immediately available.
+                </li>
+                <li>
+                    <strong>No analgesia.</strong> Alfaxalone provides no analgesic effect.
+                    Ensure adequate pain coverage for any painful procedure.
+                </li>
+            </ul>
+        </div>
+
+        <div class="calc-grid">
+            <div class="calc-form-col">
+                <form
+                    hx-post="/alfaxalone/compute"
+                    hx-target="#result-panel"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:250ms, change, load"
+                >
+                    <fieldset>
+                        <legend>Patient</legend>
+                        <div class="field field--inline">
+                            <label for="weight_value">Weight</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="weight_value" name="weight_value"
+                                    value="{{ weight_value }}" min="0.5" max="150" step="any"
+                                    required style="width: 8rem;">
+                                <div class="segmented">
+                                    <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                                    <label for="wu-lb">lb</label>
+                                    <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                                    <label for="wu-kg">kg</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-top: 1rem;">
+                            <label>Species</label>
+                            <div class="segmented">
+                                <input type="radio" name="species" value="dog" id="species-dog"
+                                    {% if (result.species.value if result else 'dog') == 'dog' %}checked{% endif %}>
+                                <label for="species-dog">Dog</label>
+                                <input type="radio" name="species" value="cat" id="species-cat"
+                                    {% if (result.species.value if result else 'dog') == 'cat' %}checked{% endif %}>
+                                <label for="species-cat">Cat</label>
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-top: 1rem;">
+                            <label>Premedication</label>
+                            <div class="segmented">
+                                <input type="radio" name="premedicated" value="premedicated"
+                                    id="premedicated-yes"
+                                    {% if (result.premedicated.value if result else 'premedicated') == 'premedicated' %}checked{% endif %}>
+                                <label for="premedicated-yes">Premedicated</label>
+                                <input type="radio" name="premedicated" value="none"
+                                    id="premedicated-none"
+                                    {% if (result.premedicated.value if result else 'premedicated') == 'none' %}checked{% endif %}>
+                                <label for="premedicated-none">None</label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset style="margin-top: 1.25rem;">
+                        <legend>CRI rate (mg/kg/hr)</legend>
+                        <div class="field">
+                            <label for="cri_rate">Rate</label>
+                            <input type="number" id="cri_rate" name="cri_rate"
+                                value="{{ result.cri_rate_mg_per_kg_per_hr if result else '6.0' }}"
+                                min="1" max="15" step="any" required>
+                            <p class="field-hint">
+                                {% if (result.premedicated.value if result else 'premedicated') == 'premedicated' %}
+                                Dog premedicated: 6–7 · Cat premedicated: 7–8 mg/kg/hr
+                                {% else %}
+                                Dog unpremedicated: 8–9 · Cat unpremedicated: 10–11 mg/kg/hr
+                                {% endif %}
+                            </p>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="calc-result-col">
+                {% if result %}
+                    {% include "partials/alfaxalone_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 3rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/alfaxalone">Clinical background</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#formula">Formula</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How it works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Alfaxalone (3α-hydroxy-5α-pregnane-11,20-dione) is a neuroactive steroid that
+                potentiates GABA-A receptors to produce dose-dependent CNS depression
+                and general anesthesia. It is formulated in 2-hydroxypropyl-beta-cyclodextrin
+                (HPCD), unlike the discontinued Saffan® formulation, it does not cause
+                histamine release.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Induction doses assume slow IV titration over ~60 seconds. Premedication
+                reduces the induction dose by 10–50% depending on agent, always titrate
+                to the individual patient's response rather than administering the full
+                calculated dose upfront.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                CRI dosing maintains plasma concentrations through a continuous infusion.
+                A 3-step infusion regimen (higher initial rate stepped down over time)
+                has been described as producing more stable concentrations in cats than
+                a single fixed rate; adjust based on anesthetic depth.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                <strong>IM use (extra-label, cats):</strong> Alfaxalone has been used IM in cats
+                in combination with dexmedetomidine and an opioid. For these protocols,
+                see the Kitty Magic (DKT) calculator or the reference notes in the result panel above.
+            </p>
+        </section>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <h2>Formula</h2>
+            <p>All doses use the same relationship: dose × weight ÷ stock concentration = volume to draw.</p>
+
+            <h3>Induction</h3>
+            <div class="formula-display">
+                $$\text{volume} = \frac{\text{dose}_{\text{mg/kg}} \times \text{weight}_{\text{kg}}}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            {% if result %}
+            <div id="worked-example" class="formula-display">
+                $$\text{low} = \frac{ {{ "%.2f"|format(result.induction_low_mg_per_kg) }}_{\text{mg/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{ {{ result.stock_mg_per_ml }}_{\text{mg/mL}} } = {{ "%.3f"|format(result.induction_low_ml) }}\,\text{mL}$$
+                $$\text{high} = \frac{ {{ "%.2f"|format(result.induction_high_mg_per_kg) }}_{\text{mg/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{ {{ result.stock_mg_per_ml }}_{\text{mg/mL}} } = {{ "%.3f"|format(result.induction_high_ml) }}\,\text{mL}$$
+            </div>
+
+            <h3>Maintenance bolus (per 10 min)</h3>
+            <div class="formula-display">
+                $$\text{bolus low} = \frac{ {{ "%.2f"|format(result.bolus_low_mg_per_kg) }}_{\text{mg/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{ {{ result.stock_mg_per_ml }}_{\text{mg/mL}} } = {{ "%.3f"|format(result.bolus_low_ml) }}\,\text{mL}$$
+                $$\text{bolus high} = \frac{ {{ "%.2f"|format(result.bolus_high_mg_per_kg) }}_{\text{mg/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} }{ {{ result.stock_mg_per_ml }}_{\text{mg/mL}} } = {{ "%.3f"|format(result.bolus_high_ml) }}\,\text{mL}$$
+            </div>
+
+            {% if result.cri_pump_rate_ml_per_hr is not none %}
+            <h3>CRI pump rate</h3>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{\text{mg/kg/hr}}}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ "%.2f"|format(result.cri_rate_mg_per_kg_per_hr) }}_{\text{mg/kg/hr}} }{ {{ result.stock_mg_per_ml }}_{\text{mg/mL}} } = {{ "%.2f"|format(result.cri_pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+            </div>
+            {% endif %}
+            {% endif %}
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Plumb DC. <em>Plumb's Veterinary Drugs.</em> Alfaxalone monograph.
+                Induction and maintenance doses from the FDA-approved label (dogs and cats);
+                CRI dosing from label and extra-label references cited in Plumb's.
+                <a href="https://plumbs.com" target="_blank" rel="noopener" style="color: var(--accent);">plumbs.com</a>
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    DEA Schedule IV controlled substance (Alfaxan®). Record all use per applicable regulations.
+                Do not use with other IV general anesthetic agents (eg, propofol) per label.
+                </li>
+            </ul>
+        </section>
+
+    </div>
+</section>
+{% endblock %}

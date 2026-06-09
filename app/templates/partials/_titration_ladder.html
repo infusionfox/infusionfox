@@ -1,0 +1,62 @@
+{#
+    Fast-titration ladder.
+
+    Designed as a glanceable reference card a technician can read at the pump
+    while the clinician is hands-busy. Shows pump rate (mL/hr) for each dose
+    step in the calculator's titration ladder, at the patient's weight and
+    the currently selected bag concentration.
+
+    Visual logic:
+      - The current dose row (matches the just-computed dose) is highlighted
+        in accent color so the tech sees "you are here" immediately.
+      - Caution rows (dose ≥ caution_threshold for this species) are shaded
+        in the signal color so the tech knows they're in titrate-with-care
+        territory before the clinician asks for the rate.
+
+    Required: result.titration_steps must be a non-empty list. The result
+    panel guards this with `{% if result.titration_steps %}` before include.
+#}
+<div class="titration-card">
+    <div class="titration-card__head">
+        <div class="eyebrow">Titration ladder · {{ "%.1f"|format(result.weight_kg) }} kg
+            on {{ result.concentration_ug_per_ml|int if result.concentration_ug_per_ml == result.concentration_ug_per_ml|int else result.concentration_ug_per_ml }} µg/mL
+        </div>
+        <p class="titration-card__hint">Pump rate at each dose step. Highlighted row = current dose.</p>
+    </div>
+    <table class="titration-table">
+        <thead>
+            <tr>
+                <th scope="col">Dose ({{ result.dose_unit.value.replace('ug', 'µg') }})</th>
+                <th scope="col">Pump rate (mL/hr)</th>
+                <th scope="col" class="titration-table__flag-col" aria-label="caution flag"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for step in result.titration_steps %}
+            <tr class="
+                {%- if step.is_current %} is-current{% endif %}
+                {%- if step.is_caution %} is-caution{% endif -%}
+            ">
+                <td class="titration-table__dose">{{ "%g"|format(step.dose) }}</td>
+                <td class="titration-table__rate">{{ "%.2f"|format(step.ml_per_hr_pump) }}</td>
+                <td class="titration-table__flag">
+                    {% if step.is_caution %}<span class="titration-table__flag-pill" title="At or above caution threshold">caution</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {#
+        Inline caution explanation. Renders when this species has a caution
+        threshold configured AND any ladder row is in caution territory.
+        Without this, the red "caution" pills next to high-dose rows have no
+        visible explanation on mobile (the title-attribute tooltip needs hover).
+    #}
+    {% if result.caution_note and result.titration_steps and result.titration_steps|selectattr('is_caution')|list %}
+    <div class="titration-card__caution-note" role="note">
+        <div class="eyebrow">Why these rows are flagged</div>
+        <p>{{ result.caution_note }}</p>
+    </div>
+    {% endif %}
+</div>

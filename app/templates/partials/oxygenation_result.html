@@ -1,0 +1,87 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+        {% include "partials/_invalid_result.html" %}
+    {% else %}
+
+    {# Headline: P:F ratio with classification badge. #}
+    <div class="result__headline">
+        <div class="eyebrow">P:F ratio</div>
+        <div class="result__primary" style="font-size: 1.5rem; line-height: 1.3;">
+            {{ "%.0f"|format(result.pf_ratio) }}
+            {% if result.pf_classification == "normal" %}
+                <span style="color: var(--ink-mute); font-size: 0.85em;">· normal</span>
+            {% elif result.pf_classification == "mild" %}
+                <span style="color: var(--ink-mute); font-size: 0.85em;">· mild impairment</span>
+            {% elif result.pf_classification == "moderate" %}
+                <span style="color: var(--ink-mute); font-size: 0.85em;">· moderate (ALI)</span>
+            {% elif result.pf_classification == "severe" %}
+                <span style="color: var(--danger); font-size: 0.85em;">· severe (ARDS)</span>
+            {% else %}
+                <span style="color: var(--danger); font-size: 0.85em;">· very severe</span>
+            {% endif %}
+        </div>
+        <div class="result__secondary">
+            PaO₂ {{ "%.0f"|format(result.inputs.pao2_mmhg) }} mmHg ÷ FiO₂ {{ "%.2f"|format(result.fio2_decimal) }}
+            {% if result.on_room_air %}· room air{% endif %}
+        </div>
+    </div>
+
+    {# Numerical breakdown. #}
+    <dl class="result__details">
+        <div class="result__detail">
+            <dt>Alveolar PO₂ (PAO₂)</dt>
+            <dd>
+                {{ "%.0f"|format(result.pa_o2_alveolar_mmhg) }} mmHg
+                <span style="color: var(--ink-mute); font-size: 0.85em;">
+                    (FiO₂ × {{ "%.0f"|format(result.inputs.patm_mmhg - 47) }} − PaCO₂/R)
+                </span>
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>A-a gradient</dt>
+            <dd>
+                <strong>{{ "%.0f"|format(result.a_a_gradient_mmhg) }} mmHg</strong>
+                <span style="color: var(--ink-mute); font-size: 0.85em;">
+                    (PAO₂ − PaO₂)
+                </span>
+            </dd>
+        </div>
+        <div class="result__detail">
+            <dt>P:F classification</dt>
+            <dd>{{ result.pf_label }}</dd>
+        </div>
+    </dl>
+
+    {# Worked formula. #}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Math</div>
+        <div class="formula-box" style="margin-top: 0.6rem;">
+            $$\text{P:F} = \frac{{ "%.0f"|format(result.inputs.pao2_mmhg) }}}{{ "%.2f"|format(result.fio2_decimal) }}} = {{ "%.0f"|format(result.pf_ratio) }}$$
+            $$\text{PAO}_2 = {{ "%.2f"|format(result.fio2_decimal) }} \times ({{ "%.0f"|format(result.inputs.patm_mmhg) }} - 47) - \frac{{ "%.0f"|format(result.inputs.paco2_mmhg) }}}{{ "%.1f"|format(result.inputs.respiratory_quotient) }}} = {{ "%.0f"|format(result.pa_o2_alveolar_mmhg) }} \,\text{mmHg}$$
+            $$\text{A-a} = {{ "%.0f"|format(result.pa_o2_alveolar_mmhg) }} - {{ "%.0f"|format(result.inputs.pao2_mmhg) }} = {{ "%.0f"|format(result.a_a_gradient_mmhg) }} \,\text{mmHg}$$
+        </div>
+    </div>
+
+    {# Clinical interpretation list. #}
+    {% if result.interpretation %}
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);">
+        <div class="eyebrow">Interpretation</div>
+        <ul style="margin: 0.4rem 0 0; padding-left: 1.3rem; color: var(--ink); font-size: 0.92rem; line-height: 1.6;">
+            {% for line in result.interpretation %}<li style="margin-bottom: 0.4rem;">{{ line }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# Warnings: hypercapnia and severe hypoxemia. #}
+    {% if result.warnings %}
+        {% set ns = namespace(danger=false) %}
+        {% if result.pf_classification in ("severe", "very_severe") %}{% set ns.danger = true %}{% endif %}
+        <div class="warnings {% if ns.danger %}danger{% endif %}" style="margin-top: 1.25rem;">
+            <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+
+    {% endif %}
+</div>

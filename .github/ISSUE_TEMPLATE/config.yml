@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Urgent clinical concern
+    url: mailto:support@infusionfox.com
+    about: Time-sensitive concerns about a dose or warning currently visible on infusionfox.com — email is faster than GitHub for these.
+  - name: Security disclosure
+    url: mailto:support@infusionfox.com
+    about: Security vulnerabilities should be reported privately via email with subject line "Security disclosure". See SECURITY.md.
+  - name: General questions
+    url: mailto:support@infusionfox.com
+    about: For general questions, use email rather than opening an issue. Issues are for actionable items.

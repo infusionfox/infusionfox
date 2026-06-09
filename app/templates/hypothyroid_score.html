@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Hypothyroidism pretest score | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+
+            <div>
+
+                <div class="eyebrow">Calculator</div>
+
+                <h1>Hypothyroidism pretest score</h1>
+
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Estimates the pretest probability of canine
+                    hypothyroidism from signalment, dermatologic and
+                    metabolic signs, and routine labs (most
+                    importantly cholesterol). Use it before ordering
+                    thyroid testing. Concurrent illness and recent
+                    glucocorticoid use can both fake the biochemical
+                    picture.
+                </p>
+
+            </div>
+
+        </div>
+        <div class="calc-grid" style="margin-top: 1.5rem;">
+            <form
+                hx-post="/hypothyroid-score/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:200ms, change, load"
+            >
+                <div class="field">
+                    <label for="age_band">Age</label>
+                    <select id="age_band" name="age_band">
+                        <option value="under_2" {% if inputs.age_band == "under_2" %}selected{% endif %}>Under 2 years</option>
+                        <option value="2_to_6" {% if inputs.age_band == "2_to_6" %}selected{% endif %}>2–6 years</option>
+                        <option value="over_6" {% if inputs.age_band == "over_6" %}selected{% endif %}>Over 6 years</option>
+                    </select>
+                </div>
+
+        <nav class="calc-tabs" style="margin-top: 2.5rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/hypothyroid-score">Clinical background</a>
+        </nav>
+
+                <div class="field">
+                    <label for="breed">Breed</label>
+                    <select id="breed" name="breed">
+                        <option value="golden_retriever" {% if inputs.breed == "golden_retriever" %}selected{% endif %}>Golden Retriever</option>
+                        <option value="doberman" {% if inputs.breed == "doberman" %}selected{% endif %}>Doberman Pinscher</option>
+                        <option value="irish_setter" {% if inputs.breed == "irish_setter" %}selected{% endif %}>Irish Setter</option>
+                        <option value="boxer" {% if inputs.breed == "boxer" %}selected{% endif %}>Boxer</option>
+                        <option value="cocker_spaniel" {% if inputs.breed == "cocker_spaniel" %}selected{% endif %}>Cocker Spaniel</option>
+                        <option value="dachshund" {% if inputs.breed == "dachshund" %}selected{% endif %}>Dachshund</option>
+                        <option value="other" {% if inputs.breed == "other" %}selected{% endif %}>Other / crossbreed</option>
+                    </select>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Clinical signs</h3>
+                {% for name, label in [("dermatologic", "Bilateral truncal dermatosis or recurrent pyoderma"), ("alopecia", "Bilateral symmetric alopecia"), ("lethargy", "Lethargy / exercise intolerance"), ("weight_gain", "Weight gain without polyphagia"), ("cold_intolerance", "Cold intolerance / heat-seeking")] %}
+                <div class="field">
+                    <label>{{ label }}</label>
+                    <div class="segmented">
+                        <input type="radio" name="{{ name }}" value="no" id="{{ name }}-n" {% if inputs[name] == "no" %}checked{% endif %}>
+                        <label for="{{ name }}-n">No</label>
+                        <input type="radio" name="{{ name }}" value="yes" id="{{ name }}-y" {% if inputs[name] == "yes" %}checked{% endif %}>
+                        <label for="{{ name }}-y">Yes</label>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Laboratory findings</h3>
+                <div class="field">
+                    <label>Hypercholesterolemia</label>
+                    <div class="segmented">
+                        <input type="radio" name="hypercholesterolemia" value="not_recorded" id="chol-nr" {% if inputs.hypercholesterolemia == "not_recorded" %}checked{% endif %}>
+                        <label for="chol-nr">Not measured</label>
+                        <input type="radio" name="hypercholesterolemia" value="no" id="chol-n" {% if inputs.hypercholesterolemia == "no" %}checked{% endif %}>
+                        <label for="chol-n">Normal</label>
+                        <input type="radio" name="hypercholesterolemia" value="yes" id="chol-y" {% if inputs.hypercholesterolemia == "yes" %}checked{% endif %}>
+                        <label for="chol-y">Elevated</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Mild non-regenerative anemia</label>
+                    <div class="segmented">
+                        <input type="radio" name="anemia" value="not_recorded" id="anem-nr" {% if inputs.anemia == "not_recorded" %}checked{% endif %}>
+                        <label for="anem-nr">Not measured</label>
+                        <input type="radio" name="anemia" value="no" id="anem-n" {% if inputs.anemia == "no" %}checked{% endif %}>
+                        <label for="anem-n">No</label>
+                        <input type="radio" name="anemia" value="yes" id="anem-y" {% if inputs.anemia == "yes" %}checked{% endif %}>
+                        <label for="anem-y">Yes</label>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 0.5rem; color: var(--ink-soft);">Confounders</h3>
+                <div class="field">
+                    <label>Currently sick with non-thyroidal illness, or on glucocorticoids in past 4 weeks</label>
+                    <div class="segmented">
+                        <input type="radio" name="nti_or_steroids" value="no" id="nti-n" {% if inputs.nti_or_steroids == "no" %}checked{% endif %}>
+                        <label for="nti-n">No</label>
+                        <input type="radio" name="nti_or_steroids" value="yes" id="nti-y" {% if inputs.nti_or_steroids == "yes" %}checked{% endif %}>
+                        <label for="nti-y">Yes</label>
+                    </div>
+                </div>
+
+                <input type="hidden" name="normal_cholesterol" value="no">
+            </form>
+
+            {% include "partials/hypothyroid_score_result.html" %}
+        </div>
+    </div>
+</section>
+{% endblock %}

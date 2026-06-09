@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Calcium gluconate (hyperkalemia) | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">10% calcium gluconate · 100 mg/mL · 0.465 mEq Ca²⁺/mL</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Calcium GLUCONATE, not chloride.</strong>
+                    Calcium chloride is ≈3× more potent per mL, more
+                    cardiotoxic, and severely tissue-toxic on
+                    extravasation. The IV preparation for hyperkalemia
+                    is calcium gluconate. Read the vial.
+                </li>
+                <li>
+                    <strong>Continuous ECG required throughout
+                    infusion.</strong> Stop the infusion immediately if
+                    bradycardia worsens, PR interval lengthens further,
+                    or QRS widens. Resume at half the rate after rhythm
+                    stabilizes. Hypercalcemia from too-rapid IV calcium
+                    can itself cause arrhythmias and arrest.
+                </li>
+                <li>
+                    <strong>Calcium does NOT lower K; it stabilizes the
+                    membrane.</strong> Onset 1–3 min, duration only
+                    30–60 min. This is bridging therapy that buys time
+                    for K-lowering treatment (insulin/dextrose, fluid
+                    therapy) and definitive correction of the underlying
+                    cause. Do not rely on calcium alone.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Hyperkalemia emergency workflow</div>
+            <p style="margin: 0;">
+                Calcium gluconate is one of three drug-therapy components
+                of life-threatening hyperkalemia management, alongside
+                insulin/dextrose and fluid therapy. See the
+                <a href="/hyperkalemia-emergency">hyperkalemia emergency hub</a>
+                for the full workflow including ECG-finding criteria,
+                step ordering, deobstruction or mineralocorticoid
+                replacement as applicable, and monitoring.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/ca-gluconate-hyperK">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/ca-gluconate-hyperK/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="dose_ml_per_kg">Dose (mL/kg of 10% Ca gluconate)</label>
+                    <input type="number" step="any" min="0.5" max="1.5"
+                           id="dose_ml_per_kg" name="dose_ml_per_kg"
+                           value="{{ inputs.dose_ml_per_kg }}" required>
+                    <div class="help">
+                        Published range is 0.5–1.5 mL/kg. Default 1.0 mL/kg
+                        (mid-range). Lower end (0.5) for less severe
+                        hyperkalemia or smaller patients; upper end (1.5)
+                        for severe with overt ECG changes.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="duration_min">Infusion duration (min)</label>
+                    <input type="number" step="any" min="10" max="20"
+                           id="duration_min" name="duration_min"
+                           value="{{ inputs.duration_min }}" required>
+                    <div class="help">
+                        Range 10–20 minutes. Default 15. Faster
+                        administration substantially increases the risk
+                        of bradyarrhythmias and hypotension. Continuous
+                        ECG required throughout, stop the infusion
+                        immediately if bradycardia worsens.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/ca_gluconate_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Total volume is dose (mL/kg) × weight. Infusion rate divides that volume over the chosen duration:
+            </p>
+            <div class="formula-display">
+                $$\text{total volume (mL)} = \text{dose}_{\text{mL/kg}} \times \text{weight}_{\text{kg}}$$
+            </div>
+            <div class="formula-display">
+                $$\text{rate (mL/min)} = \frac{\text{total volume (mL)}}{\text{duration (min)}}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{total volume} = {{ result.dose_ml_per_kg }}_{\text{mL/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.2f"|format(result.total_volume_ml) }}\,\text{mL}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div class="formula-display">
+                {% if result %}
+                $$\text{rate} = \frac{ {{ "%.2f"|format(result.total_volume_ml) }} }{ {{ result.duration_min|int }} } = {{ "%.3f"|format(result.infusion_rate_ml_per_min) }}\,\text{mL/min}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Cooper ES. Urethral Obstruction. In: Silverstein DC,
+                Hopper K, eds. <em>Small Animal Critical Care Medicine</em>.
+                3rd ed. Elsevier; 2023. Chapter 122 (cites 0.5–1.5 mL/kg
+                of 10% calcium gluconate IV slowly over 10–20 min).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    DiBartola SP. Disorders of Potassium. In: <em>Fluid,
+                Electrolyte, and Acid-Base Disorders in Small Animal
+                Practice</em>. 4th ed. Elsevier; 2012. Chapter 5
+                (overview of hyperkalemia mechanisms and therapy).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Stock concentration: 10% calcium gluconate USP =
+                100 mg/mL of the gluconate salt = 9.3 mg/mL elemental Ca
+                = 0.465 mEq/mL Ca²⁺.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

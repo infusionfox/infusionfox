@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}DKA management | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Endocrine &amp; Metabolic · Workflow hub</div>
+                <h1>DKA management hub</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Workflow for diabetic ketoacidosis in dogs and
+                    cats. Fluid resuscitation first, electrolyte
+                    correction in parallel, then low-dose insulin to
+                    clear ketones, transitioning off the CRI as the
+                    patient stabilizes.
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li>
+                    <strong>DKA is a multi-system emergency.</strong> Most
+                    DKA patients have at least one concurrent precipitating
+                    illness (pancreatitis, UTI, neoplasia, hyperadrenocorticism
+                    in dogs; hepatic lipidosis, cholangiohepatitis, pancreatitis,
+                    infection in cats). Identifying and treating the underlying
+                    illness is as important as the metabolic resuscitation,
+                    DKA will not resolve cleanly until both are addressed.
+                </li>
+                <li>
+                    <strong>Sequence matters.</strong> Don't start insulin in a
+                    hypovolemic, hypokalemic patient. The order below is
+                    deliberate: stabilize volume first, correct or supplement
+                    K, then add insulin. Premature insulin can drop K
+                    catastrophically.
+                </li>
+                <li>
+                    <strong>Reassess every 2–6 hours.</strong> Volume status,
+                    hydration, electrolytes (K every 4–6 hr, P and Mg 1–2
+                    times daily), glucose (every 1–2 hr while on insulin),
+                    acid-base status, and ketones drive the dynamic protocol
+                    adjustments.
+                </li>
+            </ul>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Workflow checklist</h2>
+
+        <ol style="list-style: none; padding-left: 0; margin-top: 1.5rem;">
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 1rem; padding-top: 0.5rem; list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">1</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Volume resuscitation &amp; fluid plan</h3>
+                    <p>
+                        Start here. If the patient is in shock, deliver
+                        10–30 mL/kg isotonic crystalloid increments up to
+                        90 mL/kg (dog) / 60 mL/kg (cat) until hemodynamically
+                        stable. Then transition to the rehydration +
+                        maintenance + ongoing-losses combined rate for the
+                        active phase, dropping to maintenance + ongoing
+                        losses post-rehydration.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        <strong>Fluid choice:</strong> buffered isotonic
+                        crystalloid (LRS, Plasma-Lyte, Normosol-R)
+                        preferred over 0.9% NaCl in most DKA cases,
+                        faster acidosis resolution, less hyperchloremia,
+                        small K contribution that blunts post-insulin K
+                        decline.
+                    </p>
+                    <a href="/fluid-therapy" class="btn">Open fluid therapy calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">2</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Initial labs &amp; workup</h3>
+                    <p>
+                        While fluids are running, complete the diagnostic
+                        workup that distinguishes DKA from uncomplicated
+                        diabetes and identifies concurrent illness:
+                    </p>
+                    <ul style="margin: 0.5rem 0 0.75rem; padding-left: 1.25rem; line-height: 1.7;">
+                        <li>CBC, full chemistry, urinalysis with culture</li>
+                        <li>Venous blood gas (pH, HCO₃⁻, lactate, base excess)</li>
+                        <li>Urine ketones and/or β-hydroxybutyrate (handheld meter or quantitative)</li>
+                        <li>Abdominal ultrasound (more sensitive than radiographs for concurrent disease)</li>
+                        <li>cPLI / fPLI if pancreatitis is suspected</li>
+                        <li>Endocrine workup as indicated (LDDT for hyperadrenocorticism in dogs)</li>
+                    </ul>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        Establish baseline electrolytes before any insulin.
+                        Even apparently normal serum K can be misleading,
+                        acidosis shifts K extracellularly and total body
+                        K is usually depleted.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">3</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Potassium supplementation</h3>
+                    <p>
+                        Most DKA patients need K supplementation from the
+                        start of fluid therapy, even with apparently normal
+                        serum K, total-body K is usually low and insulin
+                        will drop serum K further. Start a KCl CRI per the
+                        published sliding scale before or concurrent with
+                        insulin.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        <strong>Hard ceiling:</strong> 0.5 mEq/kg/hr total K
+                        delivery without continuous ECG. This ceiling
+                        applies to the SUM of K from all sources. KCl
+                        CRI plus any K from KPhos (see step 5).
+                    </p>
+                    <a href="/hypokalemia" class="btn">Open hypokalemia / KCl calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">4</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Insulin therapy</h3>
+                    <p>
+                        Start insulin once volume is restored and K is at
+                        least 3.5 mEq/L (or being actively supplemented).
+                        Two protocols are acceptable; choose based on local
+                        logistics and patient stability:
+                    </p>
+                    <ul style="margin: 0.5rem 0 0.75rem; padding-left: 1.25rem; line-height: 1.7;">
+                        <li>
+                            <strong>IV CRI</strong> with a sliding-scale
+                            tier table: finer titration, smoother
+                            pharmacokinetics, requires a syringe pump and
+                            stable IV access. Default for critically ill
+                            or unstable patients.
+                        </li>
+                        <li>
+                            <strong>Intermittent IM</strong>, dosed by the
+                            BG drop in the previous hour: works without
+                            a pump, but hourly dose
+                            adjustments and more BG-curve volatility.
+                            Practical for smaller hospitals or unstable
+                            IV access.
+                        </li>
+                    </ul>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        <strong>Use regular crystalline insulin only.</strong>
+                        Goal: lower BG by 50–75 mg/dL/hr to &lt; 250.
+                        SC insulin is not appropriate in dehydrated DKA
+                        patients (unreliable absorption).
+                    </p>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                        <a href="/insulin-cri-dka" class="btn">Insulin CRI →</a>
+                        <a href="/insulin-im-dka" class="btn">Insulin IM intermittent →</a>
+                    </div>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">5</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Phosphate supplementation</h3>
+                    <p>
+                        Hypophosphatemia affects ≈48% of dogs after starting
+                        DKA therapy (insulin shifts P intracellularly).
+                        Severe hypophosphatemia causes acute hemolysis,
+                        respiratory weakness, and cardiac dysfunction,
+                        the most life-threatening complication of DKA
+                        management. Check P every 4–12 hours; supplement
+                        per the sliding scale.
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        <strong>Critical interaction:</strong> KPhos delivers
+                        ≈4.4 mEq K per mL alongside the phosphate. The K
+                        from KPhos counts toward the 0.5 mEq/kg/hr ceiling
+                       . REDUCE the concurrent KCl rate accordingly.
+                        The hypophosphatemia calculator surfaces this
+                        explicitly.
+                    </p>
+                    <a href="/hypophosphatemia" class="btn">Open hypophosphatemia / KPhos calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">6</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Magnesium supplementation</h3>
+                    <p>
+                        Hypomagnesemia commonly worsens after starting
+                        DKA therapy. Mg deficiency can also drive
+                        refractory hypocalcemia and hypokalemia, if K
+                        won't correct despite adequate replacement, check
+                        Mg. Supplement per the sliding scale.
+                    </p>
+                    <a href="/hypomagnesemia" class="btn">Open hypomagnesemia / MgSO4 calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">7</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Bicarbonate (rarely needed)</h3>
+                    <p>
+                        Most DKA patients do not need bicarbonate therapy.
+                        The metabolic acidosis resolves as ketones clear
+                        with insulin. Bicarbonate is considered only for
+                        severe acidosis (pH &lt; 7.0) that has not improved
+                        after one hour of fluid therapy. Half-correction is
+                        the standard approach:
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem; margin-left: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-family: var(--font-mono);">
+                        NaHCO₃ (mEq) = 0.3 × weight (kg) × base deficit × 0.5
+                    </p>
+                    <p style="color: var(--ink-soft); font-size: 0.9rem;">
+                        Routine bicarbonate use worsens hypokalemia,
+                        causes paradoxical CSF acidosis, and decreases
+                        tissue oxygen delivery. Reserve for the truly
+                        severe acidemic case. Recheck pH every 1–4 hours
+                        during therapy.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">8</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Monitoring during therapy</h3>
+                    <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem; line-height: 1.7;">
+                        <li>Volume / hydration status every 2–6 hours</li>
+                        <li>Body weight every 4–8 hours</li>
+                        <li>PCV / TP every 12 hours</li>
+                        <li>Electrolytes (K) every 4–6 hours initially</li>
+                        <li>Phosphorus and magnesium 1–2 times daily</li>
+                        <li>Blood glucose every 1–2 hours during insulin (or continuous interstitial monitor)</li>
+                        <li>Venous blood gas every 4–6 hours initially</li>
+                        <li>Continuous ECG if dyskalemia is severe</li>
+                        <li>CBC and chemistry daily</li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">9</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Transition to maintenance</h3>
+                    <p>
+                        Continue IV insulin (CRI or intermittent IM) until
+                        the patient is reliably eating, drinking, hydrated,
+                        and ketone-negative. Then transition to twice-daily
+                        SC administration of an intermediate or long-acting
+                        insulin (NPH or lente in dogs; glargine, detemir,
+                        or PZI in cats), along with a dietary change
+                        (high-fiber for dogs; high-protein, low-carbohydrate
+                        for cats). Overlap the first SC dose with the IV
+                        protocol for several hours as the longer-acting
+                        insulin reaches steady state.
+                    </p>
+                </div>
+            </li>
+
+        </ol>
+
+        <section style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Hoehne SN. Diabetic Ketoacidosis. In: Silverstein DC,
+                Hopper K, eds. <em>Small Animal Critical Care Medicine</em>.
+                3rd ed. St. Louis, MO: Elsevier; 2023. Chapter 73,
+                pp. 432–435; Box 73.1; Table 73.1.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+
+
+{% endblock %}

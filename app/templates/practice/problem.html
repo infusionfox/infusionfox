@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ problem.title }} | Practice | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <p style="margin-bottom: 1rem;">
+            <a href="/learn/practice" style="color: var(--ink-soft); text-decoration: none;">← All practice problems</a>
+        </p>
+
+        <div class="practice-list">
+            {% include "practice/_problem_card.html" %}
+        </div>
+    </div>
+</section>
+{% include "practice/_check_script.html" %}
+{% endblock %}

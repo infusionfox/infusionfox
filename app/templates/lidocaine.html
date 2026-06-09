@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Lidocaine CRI | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Stock: 20 mg/mL (2% lidocaine, plain)</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Use 2% lidocaine WITHOUT epinephrine.</strong>
+                    Lidocaine-with-epinephrine (sold for dental and local
+                    infiltration) looks similar on the shelf, giving it
+                    IV would deliver an unintended epinephrine bolus.
+                    Do NOT use the product containing epinephrine IV.
+                    Always read the label twice.
+                </li>
+                <li>
+                    <strong>Dog-only.</strong> Most clinicians avoid IV
+                    lidocaine in cats for anesthetic or analgesic purposes.
+                    Cats are markedly more sensitive to both CNS and
+                    cardiodepressant effects, and lidocaine added to
+                    isoflurane in cats causes greater cardiovascular
+                    depression than equipotent isoflurane alone.
+                </li>
+                <li>
+                    <strong>Toxicity monitoring.</strong> Watch for muscle
+                    twitching, ataxia, nystagmus, drowsiness, vomiting,
+                    seizures, hypotension. Therapeutic plasma 1–6 µg/mL;
+                    toxicity likely above 8 µg/mL. <strong>Antidote: IV lipid
+                    emulsion 20% can be beneficial.</strong> Reduce doses
+                    30–50% in patients with hepatic dysfunction.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Lidocaine analgesic CRI doses (dogs)</div>
+            <ul style="margin: 0; padding-left: 1.25rem; line-height: 1.7;">
+                <li><strong>Loading dose:</strong> 1–2 mg/kg IV slowly (over 2–4 minutes; rapid bolus risks dose-dependent hypotension)</li>
+                <li><strong>Standard maintenance CRI:</strong> 25–50 µg/kg/min (= 1.5–3 mg/kg/hr) for lidocaine alone or in MLK</li>
+                <li><strong>GDV / septic peritonitis:</strong> 17–50 µg/kg/min (= 1–3 mg/kg/hr), maintain at least 3 hr postoperatively</li>
+                <li><strong>Higher published combos (surgical only):</strong> up to 100 µg/kg/min (= 6 mg/kg/hr) in lidocaine/dexmed/ketamine; step down postoperatively</li>
+            </ul>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/lidocaine">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#why-dog-only">Why dog-only</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/lidocaine/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog" checked disabled>
+                        <label for="sp-dog">Dog (only)</label>
+                    </div>
+                    <div class="help">
+                        Cat is intentionally not selectable, see banner above.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="dose_value">Maintenance dose</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.01" id="dose_value"
+                               name="dose_value" value="{{ inputs.dose_value }}" required>
+                        <div class="segmented">
+                            <input type="radio" name="dose_unit" value="mg/kg/hr" id="du-mghr"
+                                   {% if inputs.dose_unit.value == 'mg/kg/hr' %}checked{% endif %}>
+                            <label for="du-mghr">mg/kg/hr</label>
+                            <input type="radio" name="dose_unit" value="ug/kg/min" id="du-ugmin"
+                                   {% if inputs.dose_unit.value == 'ug/kg/min' %}checked{% endif %}>
+                            <label for="du-ugmin">µg/kg/min</label>
+                        </div>
+                    </div>
+                    <div class="help">
+                        Doses are commonly published in both conventions;
+                        switch the unit to match how your protocol is written.
+                        Standard range:
+                        {{ "%g"|format(dose_min) }}–{{ "%g"|format(dose_max) }} mg/kg/hr =
+                        {{ "%g"|format(dose_min * 1000 / 60) }}–{{ "%g"|format(dose_max * 1000 / 60) }} µg/kg/min.
+                        Default 2.5 mg/kg/hr.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/lidocaine_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Lidocaine stock is 20 mg/mL (2%). The dose is entered in mg/kg/hr or µg/kg/min, both are equivalent; the calculator always shows both. Converting mg/kg/hr to a pump rate:
+            </p>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{\text{mg/kg/hr}}}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                To convert µg/kg/min to mg/kg/hr:
+            </p>
+            <div class="formula-display">
+                $$\text{mg/kg/hr} = \frac{\text{dose}_{\mu g/kg/min} \times 60}{1000}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ "%.2f"|format(result.dose_mg_per_kg_per_hr) }}_{\text{mg/kg/hr}} }{ 20_{\text{mg/mL}} } = {{ "%.3f"|format(result.pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            {% if result %}
+            <p style="color: var(--ink-soft); line-height: 1.7; font-size: 0.9rem;">
+                Dose equivalence: {{ "%.2f"|format(result.dose_mg_per_kg_per_hr) }} mg/kg/hr = {{ "%.1f"|format(result.dose_ug_per_kg_per_min) }} µg/kg/min.
+            </p>
+            {% endif %}
+        </section>
+
+        <section id="why-dog-only" style="margin-top: 3rem;">
+            <div class="eyebrow">Rationale</div>
+            <h2>Why this calculator is dog-only</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Cats are markedly more sensitive to the CNS and
+                cardiodepressant effects of lidocaine than dogs. Most
+                clinicians avoid IV lidocaine in cats for analgesic or
+                anesthetic purposes; when added to isoflurane in cats,
+                lidocaine causes greater cardiovascular depression than
+                an equipotent dose of isoflurane alone, and so is not
+                recommended as part of a balanced feline anesthesia
+                protocol. The published maintenance CRI applies to dogs
+                only. No feline maintenance dose has been validated.
+                The same rationale applies to MLK, which InfusionFox also
+                locks to dogs. For feline analgesia, consider single-drug
+                fentanyl (<a href="/fentanyl">/fentanyl</a>),
+                buprenorphine, or hydromorphone.
+            </p>
+
+            <h3>Indications and benefits</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Beyond systemic analgesia, lidocaine CRI provides an
+                antihyperalgesic effect (reducing wind-up sensitization),
+                ≈30% MAC sparing in dogs, and reactive oxygen species
+                (ROS) scavenging effects relevant to GDV. A survival
+                benefit has been documented in dogs undergoing laparotomy
+                for septic peritonitis when lidocaine (50 µg/kg/min) is
+                added to opioid analgesia. Lidocaine is one of the three
+                components of the MLK multimodal CRI; if the patient also
+                needs morphine and ketamine analgesia, see
+                <a href="/analgesia-cri?prep_mode=combined_bag&opioid=morphine&adjuncts=ketamine,lidocaine">/mlk</a> for the published fixed-recipe
+                protocol.
+            </p>
+
+            <h3>Toxicity</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Therapeutic plasma range is 1–6 µg/mL; toxicity
+                becomes likely above 8 µg/mL. Lethal dose in dogs is
+                estimated at 16–28 mg/kg. Signs include ataxia, nystagmus,
+                drowsiness, depression, muscle tremors, nausea/vomiting,
+                seizures, bradycardia, hypotension, and at very high
+                concentrations circulatory collapse. <strong>IV lipid
+                emulsion 20% can be beneficial</strong> for treating
+                lidocaine toxicity. Cessation of therapy or rate
+                reduction is sufficient for minor signs; benzodiazepines
+                for seizures; supportive treatment for circulatory
+                depression. Reduce doses 30–50% in patients with hepatic
+                dysfunction. Concurrent cimetidine or beta-blocker
+                therapy increases lidocaine concentration and toxicity
+                risk.
+            </p>
+
+            <h3>Stepping down</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                For combined-agent protocols (eg MLK), discontinue
+                lidocaine and ketamine first. For single-agent lidocaine
+                CRI, taper or discontinue based on pain assessment;
+                re-load with a 1–2 mg/kg IV bolus if breakthrough pain
+                occurs. Plumb's notes that prolonged infusions can lead
+                to progressive accumulation of lidocaine and metabolites;
+                dosage modification may be required.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Primary:</strong> Plumb's Veterinary Drugs,
+                lidocaine (intravenous; systemic) monograph (current
+                edition). Sections used: Prescriber Highlights,
+                Uses/Indications, Pharmacology/Actions, Pharmacokinetics,
+                Contraindications/Precautions/Warnings, Adverse Effects,
+                Overdose/Acute Toxicity, Drug Interactions, Dosages
+                (dogs), Compatibility/Compounding Considerations.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Secondary:</strong> Silverstein DC, Hopper K, eds.
+                <em>Small Animal Critical Care Medicine</em>. 3rd ed. St.
+                Louis, MO: Elsevier; 2023. Chapter 134 (Analgesia and
+                Constant Rate Infusions), Table 134.1 (Commonly Used
+                Analgesic Agents), p. 789.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

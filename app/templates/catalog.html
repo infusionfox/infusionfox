@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="catalog">
+    <div class="container container--wide">
+        <div class="eyebrow">{{ page_eyebrow }}</div>
+        <h1>{{ page_title }}</h1>
+        {% if page_intro %}
+        <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 2rem;">
+            {{ page_intro }}
+        </p>
+        {% endif %}
+
+        {% for category, entries in nav_groups.items() %}
+            <div class="catalog__category">
+                <h2>{{ category }}</h2>
+                <div class="catalog__grid">
+                    {% for entry in entries %}
+                        <a href="{{ entry.href }}" class="catalog__card">
+                            <h3>
+                                <span class="title">{{ entry.title }}</span>
+                                {% if entry.short %}<span class="short">{{ entry.short }}</span>{% endif %}
+                            </h3>
+                            <p>{{ entry.catalog_blurb or entry.description }}</p>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

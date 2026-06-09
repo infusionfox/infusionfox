@@ -1,0 +1,184 @@
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    {% include "partials/_invalid_result.html" %}
+    {% else %}
+
+    <!-- Bag preparation (Looney recipe) -->
+    <div class="result__headline">
+        <div class="eyebrow">Bag preparation</div>
+        <div style="font-size: 0.95rem; line-height: 1.7; margin-top: 0.4rem;">
+            Add to a <strong>{{ "%g"|format(result.bag_volume_ml) }} mL</strong>
+            bag of 0.9% NaCl, after first removing
+            <strong>{{ "%g"|format(result.total_volume_to_remove_from_bag_ml) }} mL</strong>
+            of saline:
+        </div>
+    </div>
+
+    {# Stock-concentration verification (persistent). The Looney recipe
+       assumes 2 % lidocaine (20 mg/mL) and 100 mg/mL ketamine and the
+       mL-to-draw values below are hardcoded to those concentrations.
+       Lidocaine also exists at 1 % (10 mg/mL); ketamine vials are
+       usually 100 mg/mL but veterinary-labeled product can vary. If
+       the stock on hand differs, the volumes below will yield the
+       wrong total drug and the bag must be re-calculated by hand. #}
+    <div class="warnings danger" style="margin-top: 1rem;">
+        <ul>
+            <li>
+                <strong>Verify stock concentrations before drawing.</strong>
+                The recipe below assumes 2% lidocaine (20 mg/mL) and
+                ketamine 100 mg/mL. Lidocaine also comes as 1% (10 mg/mL);
+                ketamine concentration can vary by product. Confirm each
+                value on the vial label in hand. If the stock differs,
+                the mL-to-draw values below are wrong and the bag must
+                be recomputed.
+            </li>
+        </ul>
+    </div>
+
+    <div style="margin-top: 0.75rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius);">
+        <table style="width: 100%; font-size: 0.95rem;">
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.25rem 0;">2% lidocaine (20 mg/mL):</td>
+                <td style="text-align: right; font-weight: 700; padding: 0.25rem 0;">
+                    {{ "%g"|format(result.lidocaine_ml_to_draw) }} mL
+                    <span style="color: var(--ink-soft); font-weight: 400;">({{ "%g"|format(result.lidocaine_mg_to_add) }} mg)</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="color: var(--ink-soft); padding: 0.25rem 0;">Ketamine (100 mg/mL):</td>
+                <td style="text-align: right; font-weight: 700; padding: 0.25rem 0;">
+                    {{ "%g"|format(result.ketamine_ml_to_draw) }} mL
+                    <span style="color: var(--ink-soft); font-weight: 400;">({{ "%g"|format(result.ketamine_mg_to_add) }} mg)</span>
+                </td>
+            </tr>
+            <tr style="border-top: 1px solid var(--rule);">
+                <td style="color: var(--ink-soft); padding-top: 0.4rem;">Final bag concentration:</td>
+                <td style="text-align: right; padding-top: 0.4rem; font-size: 0.85rem; color: var(--ink-soft);">
+                    {{ "%g"|format(result.bag_lidocaine_mg_per_ml) }} mg/mL lidocaine,
+                    {{ "%g"|format(result.bag_ketamine_mg_per_ml) }} mg/mL ketamine
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Pump rate -->
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">Pump rate</div>
+        <div style="font-size: 1.4rem; font-weight: 700; line-height: 1.2;">
+            {{ "%g"|format(result.infusion_rate_ml_per_hr) }} mL/hr
+        </div>
+        <div style="font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.3rem;">
+            = 2.5 mL/kg/hr × {{ "%.2f"|format(result.weight_kg) }} kg
+        </div>
+        {% if result.bag_finished %}
+        <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+            <strong>Bag finishes in {{ "%g"|format(result.actual_duration_hr) }} hr</strong>
+            (faster than the prescribed {{ "%g"|format(result.duration_hr) }} hr).
+            A second bag is needed to complete the full duration.
+        </div>
+        {% else %}
+        <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+            Over {{ "%g"|format(result.duration_hr) }} hours, patient
+            uses {{ "%g"|format(result.fluid_volume_actually_delivered_ml) }} mL
+            of the {{ "%g"|format(result.bag_volume_ml) }} mL bag
+            ({{ "%.0f"|format(result.fluid_volume_actually_delivered_ml / result.bag_volume_ml * 100) }}%).
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Delivered rates check (2025 paper view) -->
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm);
+        border-left: 3px solid {%
+            if result.lidocaine_below_efficacy_threshold or result.ketamine_below_efficacy_threshold or result.ketamine_total_dose_below_efficacy_threshold
+        %}var(--danger){% else %}var(--signal){% endif %};
+        border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem;">
+            Delivered drug, efficacy threshold check (2025 JAVMA)
+        </div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--rule); color: var(--ink-soft);">
+                    <th style="text-align: left; padding: 0.3rem 0;">Drug</th>
+                    <th style="text-align: right; padding: 0.3rem 0;">Target</th>
+                    <th style="text-align: right; padding: 0.3rem 0;">Delivered</th>
+                    <th style="text-align: right; padding: 0.3rem 0;">vs threshold</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 0.3rem 0;">Lidocaine rate</td>
+                    <td style="text-align: right; padding: 0.3rem 0; color: var(--ink-soft);">
+                        {{ "%g"|format(result.target_lidocaine_mg_per_kg_per_hr) }} mg/kg/hr
+                    </td>
+                    <td style="text-align: right; padding: 0.3rem 0; font-weight: 700;
+                        {% if result.lidocaine_below_efficacy_threshold %}color: var(--danger);{% endif %}">
+                        {{ "%g"|format(result.delivered_lidocaine_mg_per_kg_per_hr) }} mg/kg/hr
+                        <span style="color: var(--ink-soft); font-weight: 400; font-size: 0.8rem;">
+                            ({{ "%g"|format(result.delivered_lidocaine_ug_per_kg_per_min) }} µg/kg/min)
+                        </span>
+                    </td>
+                    <td style="text-align: right; padding: 0.3rem 0;
+                        {% if result.lidocaine_below_efficacy_threshold %}color: var(--danger); font-weight: 600;{% else %}color: var(--ink-soft);{% endif %}">
+                        {% if result.lidocaine_below_efficacy_threshold %}⚠ below 1.5{% else %}✓ ≥ 1.5{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.3rem 0;">Ketamine rate</td>
+                    <td style="text-align: right; padding: 0.3rem 0; color: var(--ink-soft);">
+                        0.15 mg/kg/hr
+                    </td>
+                    <td style="text-align: right; padding: 0.3rem 0; font-weight: 700;
+                        {% if result.ketamine_below_efficacy_threshold %}color: var(--danger);{% endif %}">
+                        {{ "%g"|format(result.delivered_ketamine_mg_per_kg_per_hr) }} mg/kg/hr
+                        <span style="color: var(--ink-soft); font-weight: 400; font-size: 0.8rem;">
+                            ({{ "%g"|format(result.delivered_ketamine_ug_per_kg_per_min) }} µg/kg/min)
+                        </span>
+                    </td>
+                    <td style="text-align: right; padding: 0.3rem 0;
+                        {% if result.ketamine_below_efficacy_threshold %}color: var(--danger); font-weight: 600;{% else %}color: var(--ink-soft);{% endif %}">
+                        {% if result.ketamine_below_efficacy_threshold %}⚠ below 0.12{% else %}✓ ≥ 0.12{% endif %}
+                    </td>
+                </tr>
+                <tr style="border-top: 1px solid var(--rule);">
+                    <td style="padding: 0.3rem 0;">Total ketamine dose</td>
+                    <td style="text-align: right; padding: 0.3rem 0; color: var(--ink-soft);">
+                        ≥ 0.5 mg/kg
+                    </td>
+                    <td style="text-align: right; padding: 0.3rem 0; font-weight: 700;
+                        {% if result.ketamine_total_dose_below_efficacy_threshold %}color: var(--danger);{% endif %}">
+                        {{ "%g"|format(result.actual_ketamine_total_dose_mg_per_kg) }} mg/kg
+                    </td>
+                    <td style="text-align: right; padding: 0.3rem 0;
+                        {% if result.ketamine_total_dose_below_efficacy_threshold %}color: var(--danger); font-weight: 600;{% else %}color: var(--ink-soft);{% endif %}">
+                        {% if result.ketamine_total_dose_below_efficacy_threshold %}⚠ below 0.5{% else %}✓ ≥ 0.5{% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% if result.lidocaine_wasted_mg > 1 or result.ketamine_wasted_mg > 0.1 %}
+        <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--ink-soft);">
+            <strong>Drug remaining in bag at end of {{ "%g"|format(result.duration_hr) }}-hr infusion:</strong>
+            {{ "%g"|format(result.lidocaine_wasted_mg) }} mg lidocaine,
+            {{ "%g"|format(result.ketamine_wasted_mg) }} mg ketamine
+            (DEA waste documentation required for ketamine).
+        </div>
+        {% endif %}
+    </div>
+
+    {% if result.warnings %}
+    <div class="warnings danger">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if result.notes %}
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        {% for n in result.notes %}<p style="margin: 0 0 0.5rem;">{{ n }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+
+</div>

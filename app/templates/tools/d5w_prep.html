@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Solution preparation | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container" style="max-width: 720px;">
+        <div class="eyebrow">Utility</div>
+        <h1>Solution preparation</h1>
+        <p style="color: var(--ink-soft); max-width: 60ch;">
+            Calculates how much concentrated stock and how much sterile water
+            (or other diluent) to combine to produce a target volume of a target
+            concentration. Useful for making D5W from 50% dextrose, half-strength
+            saline, and similar bench preparations.
+        </p>
+
+        <div class="admonition" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="admonition-title">Worked example</div>
+            <p style="margin: 0;">
+                To make <strong>1 L of D5W</strong> from a 50% dextrose stock:
+                draw <strong>100 mL of 50% dextrose</strong> and combine with
+                <strong>900 mL of sterile water for injection</strong>.
+                Math: (1000 mL × 5%) ÷ 50% = 100 mL stock; remaining 900 mL is diluent.
+            </p>
+        </div>
+
+        <div class="tool-grid" style="margin-top: 2rem;">
+            <form id="d5w-form"
+                  hx-post="/tools/d5w-prep/compute"
+                  hx-target="#result-panel"
+                  hx-swap="outerHTML"
+                  hx-trigger="load">
+                <div class="field">
+                    <label for="target_volume_ml">Target volume (mL)</label>
+                    <input type="number" step="1" min="1" id="target_volume_ml"
+                           name="target_volume_ml" value="{{ inputs.target_volume_ml }}"
+                           required autofocus
+                           hx-post="/tools/d5w-prep/compute"
+                           hx-target="#result-panel"
+                           hx-swap="outerHTML"
+                           hx-include="closest form"
+                           hx-trigger="input changed delay:200ms">
+                    <div class="help">Final volume you want to end up with.</div>
+                </div>
+
+                <div class="field">
+                    <label for="target_percent">Target concentration (%)</label>
+                    <input type="number" step="any" min="0.1" id="target_percent"
+                           name="target_percent" value="{{ inputs.target_percent }}" required
+                           hx-post="/tools/d5w-prep/compute"
+                           hx-target="#result-panel"
+                           hx-swap="outerHTML"
+                           hx-include="closest form"
+                           hx-trigger="input changed delay:200ms">
+                    <div class="help">
+                        Common: 5 (D5W), 2.5 (half-strength D5W), 0.45 (half-strength saline).
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="stock_percent">Stock concentration (%)</label>
+                    <select id="stock_percent" name="stock_percent"
+                            hx-post="/tools/d5w-prep/compute"
+                            hx-target="#result-panel"
+                            hx-swap="outerHTML"
+                            hx-include="closest form"
+                            hx-trigger="change">
+                        <option value="50" {% if inputs.stock_percent == 50 %}selected{% endif %}>50% dextrose</option>
+                        <option value="25" {% if inputs.stock_percent == 25 %}selected{% endif %}>25% dextrose</option>
+                        <option value="70" {% if inputs.stock_percent == 70 %}selected{% endif %}>70% dextrose</option>
+                        <option value="0.9" {% if inputs.stock_percent == 0.9 %}selected{% endif %}>0.9% saline</option>
+                        <option value="23.4" {% if inputs.stock_percent == 23.4 %}selected{% endif %}>23.4% saline (hypertonic)</option>
+                    </select>
+                    <div class="help">
+                        Pick the concentrate you have on hand. Most clinics carry 50% dextrose.
+                    </div>
+                </div>
+            </form>
+
+            {% include "tools/partials/d5w_prep_result.html" %}
+        </div>
+
+        <section style="margin-top: 3rem; max-width: 60ch;">
+            <h3 style="font-size: 1rem;">Common preparations</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.8;">
+                <li><strong>D5W (5% dextrose) from 50% stock:</strong> 1 part stock + 9 parts sterile water (e.g., 100 mL + 900 mL = 1 L).</li>
+                <li><strong>D2.5W from 50% stock:</strong> 1 part stock + 19 parts sterile water (e.g., 50 mL + 950 mL = 1 L).</li>
+                <li><strong>Half-strength saline (0.45%) from 0.9%:</strong> 1 part stock + 1 part sterile water (1:1).</li>
+            </ul>
+
+            <h3 style="font-size: 1rem; margin-top: 1.5rem;">Notes</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.8;">
+                <li>Use sterile water for injection (or 0.9% NaCl as the diluent if appropriate for the application).</li>
+                <li>Prepare fresh and label clearly with concentration, date/time, and preparer initials.</li>
+                <li>Hypertonic dextrose solutions (>5%) should be administered through a central line to avoid phlebitis.</li>
+                <li>This tool does the C₁V₁ = C₂V₂ math; clinical judgment about which solution is appropriate for the patient stays with the practitioner.</li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

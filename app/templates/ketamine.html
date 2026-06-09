@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Ketamine CRI | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Stock: 100 mg/mL (vet) · Schedule III</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Unit-confusion alert.</strong> Plumb's flags
+                    ketamine CRI dosing as a high-alert risk: "Care should
+                    be taken to not confuse CRI dosages (ie, mg/kg/HOUR vs
+                    µg/kg/MINUTE)." The two units differ by ≈60×. The
+                    calculator below shows both, verify both match your
+                    protocol before infusing.
+                </li>
+                <li>
+                    <strong>Cardiovascular cautions.</strong> Ketamine
+                    increases HR, BP, and myocardial O₂ consumption via
+                    sympathetic stimulation. AVOID in cats with HCM,
+                    patients with significant hypertension, heart failure,
+                    arterial aneurysm, hyperthyroidism, or pheochromocytoma.
+                    Use caution in renal/hepatic insufficiency, seizure
+                    disorders, increased IOP, and pharyngeal/laryngeal/
+                    tracheal procedures.
+                </li>
+                <li>
+                    <strong>Recovery period.</strong> Eyes remain open,
+                    apply ophthalmic lubricant. Minimize handling and noise
+                    during recovery. Schedule III controlled substance,
+                    follow appropriate dispensing/recording protocols.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Two indication modes</div>
+            <p style="margin: 0;">
+                <strong>Surgical maintenance</strong>, intraoperative
+                analgesia. Range 10–20 µg/kg/min (= 0.6–1.2 mg/kg/hr).
+                Default 10 µg/kg/min. Per Plumb's: precede with 0.5 mg/kg
+                IV loading dose if anesthesia was induced with a non-
+                ketamine agent.
+                <br><br>
+                <strong>Postsurgical / general analgesia</strong>, postop
+                wind-down or stand-alone analgesia. Range 2–10 µg/kg/min
+                (= 0.12–0.6 mg/kg/hr). Default 2 µg/kg/min for 24 hr.
+                Plumb's "general analgesia" (0.1–0.6 mg/kg/hr loading
+                0.5 mg/kg) overlaps fully with this range.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/ketamine">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#cautions">Cautions &amp; populations</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/ketamine/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Indication</label>
+                    <div class="segmented">
+                        <input type="radio" name="indication" value="surgical" id="ind-sx"
+                               {% if inputs.indication.value == 'surgical' %}checked{% endif %}>
+                        <label for="ind-sx">Surgical (10–20 µg/kg/min)</label>
+                        <input type="radio" name="indication" value="postsurgical" id="ind-post"
+                               {% if inputs.indication.value == 'postsurgical' %}checked{% endif %}>
+                        <label for="ind-post">Postsurg / general (2–10)</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                    <div class="help">
+                        Both species supported. Cat selection surfaces
+                        additional cautions (HCM avoidance, seizure rate,
+                        renal-excretion considerations).
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="dose_value">Maintenance dose</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.01" id="dose_value"
+                               name="dose_value" value="{{ inputs.dose_value }}" required>
+                        <div class="segmented">
+                            <input type="radio" name="dose_unit" value="ug/kg/min" id="du-ugmin"
+                                   {% if inputs.dose_unit.value == 'ug/kg/min' %}checked{% endif %}>
+                            <label for="du-ugmin">µg/kg/min</label>
+                            <input type="radio" name="dose_unit" value="mg/kg/hr" id="du-mghr"
+                                   {% if inputs.dose_unit.value == 'mg/kg/hr' %}checked{% endif %}>
+                            <label for="du-mghr">mg/kg/hr</label>
+                        </div>
+                    </div>
+                    <div class="help">
+                        Plumb's gives doses in both conventions; switch the
+                        unit to match your protocol. Result panel always
+                        shows both for cross-check.
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/ketamine_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Ketamine stock is 100 mg/mL. The dose is entered in µg/kg/min or mg/kg/hr, both are equivalent and the calculator always shows both for cross-check. Converting mg/kg/hr to a pump rate:
+            </p>
+            <div class="formula-display">
+                $$\text{mL/hr} = \frac{\text{weight}_{\text{kg}} \times \text{dose}_{\text{mg/kg/hr}}}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                To convert µg/kg/min to mg/kg/hr (divide by 1000, multiply by 60):
+            </p>
+            <div class="formula-display">
+                $$\text{mg/kg/hr} = \frac{\text{dose}_{\mu g/kg/min} \times 60}{1000}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{mL/hr} = \frac{ {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} \times {{ "%.3f"|format(result.dose_mg_per_kg_per_hr) }}_{\text{mg/kg/hr}} }{ 100_{\text{mg/mL}} } = {{ "%.3f"|format(result.pump_rate_ml_per_hr) }}\,\text{mL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            {% if result %}
+            <p style="color: var(--ink-soft); line-height: 1.7; font-size: 0.9rem;">
+                Dose equivalence: {{ "%.1f"|format(result.dose_ug_per_kg_per_min) }} µg/kg/min = {{ "%.3f"|format(result.dose_mg_per_kg_per_hr) }} mg/kg/hr.
+                Plumb's flags this unit pair as a high-alert confusion risk, always verify both before infusing.
+            </p>
+            {% endif %}
+        </section>
+
+        <section id="cautions" style="margin-top: 3rem;">
+            <div class="eyebrow">Special populations &amp; warnings</div>
+            <h2>Cautions and populations</h2>
+
+            <h3 style="margin-top: 1rem;">Cats</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Plumb's documents several cat-specific concerns. AVOID in
+                cats with HCM (ketamine raises HR/BP/MVO₂). Up to 20% of
+                cats given ketamine alone may experience seizures at
+                therapeutic doses, diazepam is suggested if treatment is
+                needed. Self-limiting hyperthermia has been documented at
+                5–10 mg/kg; low-dose acepromazine (0.01–0.02 mg/kg IV)
+                may help. Cats excrete ketamine almost exclusively
+                unchanged in urine, consider dose reduction or
+                alternative agents in renal dysfunction. Anecdotal reports
+                of acute CHF in cats with mild-to-moderate heart disease.
+            </p>
+
+            <h3 style="margin-top: 1.25rem;">Small patients (low pump rates)</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The 100 mg/mL stock at typical analgesic CRI rates produces
+                very low volumes, a 4 kg cat at 2 µg/kg/min postsurgical
+                works out to about 0.005 mL/min, well below most pump
+                accuracy thresholds. For small patients, dilute ketamine
+                into a small fluid bag for accurate delivery. Plumb's:
+                ketamine may be diluted with sterile water for injection,
+                5% dextrose, or 0.9% sodium chloride. The MLK protocol
+                provides a useful ready-to-use dilution recipe (see
+                <a href="/analgesia-cri?prep_mode=combined_bag&opioid=morphine&adjuncts=ketamine,lidocaine">/mlk</a>).
+            </p>
+
+            <h3 style="margin-top: 1.25rem;">Drug interactions</h3>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li>
+                    <strong>α₂ agonists (dexmedetomidine, medetomidine,
+                    xylazine):</strong> may reduce ketamine metabolism via
+                    CYP2B11 inhibition. Doses commonly reduced when
+                    co-administered.
+                </li>
+                <li>
+                    <strong>Barbiturates, benzodiazepines, opioids, halothane:</strong>
+                    may prolong ketamine recovery. Lower doses of each
+                    agent often used in combination.
+                </li>
+                <li>
+                    <strong>Thyroid hormones:</strong> may induce
+                    hypertension and tachycardia when combined with
+                    ketamine in humans.
+                </li>
+                <li>
+                    <strong>Theophylline / aminophylline:</strong> may
+                    lower seizure threshold (in humans).
+                </li>
+                <li>
+                    <strong>Compatibility:</strong> physically compatible
+                    in same syringe with xylazine, fentanyl, hydromorphone,
+                    lidocaine, midazolam, morphine. Do NOT mix with
+                    barbiturates or diazepam in same syringe, precipitation.
+                </li>
+            </ul>
+
+            <h3 style="margin-top: 1.25rem;">Overdose</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Ketamine has a wide therapeutic index (≈5× pentobarbital).
+                Overdose presents as significant respiratory depression,
+                treat with mechanical ventilation rather than analeptics.
+                There is no specific reversal agent. In cats, yohimbine
+                with 4-aminopyridine has been suggested as a partial
+                antagonist.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Primary:</strong> Plumb's Veterinary Drugs,
+                ketamine monograph (current edition). Sections used:
+                Prescriber Highlights, Uses/Indications, Pharmacology/
+                Actions, Pharmacokinetics, Contraindications/Precautions/
+                Warnings, Adverse Effects, Overdose/Acute Toxicity, Drug
+                Interactions, Dosages (dogs and cats, adjunctive analgesia
+                section), Compatibility/Compounding Considerations.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong>Secondary:</strong> Silverstein DC, Hopper K, eds.
+                <em>Small Animal Critical Care Medicine</em>. 3rd ed. St.
+                Louis, MO: Elsevier; 2023. Chapter 134 (Analgesia and
+                Constant Rate Infusions), Table 134.1 (Commonly Used
+                Analgesic Agents), p. 789.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

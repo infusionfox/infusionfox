@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}InfusionFox | Cited. Calculated. Confirmed.{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container hero__grid">
+        <div class="hero__left">
+            <div class="eyebrow">For small-animal practitioners &amp; students · <strong>Free for clinical use</strong></div>
+            <h1>Cited. Calculated. Confirmed.</h1>
+            <p class="lede">
+                Clinical calculators, reference, and learning modules.
+                Every step shown, every source cited, every calculation
+                yours to verify before you give the dose.
+            </p>
+            <p class="hero__valueprop">
+                Built by veterinarians for the cases we see every shift. Drug
+                doses are weight-calculated and cited to a primary source.
+                Fluid plans cover shock through post-rehydration in one place.
+                Decision-support hubs walk through unstable presentations like
+                shock, DKA, anaphylaxis, and status epilepticus. The anesthesia
+                worksheet prints a patient-specific page for the case in front
+                of you.
+            </p>
+            <div class="hero__ctas">
+                <a href="/calculators" class="btn">Calculators</a>
+                <a href="/hubs" class="btn">Reference</a>
+                <a href="/anesthesia" class="btn">Anesthesia</a>
+            </div>
+        </div>
+
+        {# Right column: a single screen recording of the app in use.
+           Replaces the earlier 2x2 screenshot grid — one good demo of the
+           live-updating math says more than four static screenshots. The
+           recording is portrait (phone aspect), so we cap its width and
+           let the surrounding tile sit on the warm-paper background. #}
+        <aside class="hero__right">
+            <span class="hero__shot-eyebrow">Example: norepinephrine CRI on a 22 lb dog.</span>
+            <figure class="hero__shot hero__shot--animation">
+                <video
+                    src="/static/img/home-animation-calculator.mp4"
+                    class="hero__shot-video"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                    aria-label="Demonstration: a patient weight is entered into a calculator and the dose, rate, and volume values update live as the user types."
+                ></video>
+            </figure>
+        </aside>
+    </div>
+</section>
+
+{# What's inside. Three-column section that gives each top-level area of
+   the site a richer preview than just the hero buttons: a one-line
+   description of the kind of thing the user finds there, the actual
+   count of entries, and a few hand-picked highlights. Helps the page
+   feel like more than the hero, and gives new users a fast read on
+   what's in each section. #}
+<section class="home-inside">
+    <div class="container">
+        <div class="eyebrow" style="text-align: center; margin-bottom: 0.5rem;">What's inside</div>
+        <h2 style="text-align: center; margin: 0 0 2.5rem; font-size: 1.8rem;">
+            Calculators, clinical reference, and printable anesthesia worksheets
+        </h2>
+
+        <div class="home-inside__grid">
+
+            <div class="home-inside__col">
+                <div class="home-inside__count">{{ calc_count }}</div>
+                <h3 class="home-inside__title">
+                    <a href="/calculators">Calculators</a>
+                </h3>
+                <p class="home-inside__lede">
+                    Built so you can finish a calculation in under
+                    a minute. Live-updating results, the formula
+                    visible underneath, and a worked example using
+                    the patient's weight so the math is verifiable,
+                    not opaque.
+                </p>
+                {% if calc_highlights %}
+                <ul class="home-inside__list">
+                    {% for entry in calc_highlights %}
+                    <li>
+                        <a href="{{ entry.href }}">{{ entry.title }}</a>
+                        <span class="home-inside__blurb">{{ entry.catalog_blurb or entry.description }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <a href="/calculators" class="home-inside__cta">Browse all calculators &rarr;</a>
+            </div>
+
+            <div class="home-inside__col">
+                <div class="home-inside__count">{{ hub_count }}</div>
+                <h3 class="home-inside__title">
+                    <a href="/hubs">Reference hubs</a>
+                </h3>
+                <p class="home-inside__lede">
+                    Built so you can find the right step in the
+                    middle of an emergency. One page per
+                    presentation, top-to-bottom workflow, with
+                    calculators and dose tables placed inline where
+                    you'd reach for them.
+                </p>
+                {% if hub_highlights %}
+                <ul class="home-inside__list">
+                    {% for entry in hub_highlights %}
+                    <li>
+                        <a href="{{ entry.href }}">{{ entry.title }}</a>
+                        <span class="home-inside__blurb">{{ entry.catalog_blurb or entry.description }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <a href="/hubs" class="home-inside__cta">Browse all hubs &rarr;</a>
+            </div>
+
+            <div class="home-inside__col">
+                {# Inline SVG document icon. Uses currentColor so it
+                   inherits the .home-inside__count accent color, and
+                   fixed pixel dimensions so it renders the same size
+                   on every device — emoji glyphs vary in apparent
+                   size between OSes (Apple, Windows, Android), which
+                   is why this isn't an emoji. Tuned to match the cap
+                   height of "31" / "13" in the other columns. #}
+                <div class="home-inside__count home-inside__count--icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="8" y1="13" x2="16" y2="13"></line>
+                        <line x1="8" y1="17" x2="16" y2="17"></line>
+                        <line x1="8" y1="9" x2="10" y2="9"></line>
+                    </svg>
+                </div>
+                <h3 class="home-inside__title">
+                    <a href="/anesthesia">Anesthesia worksheet</a>
+                </h3>
+                <p class="home-inside__lede">
+                    Built so the math is done before induction.
+                    Patient-specific anesthesia worksheets covering
+                    preoperative setup, premeds, induction,
+                    intraoperative CRIs, and emergency drugs, ready
+                    to print.
+                </p>
+                <ul class="home-inside__list">
+                    <li>
+                        Preoperative and intraoperative tabs
+                        <span class="home-inside__blurb">Bag size and fluids on preop; drugs and CRIs on intraop.</span>
+                    </li>
+                    <li>
+                        Patient-specific drug volumes
+                        <span class="home-inside__blurb">In mL of standard stocks, not generic mg/kg charts.</span>
+                    </li>
+                    <li>
+                        Vasopressor and inotrope CRIs
+                        <span class="home-inside__blurb">Dopamine, dobutamine, and norepinephrine for the same patient.</span>
+                    </li>
+                </ul>
+                <a href="/anesthesia" class="home-inside__cta">Open the worksheet &rarr;</a>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}

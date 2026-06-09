@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Anaphylaxis hub | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Emergency · Workflow hub</div>
+                <h1>Anaphylaxis hub</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Workflow for acute anaphylaxis in dogs and cats.
+                    Epinephrine is the cornerstone; antihistamines and
+                    steroids are adjunctive.
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li>
+                    <strong>Epinephrine first. Always.</strong> Antihistamines
+                    and glucocorticoids cannot control or prevent anaphylaxis
+                    alone. Do not delay epinephrine to give diphenhydramine.
+                </li>
+                <li>
+                    <strong>Species differences matter.</strong> Dogs: GI and
+                    hepatic signs predominate (vomiting, abdominal pain,
+                    hepatic congestion, gallbladder wall thickening on FAST).
+                    Cats: respiratory signs predominate (bronchospasm, airway
+                    edema, increased secretions).
+                </li>
+                <li>
+                    <strong>Biphasic reaction possible.</strong> Signs may
+                    recur hours after initial resolution. Hospitalize minimum
+                    24–48 hours. Wean epinephrine CRI over 6–12 hours,
+                    never abrupt discontinuation.
+                </li>
+            </ul>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Diagnostic pattern recognition</h2>
+        <div class="compare-cards">
+            <div class="compare-card">
+                <div class="eyebrow">Dogs. GI / hepatic pattern</div>
+                <p style="margin: 0.4rem 0 0; line-height: 1.6; font-size: 0.9rem;">
+                    Acute onset vomiting, abdominal pain, diarrhea, collapse.
+                    Histamine causes hepatic arterial vasodilation +
+                    simultaneous venous congestion → portal hypertension,
+                    transudation, decreased venous return.
+                    FAST: gallbladder wall edema (halo sign) 93% sensitive,
+                    98% specific. Elevated ALT 85% sensitive.
+                    Shock is often mixed: vasodilatory + hypovolemic
+                    + cardiogenic.
+                </p>
+            </div>
+            <div class="compare-card">
+                <div class="eyebrow">Cats, respiratory pattern</div>
+                <p style="margin: 0.4rem 0 0; line-height: 1.6; font-size: 0.9rem;">
+                    Acute respiratory distress, open-mouth breathing,
+                    bronchospasm, airway edema, increased secretions.
+                    GI signs also present. High airway mast cell density
+                    in cats makes bronchoconstriction the dominant response.
+                    Suspect after recent vaccine, medication, or food exposure.
+                    Respiratory compromise may mandate emergency intubation.
+                </p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Diagnostic criteria (Pashmakova, adapted from human guidelines)</h2>
+        <div style="padding: 1rem; background: var(--paper-warm); border-radius: var(--radius); margin-top: 1rem; font-size: 0.9rem; line-height: 1.7;">
+            Anaphylaxis is likely if <strong>any one</strong> of the following:
+            <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem;">
+                <li>Acute cutaneous signs (urticaria, angioedema, pruritus) AND respiratory compromise OR hypotension/collapse</li>
+                <li>Exposure to likely allergen AND two or more of: cutaneous signs, respiratory compromise, hypotension/collapse, GI signs</li>
+                <li>Hypotension after exposure to a <em>known</em> allergen</li>
+            </ul>
+        </div>
+
+        <h2 style="margin-top: 2rem;">Treatment checklist</h2>
+
+        <ol style="list-style: none; padding-left: 0; margin-top: 1.5rem;">
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 1rem; padding-top: 0.5rem; list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">1</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Oxygen + IV access</h3>
+                    <p>
+                        Flow-by oxygen immediately for all patients. Place IV
+                        catheter. Oxygen therapy continues until stabilized;
+                        ongoing for any patient with respiratory compromise.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">2</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Epinephrine, first-line, essential</h3>
+                    <p>
+                        α₁ activity: vasoconstriction → reverses vasodilatory
+                        shock, improves coronary flow, reduces mucosal edema
+                        and upper airway obstruction. β₁ activity: positive
+                        inotropy and chronotropy → improves cardiac output.
+                        β₂ activity: bronchodilation + mast cell stabilisation
+                        → halts further mediator release.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 40%;">Initial IM dose:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">0.01 mg/kg IM (1:1000, 1 mg/mL)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">CRI (preferred):</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">0.05 µg/kg/min IV, titrate to effect</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Severe hypotension:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">IV bolus may be indicated before CRI</td>
+                        </tr>
+                    </table>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        CRI must not be interrupted, even briefly during nursing care. Short half-life
+                        means any break results in rapid rebound vasodilation. Wean over 6–12 hr
+                        once stable; faster if tachyarrhythmia or hypertension develops.
+                    </p>
+                    <a href="/epinephrine" class="btn">Open epinephrine CRI calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">3</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Fluid therapy, volume resuscitation</h3>
+                    <p>
+                        Balanced isotonic crystalloid. Administer in
+                        incremental shock-dose aliquots, reassess after
+                        each. Ongoing GI losses may be substantial; vigilant
+                        reassessment required for first 12–24 hours.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 30%;">Dogs:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">30 mL/kg bolus aliquots</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Cats:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">10 mL/kg bolus aliquots</td>
+                        </tr>
+                    </table>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        Synthetic colloids or blood products not indicated unless documented
+                        hypocoagulability with clinical bleeding (e.g. bee sting envenomation
+                        with hemoabdomen). Reassess after each aliquot, avoid overloading.
+                    </p>
+                    <a href="/fluid-therapy" class="btn">Open fluid therapy calculator →</a>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">4</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Diphenhydramine, adjunctive, not first-line</h3>
+                    <p>
+                        H1-receptor blocker. Relieves pruritus, lacrimation,
+                        and erythema. No evidence it can control or prevent
+                        anaphylaxis alone. Give after epinephrine is running,
+                        not instead of it.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 30%;">Dogs:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">1–4 mg/kg IM</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft);">Cats:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">0.5–2 mg/kg IM</td>
+                        </tr>
+                    </table>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">5</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Bronchodilation, if respiratory compromise present</h3>
+                    <p>
+                        If bronchospasm persists after epinephrine, add:
+                    </p>
+                    <ul style="margin: 0.4rem 0 0; padding-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
+                        <li><strong>Albuterol:</strong> 2 puffs via AeroKat inhaler (cats primarily)</li>
+                        <li><strong>Terbutaline:</strong> 0.01 mg/kg IM or IV slow (dogs and cats)</li>
+                    </ul>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        If severe upper airway obstruction unresponsive to epinephrine:
+                        emergency intubation. Have tracheotomy equipment ready.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">6</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Dexamethasone, adjunctive, delayed onset</h3>
+                    <p>
+                        Onset hours after administration. NOT first-line for
+                        acute anaphylaxis. Downregulates late-phase eosinophilic
+                        response and blocks arachidonic acid cascade. A 2012
+                        Cochrane review found no evidence supporting
+                        glucocorticoids in acute anaphylaxis; not in current
+                        human first-line guidelines. Use at anti-inflammatory
+                        (not immunosuppressive) dose.
+                    </p>
+                    <table style="width: 100%; font-size: 0.93rem; margin-top: 0.5rem; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0.3rem 0.5rem 0.3rem 0; color: var(--ink-soft); width: 40%;">Dexamethasone:</td>
+                            <td style="font-weight: 600; padding: 0.3rem 0;">0.1 mg/kg IV (anti-inflammatory dose)</td>
+                        </tr>
+                    </table>
+                    <p style="color: var(--ink-soft); font-size: 0.88rem; margin-top: 0.5rem;">
+                        A short tapering course of oral prednisone may follow if needed.
+                        Do not use immunosuppressive doses for acute anaphylaxis.
+                    </p>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">7</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>GI mucosal support</h3>
+                    <p>
+                        In patients with GI compromise or on vasopressor
+                        support, parenteral proton pump inhibitor is reasonable;
+                        decreased splanchnic perfusion increases ulceration risk.
+                    </p>
+                    <ul style="margin: 0.4rem 0 0; padding-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
+                        <li><strong>Pantoprazole:</strong> 1 mg/kg IV q12–24h</li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="dka-step" style="display: grid; grid-template-columns: max-content 1fr; gap: 0.85rem; align-items: start; margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); list-style: none;">
+                <div class="dka-step__number" style="background: var(--accent); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; line-height: 1; flex-shrink: 0;">8</div>
+                <div class="dka-step__body" style="min-width: 0;">
+                    <h3>Monitoring</h3>
+                    <ul style="margin: 0.4rem 0 0; padding-left: 1.25rem; line-height: 1.7;">
+                        <li>Continuous blood pressure, vasopressor support as indicated</li>
+                        <li>ECG, dysrhythmias can occur; myocardial ischemia possible</li>
+                        <li>SpO₂, especially in cats with respiratory signs</li>
+                        <li>Serial FAST, hepatic venous congestion, free fluid, gallbladder wall</li>
+                        <li>ALT at 24 hr, may dramatically increase; values may require sample dilution</li>
+                        <li>Coagulation times (PT/aPTT) if elevated ALT, liver dysfunction, or bleeding</li>
+                        <li>Renal parameters 1–2 weeks post-discharge (AKI documented in severe cases)</li>
+                        <li>Minimum hospitalisation: 24–48 hr for biphasic reaction surveillance</li>
+                    </ul>
+                </div>
+            </li>
+
+        </ol>
+
+        <section style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Pashmakova M. Anaphylaxis. In: Silverstein DC, Hopper K, eds.
+                <em>Small Animal Critical Care Medicine</em>. 3rd ed.
+                St. Louis, MO: Elsevier; 2023. Chapter 141.
+                Primary source for all doses, diagnostic criteria, species-specific
+                presentations, and monitoring recommendations.
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Simons FE, et al. World Allergy Organization guidelines for
+                the assessment and management of anaphylaxis. <em>World
+                Allergy Organ J.</em> 2011;4(2):13–37.
+                (Cited by Pashmakova as basis for epinephrine as essential drug.)
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+
+
+{% endblock %}

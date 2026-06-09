@@ -1,0 +1,187 @@
+{# Analgesia builder result panel. In per-drug mode (default and
+   Phase 2 behavior) we render one card per selected drug. In
+   combined-bag mode (Phase 3) we delegate to the combined-bag
+   partial. The branch happens at the top so each partial owns the
+   #result-panel wrapper directly. #}
+
+{% if result.prep_mode == "combined_bag" %}
+    {% include "partials/analgesia_combined_bag_result.html" %}
+{% else %}
+<div id="result-panel">
+    {# Print-only header. Hidden on screen via .print-only { display:none }
+       in analgesia_cri.html; revealed by @media print. Carries patient
+       context (otherwise the printed page would have pump rates with no
+       patient anchor since the form is hidden in print) and the
+       InfusionFox mark, paralleling the anesthesia worksheet header.
+       The timestamp is set by JS on print so it's always current. #}
+    <div class="print-only print-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 0.3rem; margin-bottom: 0.5rem;">
+            <div>
+                <div style="font-weight: 700; font-size: 1rem; line-height: 1.1;">Analgesia CRI · multi-modal</div>
+                <div style="font-size: 0.8rem; color: #444;">{{ "%.2f"|format(result.weight_kg) }} kg · {{ result.species.value }}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;">
+                <div style="display: flex; align-items: center; gap: 0.3rem;">
+                    <img src="/static/brand/logos/mark.png" alt="" aria-hidden="true" style="width: 16px; height: 16px;">
+                    <span style="font-size: 0.7rem; color: #444;">infusionfox.com</span>
+                </div>
+                <span id="print-timestamp" style="font-size: 0.7rem; color: #444;"></span>
+            </div>
+        </div>
+    </div>
+
+    {% if result.global_warnings %}
+    <div class="warnings" style="margin-bottom: 1rem;">
+        <ul style="margin: 0; padding-left: 1.25rem;">
+            {% for w in result.global_warnings %}
+            <li>{{ w }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if not result.drug_results %}
+    <div class="placeholder-panel" style="padding: 2rem; text-align: center; color: var(--ink-mute);">
+        <p style="margin: 0;">Enter a patient weight to compute pump rates.</p>
+    </div>
+    {% else %}
+    {% for dr in result.drug_results %}
+    <div class="analgesia-drug-card" style="padding: 1.25rem; border: 1px solid var(--rule); border-radius: var(--radius); margin-bottom: 1rem; background: var(--bg-soft);">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;">
+            <div>
+                <div class="eyebrow" style="margin-bottom: 0.125rem;">{{ dr.spec.role|capitalize }}</div>
+                <h2 style="margin: 0; font-size: 1.25rem;">{{ dr.spec.display_name }}</h2>
+            </div>
+            {% if dr.valid %}
+            <div style="text-align: right;">
+                <div style="font-size: 1.875rem; font-weight: 600; line-height: 1.1;">
+                    {{ "%.2f"|format(dr.ml_per_hr_pump) }}<span style="font-size: 0.85rem; font-weight: 400; color: var(--ink-soft); margin-left: 0.25rem;">mL/hr</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--ink-mute); margin-top: 0.1rem;">
+                    {{ "%.3f"|format(dr.ml_per_kg_per_hr) }} mL/kg/hr
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if dr.valid %}
+        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--ink-soft);">
+            {{ dr.dose }} {{ dr.spec.dose_unit.value }} at {{ dr.concentration_ug_per_ml|int if dr.concentration_ug_per_ml == dr.concentration_ug_per_ml|int else dr.concentration_ug_per_ml }} µg/mL
+        </div>
+
+        {% if dr.spec.syringe_prep %}
+        <div style="margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+            <strong style="color: var(--ink); font-weight: 600;">Syringe prep:</strong> {{ dr.spec.syringe_prep }}
+        </div>
+        {% endif %}
+
+        {# Formula box — same per-unit branching as the single-drug
+           result_panel template. Three branches: µg/kg/min (× 60),
+           mg/kg/hr (× 1000), and µg/kg/hr (no factor). #}
+        <details style="margin-top: 0.75rem;">
+            <summary style="font-size: 0.85rem; color: var(--ink-mute); cursor: pointer;">Formula</summary>
+            <div class="formula-box" style="margin-top: 0.5rem; padding: 0.75rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem;">
+                {% if dr.spec.dose_unit.value == 'ug/kg/min' %}
+                    weight × dose × 60 ÷ concentration<br>
+                    {{ "%.2f"|format(result.weight_kg) }} kg × {{ dr.dose }} µg/kg/min × 60 ÷ {{ dr.concentration_ug_per_ml|int if dr.concentration_ug_per_ml == dr.concentration_ug_per_ml|int else dr.concentration_ug_per_ml }} µg/mL = {{ "%.2f"|format(dr.ml_per_hr_pump) }} mL/hr
+                {% elif dr.spec.dose_unit.value == 'mg/kg/hr' %}
+                    weight × dose × 1000 ÷ concentration<br>
+                    {{ "%.2f"|format(result.weight_kg) }} kg × {{ dr.dose }} mg/kg/hr × 1000 ÷ {{ dr.concentration_ug_per_ml|int if dr.concentration_ug_per_ml == dr.concentration_ug_per_ml|int else dr.concentration_ug_per_ml }} µg/mL = {{ "%.2f"|format(dr.ml_per_hr_pump) }} mL/hr
+                {% else %}
+                    weight × dose ÷ concentration<br>
+                    {{ "%.2f"|format(result.weight_kg) }} kg × {{ dr.dose }} µg/kg/hr ÷ {{ dr.concentration_ug_per_ml|int if dr.concentration_ug_per_ml == dr.concentration_ug_per_ml|int else dr.concentration_ug_per_ml }} µg/mL = {{ "%.2f"|format(dr.ml_per_hr_pump) }} mL/hr
+                {% endif %}
+            </div>
+        </details>
+
+        {% if dr.titration_rates %}
+        <details style="margin-top: 0.5rem;">
+            <summary style="font-size: 0.85rem; color: var(--ink-mute); cursor: pointer;">Titration ladder</summary>
+            <table style="margin-top: 0.5rem; width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--rule);">
+                        <th style="text-align: left; padding: 0.25rem 0.5rem;">Dose ({{ dr.spec.dose_unit.value }})</th>
+                        <th style="text-align: right; padding: 0.25rem 0.5rem;">Pump rate (mL/hr)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tdose, tml in dr.titration_rates %}
+                    <tr {% if tdose == dr.dose %}style="background: var(--accent-soft); font-weight: 600;"{% endif %}>
+                        <td style="padding: 0.25rem 0.5rem;">{{ tdose }}</td>
+                        <td style="text-align: right; padding: 0.25rem 0.5rem;">{{ "%.2f"|format(tml) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </details>
+        {% endif %}
+
+        {# Loading-dose panels per drug. Compact rendering tuned for
+           the multi-drug card context — each scenario shows the
+           range or single value with the mL of stock and any note. #}
+        {% if dr.loading_dose_results %}
+        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--rule);">
+            <div class="eyebrow" style="margin-bottom: 0.4rem;">Loading dose</div>
+            {% for ld in dr.loading_dose_results %}
+            <div style="padding: 0.625rem 0.75rem; background: var(--paper-warm); border-radius: var(--radius); margin-bottom: 0.5rem;">
+                <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.125rem;">{{ ld.label }}</div>
+                {% if ld.description %}
+                <div style="font-size: 0.8rem; color: var(--ink-soft); margin-bottom: 0.4rem;">{{ ld.description }}</div>
+                {% endif %}
+
+                {% if ld.matched_ml_stock is not none %}
+                <div style="font-size: 1.15rem; font-weight: 600; line-height: 1.2;">
+                    {{ "%.2f"|format(ld.matched_ml_stock) }}<span style="font-size: 0.75rem; font-weight: 400; color: var(--ink-soft); margin-left: 0.25rem;">mL IV bolus</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--ink-mute);">
+                    {{ ld.matched_per_kg|int if ld.matched_per_kg == ld.matched_per_kg|int else ld.matched_per_kg }} {{ ld.dose_unit_label }}/kg × {{ "%.2f"|format(result.weight_kg) }} kg = {{ "%g"|format(ld.matched_total) }} {{ ld.dose_unit_label }} · matched to CRI rate
+                </div>
+                {% if ld.matched_outside_range %}
+                <div style="font-size: 0.8rem; color: var(--danger); margin-top: 0.25rem;">
+                    ⚠ CRI dose is outside the published loading range of {{ ld.min_per_kg|int if ld.min_per_kg == ld.min_per_kg|int else ld.min_per_kg }}–{{ ld.max_per_kg|int if ld.max_per_kg == ld.max_per_kg|int else ld.max_per_kg }} {{ ld.dose_unit_label }}/kg.
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <div style="font-size: 0.8rem; margin-top: 0.35rem; {% if ld.matched_ml_stock is not none %}padding-top: 0.35rem; border-top: 1px dashed var(--rule);{% endif %}">
+                    {% if ld.is_single_value %}
+                    <span style="color: var(--ink-mute);">Published dose:</span>
+                    <strong>{{ ld.min_per_kg|int if ld.min_per_kg == ld.min_per_kg|int else ld.min_per_kg }} {{ ld.dose_unit_label }}/kg</strong>
+                    = {{ "%g"|format(ld.min_total) }} {{ ld.dose_unit_label }} = {{ "%.2f"|format(ld.min_ml_stock) }} mL of stock
+                    {% else %}
+                    <span style="color: var(--ink-mute);">Range:</span>
+                    <strong>{{ ld.min_per_kg|int if ld.min_per_kg == ld.min_per_kg|int else ld.min_per_kg }}–{{ ld.max_per_kg|int if ld.max_per_kg == ld.max_per_kg|int else ld.max_per_kg }} {{ ld.dose_unit_label }}/kg</strong>
+                    = {{ "%g"|format(ld.min_total) }}–{{ "%g"|format(ld.max_total) }} {{ ld.dose_unit_label }} = {{ "%.2f"|format(ld.min_ml_stock) }}–{{ "%.2f"|format(ld.max_ml_stock) }} mL of stock
+                    {% endif %}
+                </div>
+
+                {% if ld.note %}
+                <div style="font-size: 0.75rem; color: var(--ink-mute); margin-top: 0.35rem; font-style: italic;">{{ ld.note }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Per-drug warnings (dose-range / persistent / caution / exceeds).
+           Stack at the bottom of the card so they don't crowd the numeric
+           output but stay tied to the drug they apply to. #}
+        {% if dr.warnings %}
+        {% set danger_ns = namespace(danger=false) %}
+        {% for w in dr.warnings %}
+            {% if 'CAUTION' in w or 'exceeds' in w or 'below' in w %}{% set danger_ns.danger = true %}{% endif %}
+        {% endfor %}
+        <div class="warnings {% if danger_ns.danger %}danger{% endif %}" style="margin-top: 0.75rem; padding: 0.625rem 0.75rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem;">
+            <ul style="margin: 0; padding-left: 1.25rem;">
+                {% for w in dr.warnings %}
+                <li>{{ w }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endif %}

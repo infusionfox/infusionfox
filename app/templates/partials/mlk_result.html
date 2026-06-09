@@ -1,0 +1,189 @@
+{# MLK CRI step-by-step walkthrough.
+   Renders the bag-build math as discrete steps:
+       Step 1: Pump rate and bag duration
+       Step 2: Per-drug calculation (morphine, lidocaine, ketamine)
+       Step 3: Bag preparation (saline to remove, drugs to add)
+       Step 4: Administration
+   Each step shows the math the user would do by hand so the calculator
+   teaches as well as computes. #}
+<div class="result" id="result-panel">
+    {% if not result.valid %}
+    <div class="warnings danger" style="margin-top: 0;">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% else %}
+
+    {# ── Headline: pump rate at a glance ───────────────────────────── #}
+    <div class="result__headline">
+        <div class="eyebrow">Pump rate</div>
+        <div class="result__primary">
+            {{ "%g"|format(result.pump_rate_ml_per_hr) }}<span class="unit">mL/hr</span>
+        </div>
+        <div class="result__secondary">
+            {{ "%.2f"|format(result.weight_kg) }} kg × {{ "%g"|format(result.pump_rate_ml_per_kg_per_hr) }} mL/kg/hr
+            · bag lasts {{ "%g"|format(result.bag_duration_hr) }} hr
+        </div>
+    </div>
+
+    {# ── Stock-concentration verification (persistent) ─────────────
+       Morphine and lidocaine both come in multiple strengths
+       (morphine 1, 2, 5, 10, 15 mg/mL; lidocaine 1% / 2% / etc.),
+       and the resulting bag is wrong by the same multiple if the
+       stock entered doesn't match the stock drawn. Always shown, so
+       the verification happens even when no other warning fires. #}
+    <div class="warnings danger" style="margin-top: 1rem;">
+        <ul>
+            <li>
+                <strong>Verify stock concentrations before drawing.</strong>
+                Morphine comes in multiple strengths (1, 2, 5, 10, 15 mg/mL);
+                lidocaine in 1% (10 mg/mL) and 2% (20 mg/mL).
+                A wrong stock value here yields a bag that is wrong by the
+                same factor. Confirm each value against the vial label
+                actually in hand.
+            </li>
+        </ul>
+    </div>
+
+    {# ── Out-of-range warnings, if any ────────────────────────────── #}
+    {% if result.warnings %}
+    <div class="warnings danger" style="margin-top: 1rem;">
+        <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {# ── Step 1: bag duration ─────────────────────────────────────── #}
+    <section style="margin-top: 1.25rem;">
+        <div class="eyebrow" style="margin-bottom: 0.5rem;">Step 1 — Bag duration</div>
+        <p style="margin: 0; color: var(--ink); font-size: 0.92rem; line-height: 1.65;">
+            {{ "%g"|format(result.bag_volume_ml) }} mL bag ÷ {{ "%g"|format(result.pump_rate_ml_per_hr) }} mL/hr =
+            <strong>{{ "%g"|format(result.bag_duration_hr) }} hr</strong>
+        </p>
+    </section>
+
+    {# ── Step 2: per-drug recipe ──────────────────────────────────── #}
+    <section style="margin-top: 1.25rem;">
+        <div class="eyebrow" style="margin-bottom: 0.5rem;">Step 2 — Drug amounts to add</div>
+        <table class="data-table" style="width: 100%; font-size: 0.9rem;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Drug</th>
+                    <th style="text-align: right;">Total in bag</th>
+                    <th style="text-align: right;">Volume to draw</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in result.components %}
+                <tr>
+                    <td>
+                        <strong>{{ c.name }}</strong>
+                        <div style="font-size: 0.82rem; color: var(--ink-mute); margin-top: 0.15rem;">
+                            {{ "%g"|format(c.dose_mg_per_kg_per_hr) }} mg/kg/hr
+                            · stock {{ "%g"|format(c.stock_mg_per_ml) }} mg/mL
+                        </div>
+                    </td>
+                    <td style="text-align: right;">
+                        <strong>{{ "%g"|format(c.total_mg_in_bag) }} mg</strong>
+                        <div style="font-size: 0.82rem; color: var(--ink-mute); margin-top: 0.15rem; line-height: 1.5;">
+                            {{ "%g"|format(c.dose_mg_per_kg_per_hr) }} mg/kg/hr<br>
+                            × {{ "%.2f"|format(result.weight_kg) }} kg
+                            × {{ "%g"|format(result.bag_duration_hr) }} hr
+                        </div>
+                    </td>
+                    <td style="text-align: right;">
+                        <strong>{{ "%g"|format(c.volume_ml_to_add) }} mL</strong>
+                        <div style="font-size: 0.82rem; color: var(--ink-mute); margin-top: 0.15rem;">
+                            {{ "%g"|format(c.total_mg_in_bag) }} mg<br>
+                            ÷ {{ "%g"|format(c.stock_mg_per_ml) }} mg/mL
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    {# ── Step 3: bag preparation ──────────────────────────────────── #}
+    <section style="margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.5rem;">Step 3 — Prepare the bag</div>
+        <ol style="margin: 0; padding-left: 1.25rem; color: var(--ink); font-size: 0.92rem; line-height: 1.7;">
+            <li>
+                Start with a <strong>{{ "%g"|format(result.bag_volume_ml) }} mL bag of 0.9 % NaCl</strong>
+                (or LRS).
+            </li>
+            <li>
+                Remove <strong>{{ "%g"|format(result.saline_to_remove_ml) }} mL</strong> of saline
+                (= sum of the drug volumes above).
+            </li>
+            <li>
+                Add to the bag:
+                <ul style="margin: 0.35rem 0 0; padding-left: 1.1rem;">
+                    {% for c in result.components %}
+                    <li>
+                        <strong>{{ "%g"|format(c.volume_ml_to_add) }} mL {{ c.name|lower }}</strong>
+                        ({{ "%g"|format(c.stock_mg_per_ml) }} mg/mL)
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            <li>Final bag volume: <strong>{{ "%g"|format(result.bag_volume_ml) }} mL</strong>.</li>
+        </ol>
+    </section>
+
+    {# ── Step 4: administration ───────────────────────────────────── #}
+    <section style="margin-top: 1.25rem;">
+        <div class="eyebrow" style="margin-bottom: 0.5rem;">Step 4 — Administer</div>
+        <p style="margin: 0; color: var(--ink); font-size: 0.92rem; line-height: 1.65;">
+            Attach an extension set and connect to the patient's IV catheter. Set the pump to
+            <strong>{{ "%g"|format(result.pump_rate_ml_per_hr) }} mL/hr</strong>. The bag will last
+            <strong>{{ "%g"|format(result.bag_duration_hr) }} hr</strong> at this rate. Monitor pain,
+            sedation, respiration, blood pressure, and ECG (lidocaine).
+        </p>
+    </section>
+
+    {# ── Step 5: controlled-drug waste ────────────────────────────── #}
+    {# Independent sub-form. It echoes the bag-builder inputs as hidden
+       fields so the waste endpoint can rebuild the identical bag without
+       depending on the bag-builder form's live state. The waste result
+       swaps into #mlk-waste-result only, so editing volume-given never
+       disturbs the walkthrough above, and recomputing the walkthrough
+       never wipes a waste entry (the bag-builder form targets
+       #result-panel; this form targets #mlk-waste-result). #}
+    <section style="margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--ink-mute); border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.5rem;">Step 5 — Document controlled-drug waste</div>
+        <p style="margin: 0 0 0.6rem; color: var(--ink-soft); font-size: 0.88rem; line-height: 1.6;">
+            Enter the volume actually infused. The unused bag remainder contains a
+            proportional amount of each drug. That's what gets wasted and logged.
+        </p>
+        <form
+            hx-post="/mlk/waste"
+            hx-target="#mlk-waste-result"
+            hx-swap="outerHTML"
+            hx-trigger="input changed delay:300ms, change"
+            hx-sync="this:replace"
+        >
+            {# Echo the bag-builder inputs so the waste endpoint rebuilds
+               the same bag. #}
+            <input type="hidden" name="weight_value" value="{{ inputs.weight_value }}">
+            <input type="hidden" name="weight_unit" value="{{ inputs.weight_unit.value }}">
+            <input type="hidden" name="pump_rate_ml_per_kg_per_hr" value="{{ inputs.pump_rate_ml_per_kg_per_hr }}">
+            <input type="hidden" name="bag_volume_ml" value="{{ inputs.bag_volume_ml }}">
+            <input type="hidden" name="morphine_dose" value="{{ inputs.morphine_dose_mg_per_kg_per_hr }}">
+            <input type="hidden" name="lidocaine_dose" value="{{ inputs.lidocaine_dose_mg_per_kg_per_hr }}">
+            <input type="hidden" name="ketamine_dose" value="{{ inputs.ketamine_dose_mg_per_kg_per_hr }}">
+            <input type="hidden" name="morphine_stock" value="{{ inputs.morphine_stock_mg_per_ml }}">
+            <input type="hidden" name="lidocaine_stock" value="{{ inputs.lidocaine_stock_mg_per_ml }}">
+            <input type="hidden" name="ketamine_stock" value="{{ inputs.ketamine_stock_mg_per_ml }}">
+            <div class="field" style="margin: 0;">
+                <label for="volume_given_ml">Volume actually given (mL)</label>
+                <input type="number" step="any" min="0" id="volume_given_ml"
+                       name="volume_given_ml"
+                       max="{{ result.bag_volume_ml }}"
+                       placeholder="of {{ "%g"|format(result.bag_volume_ml) }} mL bag">
+            </div>
+        </form>
+        {% include "partials/mlk_waste_result.html" %}
+    </section>
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+</div>

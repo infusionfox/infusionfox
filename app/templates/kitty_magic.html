@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Kitty Magic (DKT) | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Analgesia · Cats only</div>
+                <h1>Kitty Magic (DKT)</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Single-syringe IM sedation combo for cats, mixing
+                    equal volumes of dexmedetomidine, ketamine, and an
+                    opioid (butorphanol or buprenorphine) for mild,
+                    moderate, or profound sedation. Useful when IV
+                    access is impractical or minimal handling is
+                    desired. Atipamezole reverses the dex component.
+                </p>
+            </div>
+            <div class="stock">Cats only · Schedule II/III/IV</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Fixed stock concentrations required.</strong>
+                    Dexmedetomidine 0.5 mg/mL · Ketamine 100 mg/mL ·
+                    Butorphanol 10 mg/mL · Buprenorphine 0.3 mg/mL.
+                    Using different concentrations will produce wrong doses.
+                </li>
+                <li>
+                    <strong>Dexmedetomidine cardiovascular effects.</strong>
+                    Expect bradycardia and pale/grey mucous membranes, this is
+                    expected vasoconstriction, not shock. Monitor SpO₂, HR, RR,
+                    and temperature. Apply ophthalmic lubricant. Contraindicated
+                    in cardiac disease, respiratory disorders, shock, severe debilitation.
+                </li>
+            </ul>
+        </div>
+
+        <div class="calc-grid">
+            <div class="calc-form-col">
+                <form
+                    hx-post="/kitty-magic/compute"
+                    hx-target="#result-panel"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:300ms, change, load"
+                    hx-sync="this:replace"
+                >
+                    <fieldset>
+                        <legend>Patient weight</legend>
+                        <div class="field field--inline">
+                            <label for="weight_value">Weight</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="weight_value" name="weight_value"
+                                    value="{{ weight_value }}" min="0.5" step="any"
+                                    required style="width: 8rem;">
+                                <div class="segmented">
+                                    <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                                    <label for="wu-lb">lb</label>
+                                    <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                                    <label for="wu-kg">kg</label>
+                                </div>
+                            </div>
+                        </div>
+                        <p style="color: var(--ink-mute); font-size: 0.85rem; margin-top: 0.5rem;">
+                            Table range: 2–8 kg (4–18 lb)
+                        </p>
+                    </fieldset>
+
+                    <fieldset style="margin-top: 1.25rem;">
+                        <legend>Opioid</legend>
+                        <div class="field">
+                            <div class="segmented">
+                                <input type="radio" name="opioid" value="butorphanol"
+                                    id="opioid-butorphanol"
+                                    {% if (result.opioid.value if result else 'butorphanol') == 'butorphanol' %}checked{% endif %}>
+                                <label for="opioid-butorphanol">Butorphanol</label>
+                                <input type="radio" name="opioid" value="buprenorphine"
+                                    id="opioid-buprenorphine"
+                                    {% if (result.opioid.value if result else 'butorphanol') == 'buprenorphine' %}checked{% endif %}>
+                                <label for="opioid-buprenorphine">Buprenorphine</label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset style="margin-top: 1.25rem;">
+                        <legend>Sedation level</legend>
+                        <div class="field">
+                            <div class="segmented segmented--column">
+                                <span>
+                                    <input type="radio" name="level" value="mild"
+                                        id="level-mild"
+                                        {% if (result.level.value if result else 'moderate') == 'mild' %}checked{% endif %}>
+                                    <label for="level-mild">Mild &mdash; preanesthesia / sedation</label>
+                                </span>
+                                <span>
+                                    <input type="radio" name="level" value="moderate"
+                                        id="level-moderate"
+                                        {% if (result.level.value if result else 'moderate') == 'moderate' %}checked{% endif %}>
+                                    <label for="level-moderate">Moderate &mdash; castration / minor surgery</label>
+                                </span>
+                                <span>
+                                    <input type="radio" name="level" value="profound"
+                                        id="level-profound"
+                                        {% if (result.level.value if result else 'moderate') == 'profound' %}checked{% endif %}>
+                                    <label for="level-profound">Profound &mdash; OHE / invasive surgery</label>
+                                </span>
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="calc-result-col">
+                {% if result %}
+                    {% include "partials/kitty_magic_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 3rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/kitty-magic">Clinical background</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#formula">Formula</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <section id="how-it-works" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How it works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The equal-volume protocol exploits the fixed stock concentrations to produce a
+                predictable drug ratio without requiring individual weight-based calculations
+                in the moment. The Plumb's table maps cat body weight and desired depth of
+                sedation to a single volume that is drawn from each of the three vials.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Delivered doses scale with volume. At 0.2 mL per drug (4–6 kg cat, moderate):
+                dexmedetomidine ≈22 µg/kg, ketamine ≈4.4 mg/kg, butorphanol ≈0.44 mg/kg IM.
+                Onset 5–15 min, peak 15–30 min. Allow the cat to rest quietly after injection.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Choosing buprenorphine produces slower-onset but longer-duration sedation.
+                Sedation with buprenorphine + dexmedetomidine is less predictable
+                and of slower onset but longer duration than butorphanol + dexmedetomidine.
+            </p>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                For lighter sedation only (preanesthesia), ketamine can be omitted.
+                In that case, draw dexmedetomidine + opioid only at the same volumes.
+            </p>
+        </section>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <h2>Formula</h2>
+            <p>Volumes come directly from the Plumb's DKT table, looked up by weight band and sedation level. The underlying relationship for each drug is:</p>
+            <div class="formula-display">
+                $$\text{volume}_{\text{mL}} = \frac{\text{dose}_{\text{mg}}}{\text{stock}_{\text{mg/mL}}}$$
+            </div>
+            {% if result and result.in_table %}
+            <p>Worked example for this patient ({{ "%.2f"|format(result.weight_kg) }} kg, {{ result.level.value }}, {{ result.opioid.value }}):</p>
+            <div id="worked-example" class="formula-display">
+                {% for d in result.drugs %}
+                {% if d.vol_low_ml == d.vol_high_ml %}
+                $$\text{ {{- d.name -}} } = \frac{ {{ "%.4g"|format(d.dose_low_mg) }}_{\text{mg}} }{ {{ "%.4g"|format(d.stock_mg_per_ml) }}_{\text{mg/mL}} } = {{ "%.3f"|format(d.vol_low_ml) }}\,\text{mL}$$
+                {% else %}
+                $$\text{ {{- d.name -}} } = \frac{ {{ "%.4g"|format(d.dose_low_mg) }}\text{–}{{ "%.4g"|format(d.dose_high_mg) }}_{\text{mg}} }{ {{ "%.4g"|format(d.stock_mg_per_ml) }}_{\text{mg/mL}} } = {{ "%.3f"|format(d.vol_low_ml) }}\text{–}{{ "%.3f"|format(d.vol_high_ml) }}\,\text{mL}$$
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Plumb DC. <em>Plumb's Veterinary Drugs.</em> Dexmedetomidine monograph,
+                "In combination with an opioid and ketamine (ie, 'kitty magic', DKT, or Triple
+                Combination) to provide sedation and analgesia (extra-label)", cats dosing table.
+                <a href="https://plumbs.com" target="_blank" rel="noopener" style="color: var(--accent);">plumbs.com</a>
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    All doses are extra-label in the United States. DEA: dexmedetomidine is not scheduled;
+                ketamine is Schedule III; butorphanol is Schedule IV; buprenorphine is Schedule III.
+                Follow all applicable controlled substance recording and dispensing requirements.
+                </li>
+            </ul>
+        </section>
+
+    </div>
+</section>
+{% endblock %}

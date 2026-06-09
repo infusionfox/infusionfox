@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Hypernatremia | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Why mechanism matters</div>
+            <p style="margin: 0;">
+                Hypernatremia presents three different fluid problems. Pure water loss
+                needs free-water replacement. Hypotonic loss needs ECF volume restoration
+                first, then free water. Sodium gain is a solute problem, not a water
+                problem. The correct fluid depends on which mechanism caused the elevated Na.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/hypernatremia">Clinical background</a>
+            <a href="#mechanism-detail">Mechanism detail</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/hypernatremia/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Mechanism</label>
+                    <div class="segmented segmented--stack">
+                        <input type="radio" name="mechanism" value="pure_water_loss" id="mech-pwl"
+                               {% if inputs.mechanism.value == 'pure_water_loss' %}checked{% endif %}>
+                        <label for="mech-pwl">Pure water loss</label>
+                        <input type="radio" name="mechanism" value="hypotonic_loss" id="mech-hl"
+                               {% if inputs.mechanism.value == 'hypotonic_loss' %}checked{% endif %}>
+                        <label for="mech-hl">Hypotonic loss</label>
+                        <input type="radio" name="mechanism" value="solute_gain" id="mech-sg"
+                               {% if inputs.mechanism.value == 'solute_gain' %}checked{% endif %}>
+                        <label for="mech-sg">Solute gain</label>
+                    </div>
+                    <div class="help">
+                        See "Mechanism detail" below for examples and clinical clues.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value" name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="patient_na_meq_per_l">Patient serum Na (mEq/L)</label>
+                    <input type="number" step="any" min="100" max="220" id="patient_na_meq_per_l"
+                           name="patient_na_meq_per_l" value="{{ inputs.patient_na_meq_per_l }}" required>
+                </div>
+
+                <div class="field">
+                    <label for="previous_na_meq_per_l">Reference (previous normal) Na (mEq/L)</label>
+                    <input type="number" step="any" min="100" max="180" id="previous_na_meq_per_l"
+                           name="previous_na_meq_per_l" value="{{ inputs.previous_na_meq_per_l }}" required>
+                    <div class="help">
+                        Default {{ DEFAULT_PREVIOUS_NA|int }} mEq/L from a
+                        worked example in the published literature. Override
+                        with the patient's documented previous normal sodium
+                        when known.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="replacement_hours">Replacement timeframe (hours)</label>
+                    <input type="number" step="any" min="1" max="120" id="replacement_hours"
+                           name="replacement_hours" value="{{ inputs.replacement_hours }}" required>
+                    <div class="help">
+                        Standard published default is 48 hours. Extend if
+                        predicted Na drop exceeds 12 mEq/L per 24 hr.
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="maintenance_ml_per_hr">
+                        Hourly maintenance fluids (mL/hr)
+                        <span class="optional">(optional, added to deficit rate)</span>
+                    </label>
+                    <input type="number" step="any" min="0" id="maintenance_ml_per_hr"
+                           name="maintenance_ml_per_hr" value="{{ inputs.maintenance_ml_per_hr }}">
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/hypernatremia_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="mechanism-detail" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Mechanism detail</h2>
+
+            {% set mechanisms = [
+                ('Pure water loss', 'Free water lost without proportional sodium loss. ECF volume preserved or only mildly contracted.',
+                 ['Water deprivation (locked in garage, no access to water)',
+                  'Central diabetes insipidus',
+                  'Nephrogenic diabetes insipidus',
+                  'Hypodipsia / adipsia syndromes'],
+                 ['5% dextrose in water (D5W)'],
+                 'Replace the calculated water deficit with 5% dextrose in water. Glucose is metabolized leaving essentially free water.'
+                ),
+                ('Hypotonic loss', 'Water and sodium both lost, but water lost in greater proportion. ECF volume contracted; signs of hypovolemia may be present.',
+                 ['Osmotic diuresis (DKA, mannitol therapy)',
+                  'GI losses with ongoing dehydration',
+                  'Third-spacing (peritonitis, severe pancreatitis)',
+                  'Heat stroke with significant ongoing losses'],
+                 ['Initial volume restoration: 0.9% NaCl, LRS', 'Subsequent free-water replacement: 0.45% NaCl, half-strength LRS'],
+                 'Two-stage approach. Restore ECF volume with isotonic crystalloid first, then transition to hypotonic fluids. Up to 4× the suspected intravascular deficit may be needed.'
+                ),
+                ('Gain of impermeant solute', 'Sodium gained without proportional water loss. ECF volume may be expanded; signs of volume overload (pulmonary edema) may be present.',
+                 ['Hypertonic saline administration (iatrogenic)',
+                  'Sodium bicarbonate during cardiac resuscitation',
+                  'Salt toxicosis (paintball ingestion, dough ingestion, seawater)',
+                  'Sodium phosphate enemas',
+                  'Hypertonic feeding tube formulas in compromised patients'],
+                 ['5% dextrose in water (D5W)'],
+                 'Administer 5% dextrose IV. Risk of further ECF expansion in patients already volume-overloaded, loop diuretic may be needed.'
+                ),
+            ] %}
+
+            {% for name, desc, examples, fluids, strategy in mechanisms %}
+            <div style="background: white; border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.5rem 1.75rem; margin-bottom: 1rem;">
+                <h3 style="margin: 0 0 0.5rem; font-size: 1.15rem;">{{ name }}</h3>
+                <p style="color: var(--ink-soft); margin: 0 0 1rem; line-height: 1.6;">{{ desc }}</p>
+
+                <div class="eyebrow">Examples</div>
+                <ul style="color: var(--ink-soft); line-height: 1.7; margin: 0.4rem 0 1rem;">
+                    {% for ex in examples %}<li>{{ ex }}</li>{% endfor %}
+                </ul>
+
+                <div class="eyebrow">Strategy</div>
+                <p style="color: var(--ink); line-height: 1.7; margin: 0.4rem 0 1rem;">{{ strategy }}</p>
+
+                <div class="eyebrow">Fluids</div>
+                <ul style="color: var(--ink); line-height: 1.7; margin: 0.4rem 0 0;">
+                    {% for f in fluids %}<li>{{ f }}</li>{% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+
+            <h3 style="margin-top: 2rem; font-size: 1rem;">Formula</h3>
+            <div class="formula-display">
+                $$\text{water deficit (L)} = \text{Wt}_{\text{present}} \times \left( \frac{P_{Na}(\text{present})}{P_{Na}(\text{previous})} - 1 \right)$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Weight in kilograms multiplied by the ratio of present-to-previous serum
+                sodium minus one. The result is in liters of free-water deficit.
+            </p>
+
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$ {{ "%.2f"|format(result.weight_kg) }}\,\text{kg} \times \left( \frac{ {{ "%.0f"|format(result.patient_na) }} }{ {{ "%.0f"|format(result.previous_na) }} } - 1 \right) = {{ "%.2f"|format(result.water_deficit_l) }}\,\text{L}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight and sodium values to see the worked example.</p>
+                {% endif %}
+            </div>
+
+            <h3>Correction rate ceiling</h3>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Correction at less than 10–12 mEq/L per 24 hours (≈ 0.42–0.5 mEq/L/hr)
+                minimizes risk of cerebral edema from idiogenic osmoles. Faster correction is
+                particularly risky in chronic hypernatremia.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    DiBartola SP, ed. <em>Fluid, Electrolyte, and Acid-Base Disorders in
+                Small Animal Practice</em>. 4th ed. St. Louis, MO: Elsevier Saunders;
+                2012. Chapter 3 (Disorders of Sodium and Water: Hypernatremia and
+                Hyponatremia), pp. 60–61.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

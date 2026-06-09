@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Admin · InfusionFox{% endblock %}
+
+{% block content %}
+<section class="admin-page">
+    <div class="container">
+        <header class="admin-header">
+            <div class="eyebrow">Admin · signed in as {{ admin_email }}</div>
+            <h1>Dashboard</h1>
+            <nav class="admin-nav">
+                <a href="/admin/" class="active">Overview</a>
+                <a href="/admin/disclaimer-acceptances">Disclaimer acceptances ({{ da_total }})</a>
+                <a href="/admin/feedback">Feedback ({{ fb_total }})</a>
+            </nav>
+        </header>
+
+        <div class="admin-grid">
+            <div class="admin-card">
+                <div class="admin-card__label">Disclaimer acceptances</div>
+                <div class="admin-card__primary">{{ da_total }}</div>
+                <div class="admin-card__secondary">
+                    {{ da_24h }} in last 24h · {{ da_7d }} in last 7d · {{ da_30d }} in last 30d
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card__label">Unique IPs (last 30 days)</div>
+                <div class="admin-card__primary">{{ da_unique_ips_30d }}</div>
+                <div class="admin-card__secondary">
+                    Rough proxy for distinct devices.
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card__label">Feedback — open</div>
+                <div class="admin-card__primary">{{ fb_new }}</div>
+                <div class="admin-card__secondary">
+                    {% if fb_dose_concern_new %}
+                    <strong style="color: var(--sev-critical, #b8131b);">{{ fb_dose_concern_new }} dose-concern</strong> · 
+                    {% endif %}
+                    {{ fb_total }} all-time
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-row">
+            <div class="admin-block">
+                <h2>Acceptances by disclaimer version</h2>
+                {% if da_by_version %}
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Version</th><th style="text-align:right;">Count</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in da_by_version %}
+                        <tr>
+                            <td><code>{{ row.version }}</code></td>
+                            <td style="text-align:right;">{{ row.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="admin-empty">No acceptances yet.</p>
+                {% endif %}
+            </div>
+
+            <div class="admin-block">
+                <h2>Feedback by kind</h2>
+                {% if fb_by_kind %}
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Kind</th><th style="text-align:right;">Count</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in fb_by_kind %}
+                        <tr>
+                            <td>{{ row.kind }}</td>
+                            <td style="text-align:right;">{{ row.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="admin-empty">No feedback yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="admin-row">
+            <div class="admin-block">
+                <h2>Recent disclaimer acceptances</h2>
+                {% if recent_da %}
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>When (UTC)</th>
+                            <th>Version</th>
+                            <th>IP</th>
+                            <th>User agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recent_da %}
+                        <tr>
+                            <td><time datetime="{{ r.accepted_at.isoformat() if r.accepted_at else '' }}">
+                                {{ r.accepted_at.strftime("%Y-%m-%d %H:%M") if r.accepted_at else "—" }}
+                            </time></td>
+                            <td><code>{{ r.disclaimer_version }}</code></td>
+                            <td><code>{{ r.ip_address or "—" }}</code></td>
+                            <td class="admin-table__truncate" title="{{ r.user_agent or '' }}">
+                                {{ (r.user_agent[:60] + "…") if r.user_agent and r.user_agent|length > 60 else (r.user_agent or "—") }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p style="margin-top: 0.5rem;">
+                    <a href="/admin/disclaimer-acceptances">See all →</a>
+                    &nbsp;·&nbsp;
+                    <a href="/admin/disclaimer-acceptances/export.csv">Export CSV</a>
+                </p>
+                {% else %}
+                <p class="admin-empty">No acceptances yet.</p>
+                {% endif %}
+            </div>
+
+            <div class="admin-block">
+                <h2>Recent feedback</h2>
+                {% if recent_fb %}
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>When (UTC)</th>
+                            <th>Kind</th>
+                            <th>Status</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recent_fb %}
+                        <tr>
+                            <td><time datetime="{{ r.created_at.isoformat() if r.created_at else '' }}">
+                                {{ r.created_at.strftime("%Y-%m-%d %H:%M") if r.created_at else "—" }}
+                            </time></td>
+                            <td>
+                                {% if r.kind.value == "dose_concern" %}
+                                <strong style="color: var(--sev-critical, #b8131b);">{{ r.kind.value }}</strong>
+                                {% else %}
+                                {{ r.kind.value }}
+                                {% endif %}
+                            </td>
+                            <td>{{ r.status.value }}</td>
+                            <td class="admin-table__truncate">
+                                <a href="/admin/feedback/{{ r.id }}">
+                                    {{ (r.message[:50] + "…") if r.message and r.message|length > 50 else (r.message or "—") }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p style="margin-top: 0.5rem;">
+                    <a href="/admin/feedback">See all →</a>
+                    &nbsp;·&nbsp;
+                    <a href="/admin/feedback/export.csv">Export CSV</a>
+                </p>
+                {% else %}
+                <p class="admin-empty">No feedback yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+{% include "admin/_admin_styles.html" %}
+{% endblock %}

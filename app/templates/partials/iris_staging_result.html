@@ -1,0 +1,88 @@
+<div id="result-panel">
+    {# Safety Rule #8 gate: only render the staging result once the
+       clinician has entered creatinine. The not-computed branch shows
+       a placeholder so the page doesn't look broken — it tells the
+       user what's needed to compute. #}
+    {% if not result.computed %}
+        <div class="placeholder-panel" style="padding: 2rem; text-align: center; color: var(--ink-mute);">
+            <p style="margin: 0;">Enter creatinine to compute IRIS stage.</p>
+        </div>
+    {% else %}
+    {% set stage_color = {
+        1: "var(--success)",
+        2: "var(--success)",
+        3: "var(--sev-high)",
+        4: "var(--sev-critical)"
+    }[result.final_stage] %}
+
+    <div class="result__headline">
+        <div class="eyebrow">IRIS Stage</div>
+        <div class="result__primary" style="color: {{ stage_color }};">
+            {{ result.final_stage }}
+        </div>
+        <div class="result__secondary">
+            {% if result.stage_sdma > 0 and result.stage_sdma > result.stage_creatinine %}
+            Staged by SDMA (creatinine = Stage {{ result.stage_creatinine }})
+            {% elif result.stage_sdma > 0 %}
+            Staged by creatinine and SDMA
+            {% else %}
+            Staged by creatinine
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid {{ stage_color }}; border-radius: var(--radius); font-size: 0.92rem; line-height: 1.55;">
+        {{ result.stage_description }}
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 1.5rem;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--line);">
+                <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Marker</th>
+                <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Value</th>
+                <th style="text-align: right; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Stage / substage</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 0.5rem; color: var(--ink-soft);">Creatinine</td>
+                <td style="padding: 0.5rem;">{{ "%g"|format(result.inputs.creatinine_mg_dl) }} mg/dL</td>
+                <td style="padding: 0.5rem; text-align: right; font-weight: 600;">Stage {{ result.stage_creatinine }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 0.5rem; color: var(--ink-soft);">SDMA</td>
+                <td style="padding: 0.5rem;">
+                    {% if result.inputs.sdma_ug_dl > 0 %}{{ "%g"|format(result.inputs.sdma_ug_dl) }} µg/dL{% else %}<em style="color: var(--ink-mute);">not measured</em>{% endif %}
+                </td>
+                <td style="padding: 0.5rem; text-align: right; font-weight: 600;">
+                    {% if result.stage_sdma > 0 %}Stage {{ result.stage_sdma }}{% else %}—{% endif %}
+                </td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 0.5rem; color: var(--ink-soft);">UPC ratio</td>
+                <td style="padding: 0.5rem;">
+                    {% if result.inputs.upc > 0 %}{{ "%g"|format(result.inputs.upc) }}{% else %}<em style="color: var(--ink-mute);">not measured</em>{% endif %}
+                </td>
+                <td style="padding: 0.5rem; text-align: right; font-weight: 600;">{{ result.upc_label }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 0.5rem; color: var(--ink-soft);">Systolic BP</td>
+                <td style="padding: 0.5rem;">
+                    {% if result.inputs.sbp_mmhg > 0 %}{{ result.inputs.sbp_mmhg|int }} mmHg{% else %}<em style="color: var(--ink-mute);">not measured</em>{% endif %}
+                </td>
+                <td style="padding: 0.5rem; text-align: right; font-weight: 600;">
+                    {{ result.bp_label }}{% if result.bp_organ_risk %}<br><span style="font-weight: 400; font-size: 0.8rem; color: var(--ink-mute);">{{ result.bp_organ_risk }}</span>{% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.85rem; color: var(--ink-soft);">
+        <p style="margin: 0;">
+            IRIS staging requires that creatinine and SDMA be measured on at least two occasions in a hydrated, stable patient before final stage assignment. Use this calculator as a quick reference; the formal stage requires repeat testing.
+        </p>
+    </div>
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+    {% endif %}
+</div>

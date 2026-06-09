@@ -1,0 +1,42 @@
+{# Tabbed wrapper combining the preop and intraop anesthesia sheets.
+   HTMX swap target for /anesthesia/compute; one form posts and gets
+   both sheets back, the tab UI controls which is visible.
+
+   Tab state is preserved across HTMX swaps by reading the form's
+   hidden `active_tab` input (server) and re-applying the right
+   `is-active` class via the partial template (also server). The
+   browser-side JS (in anesthesia_hub.html) toggles the input value
+   and triggers a refresh when the user clicks a tab. #}
+<div id="anesthesia-sheet-wrapper">
+    <div class="anesthesia-tab-bar no-print" role="tablist" aria-label="Anesthesia sheet">
+        <button type="button"
+            class="anesthesia-tab-btn{% if active_tab == 'preop' %} is-active{% endif %}"
+            role="tab"
+            aria-selected="{% if active_tab == 'preop' %}true{% else %}false{% endif %}"
+            data-target="preop"
+            onclick="infusionfox_anesthesia_activateTab('preop')">
+            Preoperative
+        </button>
+        <button type="button"
+            class="anesthesia-tab-btn{% if active_tab == 'intraop' %} is-active{% endif %}"
+            role="tab"
+            aria-selected="{% if active_tab == 'intraop' %}true{% else %}false{% endif %}"
+            data-target="intraop"
+            onclick="infusionfox_anesthesia_activateTab('intraop')">
+            Intraoperative
+        </button>
+        <button type="button"
+            class="anesthesia-print-btn no-print"
+            onclick="infusionfox_anesthesia_print()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: text-bottom; margin-right: 0.35rem;">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Print
+        </button>
+    </div>
+
+    {% include "partials/anesthesia_sheet_preop.html" %}
+    {% include "partials/anesthesia_sheet_intraop.html" %}
+</div>

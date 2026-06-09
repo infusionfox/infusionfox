@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Insulin IM · DKA | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">{{ meta.category }}</div>
+                <h1>{{ meta.display_name }}</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    {{ meta.indications_summary }}
+                </p>
+            </div>
+            <div class="stock">Regular crystalline insulin · U-100 · IM only</div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 1.5rem;">
+            <ul>
+                <li>
+                    <strong>Regular crystalline insulin only.</strong> Do
+                    NOT use lispro, aspart, NPH, glargine, detemir, or any
+                    long- or ultra-short-acting form for this protocol.
+                </li>
+                <li>
+                    <strong>IM route only.</strong> Do not give SC in a
+                    dehydrated DKA patient, absorption is unreliable.
+                    Switch to SC long-acting insulin only after
+                    rehydration and once the patient is reliably eating
+                    and drinking.
+                </li>
+                <li>
+                    <strong>Goal: BG decline ≤ 50–75 mg/dL/hr</strong>
+                    toward &lt; 250 mg/dL. Re-check BG hourly. If BG fails
+                    to drop into the 50–75 mg/dL target band over
+                    multiple cycles, reassess hydration, electrolytes,
+                    and concurrent disease; consider switching to
+                    <a href="/insulin-cri-dka">IV CRI</a> for finer
+                    titration.
+                </li>
+            </ul>
+        </div>
+
+        <div class="admonition" style="margin-bottom: 2rem;">
+            <div class="admonition-title">Two-mode workflow</div>
+            <p style="margin: 0;">
+                <strong>Loading:</strong> first dose at admission, fixed
+                at 0.2 U/kg IM. Then re-check BG in 1 hour and switch to
+                <strong>Subsequent</strong> mode, entering the previous
+                and current BG to get the next IM dose.
+            </p>
+        </div>
+
+        <nav class="calc-tabs">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="/learn/insulin-im-dka">Clinical background</a>
+            <a href="#formula">Formula</a>
+            <a href="#sliding-scale">Sliding scale</a>
+            <a href="#electrolytes">Electrolytes &amp; monitoring</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <div class="calc-grid" id="calculator">
+            <form
+                hx-post="/insulin-im-dka/compute"
+                hx-target="#result-panel"
+                hx-swap="outerHTML"
+                hx-trigger="input changed delay:250ms, change, load"
+            >
+                <div class="field">
+                    <label>Mode</label>
+                    <div class="segmented">
+                        <input type="radio" name="mode" value="loading" id="m-load"
+                               {% if inputs.mode.value == 'loading' %}checked{% endif %}
+                               onchange="document.getElementById('subsequent-fields').style.display='none'">
+                        <label for="m-load">Loading (first dose)</label>
+                        <input type="radio" name="mode" value="subsequent" id="m-sub"
+                               {% if inputs.mode.value == 'subsequent' %}checked{% endif %}
+                               onchange="document.getElementById('subsequent-fields').style.display=''">
+                        <label for="m-sub">Subsequent (hourly)</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Species</label>
+                    <div class="segmented">
+                        <input type="radio" name="species" value="dog" id="sp-dog"
+                               {% if inputs.species.value == 'dog' %}checked{% endif %}>
+                        <label for="sp-dog">Dog</label>
+                        <input type="radio" name="species" value="cat" id="sp-cat"
+                               {% if inputs.species.value == 'cat' %}checked{% endif %}>
+                        <label for="sp-cat">Cat</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="weight_value">Patient weight</label>
+                    <div class="field-group">
+                        <input type="number" step="any" min="0.1" id="weight_value"
+                               name="weight_value" value="{{ weight_value if weight_value is defined else inputs.weight_value }}" required autofocus>
+                        <div class="segmented">
+                            <input type="radio" name="weight_unit" value="lb" id="wu-lb"
+                                   {% if inputs.weight_unit.value == 'lb' %}checked{% endif %}>
+                            <label for="wu-lb">lb</label>
+                            <input type="radio" name="weight_unit" value="kg" id="wu-kg"
+                                   {% if inputs.weight_unit.value == 'kg' %}checked{% endif %}>
+                            <label for="wu-kg">kg</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="subsequent-fields" style="{% if inputs.mode.value != 'subsequent' %}display: none;{% endif %}">
+                    <div class="field">
+                        <label for="previous_bg_mg_per_dl">Previous BG (mg/dL)</label>
+                        <input type="number" step="1" min="20" max="900"
+                               id="previous_bg_mg_per_dl" name="previous_bg_mg_per_dl"
+                               value="{{ inputs.previous_bg_mg_per_dl or '' }}">
+                        <div class="help">
+                            Blood glucose 1 hour ago (before the previous IM dose).
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="current_bg_mg_per_dl">Current BG (mg/dL)</label>
+                        <input type="number" step="1" min="20" max="900"
+                               id="current_bg_mg_per_dl" name="current_bg_mg_per_dl"
+                               value="{{ inputs.current_bg_mg_per_dl or '' }}">
+                        <div class="help">
+                            Blood glucose just measured. Calculator computes
+                            the drop and selects the next dose from the scale.
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <div class="calc-right-column">
+                {% if result %}
+                    {% include "partials/insulin_im_dka_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <section id="formula" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>How the calculation works</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Each IM dose is weight-based. Total units and draw volume from U-100 stock:
+            </p>
+            <div class="formula-display">
+                $$\text{total units (U)} = \text{dose}_{\text{U/kg}} \times \text{weight}_{\text{kg}}$$
+            </div>
+            <div class="formula-display">
+                $$\text{volume (mL)} = \frac{\text{total units}}{100_{\text{U/mL}}}$$
+            </div>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                In subsequent mode, the BG drop over the previous hour determines the next dose from the Hoehne sliding scale. The target band is 50–75 mg/dL/hr:
+            </p>
+            <div class="formula-display">
+                $$\Delta\text{BG} = \text{BG}_{\text{previous}} - \text{BG}_{\text{current}}$$
+            </div>
+            <h3>Worked example with current inputs</h3>
+            <div id="worked-example" class="formula-display">
+                {% if result %}
+                $$\text{total units} = {{ result.dose_u_per_kg }}_{\text{U/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.2f"|format(result.total_units) }}\,\text{U}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div id="worked-example-volume" class="formula-display">
+                {% if result %}
+                $$\text{volume} = \frac{ {{ "%.2f"|format(result.total_units) }} }{100} = {{ "%.3f"|format(result.volume_ml_u100) }}\,\text{mL (U-100 syringe)}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
+                {% endif %}
+            </div>
+            <div id="worked-example-bg" class="formula-display">
+                {% if result and result.bg_drop_mg_per_dl is not none %}
+                $$\Delta\text{BG} = {{ result.previous_bg|int }} - {{ result.current_bg|int }} = {{ result.bg_drop_mg_per_dl|int }}\,\text{mg/dL/hr}$$
+                {% else %}
+                <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter previous and current BG to see the worked example.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="sliding-scale" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>Hoehne IM sliding scale</h2>
+            <p style="color: var(--ink-soft); max-width: 65ch;">
+                Reproduced from Hoehne SN, in Silverstein &amp; Hopper 3rd
+                ed. Ch. 73 (citing Macintire 1993). Initial dose
+                {{ "%g"|format(loading_dose_u_per_kg) }} U/kg IM, then
+                hourly IM injections dosed by the BG drop in the
+                previous hour.
+            </p>
+            <div class="reference-table-wrap" style="margin-top: 1rem;">
+                <table class="reference-table">
+                    <thead>
+                        <tr>
+                            <th>Previous-hour BG drop</th>
+                            <th>Next IM dose</th>
+                            <th>Interpretation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tier in tiers %}
+                        <tr {% if result and result.matched_tier and tier.label == result.matched_tier.label %}style="background: var(--paper-warm); font-weight: 600;"{% endif %}>
+                            <td>{{ tier.label }}</td>
+                            <td>{{ "%g"|format(tier.dose_u_per_kg) }} U/kg IM</td>
+                            <td style="font-size: 0.85rem; font-weight: normal;">{{ tier.interpretation }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p style="color: var(--ink-soft); font-size: 0.85rem; margin-top: 0.75rem;">
+                Currently-matched tier is highlighted (in subsequent
+                mode). The 50–75 mg/dL/hr drop band is the desired
+                target; both faster and slower decline trigger a dose
+                change in the next cycle.
+            </p>
+        </section>
+
+        <section id="electrolytes" style="margin-top: 3rem;">
+            <div class="eyebrow">Concurrent management</div>
+            <h2>Electrolytes and monitoring</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Same electrolyte cautions apply as for the CRI protocol:
+                hypokalemia, hypophosphatemia, and hypomagnesemia
+                commonly worsen as DKA therapy progresses. Monitor every
+                4–6 hours initially.
+            </p>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li><strong>Potassium:</strong> KCl CRI per <a href="/hypokalemia">/hypokalemia</a> sliding scale.</li>
+                <li><strong>Phosphate:</strong> KPhos CRI 0.03–0.12 mmol/kg/hr IV; subtract its K contribution from total K supplementation.</li>
+                <li><strong>Magnesium:</strong> MgSO₄ CRI 0.25–1 mEq/kg/day for documented hypomagnesemia.</li>
+                <li><strong>Bicarbonate:</strong> only if arterial pH &lt; 7.0 after 1 hr of fluid therapy; one-third to one-half of calculated dose.</li>
+            </ul>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                Re-check BG every hour. As BG approaches 250 mg/dL, add
+                2.5% dextrose to the IV fluids; step to 5% dextrose at
+                BG &lt; 150 mg/dL; STOP insulin (the next IM dose) at
+                BG &lt; 100 mg/dL and continue 5% dextrose until BG
+                recovers.
+            </p>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Hoehne SN. Diabetic Ketoacidosis. In: Silverstein DC,
+                Hopper K, eds. <em>Small Animal Critical Care Medicine</em>.
+                3rd ed. St. Louis, MO: Elsevier; 2023. Chapter 73, pp.
+                432–435. Intermittent IM protocol described on p. 434
+                (citing Macintire DK, "Emergency therapy of diabetic
+                crises: insulin overdose, diabetic ketoacidosis, and
+                hyperosmolar coma," <em>Vet Clin North Am Small Anim
+                Pract</em>. 1995;25(3):639–650, as ref 28).
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    See also <a href="/insulin-cri-dka">/insulin-cri-dka</a>
+                for the IV CRI alternative protocol.
+                </li>
+            </ul>
+        </section>
+    </div>
+</section>
+{% endblock %}

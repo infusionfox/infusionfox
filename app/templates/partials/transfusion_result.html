@@ -1,0 +1,118 @@
+    <div id="result-panel">
+    <div style="margin-bottom: 1rem; color: var(--ink-soft); font-size: 0.85rem;">
+        <strong style="color: var(--ink);">{{ "%.1f"|format(result.weight_kg) }} kg {{ result.inputs.species }}</strong>
+        · Total blood volume: {{ "%g"|format(result.blood_volume_ml) }} mL
+        <span style="color: var(--ink-mute);">
+            ({{ "%.1f"|format(result.weight_kg) }} kg × {{ 90 if result.inputs.species == "dog" else 60 }} mL/kg)
+        </span>
+    </div>
+
+    <div class="result__headline">
+        <div class="eyebrow">
+            {% if result.inputs.product == "prbc" %}pRBC volume
+            {% elif result.inputs.product == "whole_blood" %}Whole blood volume
+            {% else %}FFP volume{% endif %}
+        </div>
+        <div class="result__primary" style="color: var(--signal);">
+            {{ "%g"|format(result.total_volume_ml) }} mL
+        </div>
+        {% if result.inputs.product != "ffp" %}
+        <div class="result__secondary">
+            To raise PCV from {{ result.inputs.pcv_current|int }}% → {{ result.inputs.pcv_target|int }}%
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: var(--ink-mute); line-height: 1.6;">
+            ({{ result.inputs.pcv_target|int }}% − {{ result.inputs.pcv_current|int }}%) ÷ {{ result.donor_pcv|int }}% donor PCV × {{ "%g"|format(result.blood_volume_ml) }} mL blood volume = {{ "%g"|format(result.total_volume_ml) }} mL
+        </div>
+        {% else %}
+        <div class="result__secondary">
+            {{ result.inputs.ffp_dose_ml_kg|int }} mL/kg dose
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.78rem; color: var(--ink-mute); line-height: 1.6;">
+            {{ result.inputs.ffp_dose_ml_kg|int }} mL/kg × {{ "%.1f"|format(result.weight_kg) }} kg = {{ "%g"|format(result.total_volume_ml) }} mL
+        </div>
+        {% endif %}
+    </div>
+
+    {% if result.warnings %}
+    <div class="warnings warning" style="margin-top: 1.25rem;">
+        <ul>
+            {% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# ===== Rate table ===== #}
+    {% if result.total_volume_ml > 0 %}
+    <h3 style="margin-top: 1.5rem; font-size: 1rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.78rem;">Infusion rates</h3>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--line);">
+                <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Phase</th>
+                <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Duration</th>
+                <th style="text-align: right; padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Rate</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 0.55rem 0.5rem; vertical-align: top;">
+                    <strong>Slow trial</strong><br>
+                    <span style="color: var(--ink-mute); font-size: 0.78rem;">Watch for acute reaction</span>
+                </td>
+                <td style="padding: 0.55rem 0.5rem; vertical-align: top;">First 30 min</td>
+                <td style="padding: 0.55rem 0.5rem; text-align: right; vertical-align: top; font-weight: 600;">
+                    {{ "%g"|format(result.slow_trial_rate_ml_hr) }} mL/hr
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 0.55rem 0.5rem; vertical-align: top;">
+                    <strong>Main rate</strong><br>
+                    <span style="color: var(--ink-mute); font-size: 0.78rem;">If no reaction</span>
+                </td>
+                <td style="padding: 0.55rem 0.5rem; vertical-align: top;">~{{ "%g"|format(result.main_duration_hr) }} hr</td>
+                <td style="padding: 0.55rem 0.5rem; text-align: right; vertical-align: top; font-weight: 600;">
+                    {{ "%g"|format(result.main_rate_ml_hr) }} mL/hr
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <p style="font-size: 0.82rem; color: var(--ink-mute); margin-top: 0.6rem; line-height: 1.5;">
+        Total transfusion time should not exceed 4 hours. If patient cannot tolerate the calculated rate (volume overload, cardiac disease), split into multiple smaller transfusions.
+    </p>
+
+    {# ===== Premedication ===== #}
+    <h3 style="margin-top: 1.5rem; font-size: 0.78rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em;">Diphenhydramine premedication</h3>
+    <div style="margin-top: 0.5rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.9rem;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div>
+                <strong>1 mg/kg IM</strong>
+                <span style="color: var(--ink-mute); font-size: 0.85rem;"> · 50 mg/mL stock</span>
+            </div>
+            <div style="text-align: right;">
+                <strong>{{ "%g"|format(result.diphenhydramine_mg) }} mg</strong>
+                · {{ "%g"|format(result.diphenhydramine_ml) }} mL
+            </div>
+        </div>
+        <p style="margin: 0.5rem 0 0; color: var(--ink-mute); font-size: 0.8rem; line-height: 1.5;">
+            Optional. Prophylaxis for mild allergic / urticarial reactions only. Does not prevent acute hemolytic reactions. Many specialists do not routinely premedicate first transfusions.
+        </p>
+    </div>
+
+    {# ===== Quick checklist ===== #}
+    <h3 style="margin-top: 1.5rem; font-size: 0.78rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em;">Pre-transfusion checklist</h3>
+    <div style="margin-top: 0.5rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; line-height: 1.6;">
+        <ul style="margin: 0; padding-left: 1.2rem;">
+            {% if result.inputs.species == "cat" %}
+            <li><strong>Blood type AND crossmatch</strong> required before every cat transfusion.</li>
+            {% else %}
+            <li>Blood type before first transfusion. <strong>Crossmatch required</strong> before any subsequent transfusion or any transfusion in a patient with prior pregnancy.</li>
+            {% endif %}
+            <li>Baseline TPR, mucous membrane color, PCV/TS, BUN/creatinine.</li>
+            <li>Confirm IV access patent. 18-gauge or larger preferred for canine pRBC; 20-gauge OK for cats.</li>
+            <li>Use a blood-administration set with in-line filter (170–260 µm). Do not co-administer LRS through the same line (calcium → clot).</li>
+            <li>Warm refrigerated product to room temperature only; do not warm above 37°C.</li>
+        </ul>
+    </div>
+    {% endif %}
+
+    {% with sources = result.sources %}{% include "partials/_source_cite.html" %}{% endwith %}
+</div>

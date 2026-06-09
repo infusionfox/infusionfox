@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}CPR Dosing. RECOVER Guidelines | InfusionFox{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="container">
+        <div class="calc-header">
+            <div>
+                <div class="eyebrow">Emergency</div>
+                <h1>CPR dosing calculator</h1>
+                <p style="color: var(--ink-soft); max-width: 60ch; margin: 0.25rem 0 0;">
+                    Weight-based doses for cardiopulmonary arrest per the
+                    2024 RECOVER CPR guidelines. Enter patient weight to
+                    generate a patient-specific dose sheet.
+                </p>
+            </div>
+        </div>
+
+        <div class="warnings danger" style="margin-bottom: 2rem;">
+            <ul>
+                <li><strong>For use during active CPR only.</strong> Confirm drug concentrations on every vial. Doses are IV/IO unless otherwise noted.</li>
+            </ul>
+        </div>
+
+        <div class="calc-grid">
+            <!-- Form -->
+            <div class="calc-form-col">
+                <form
+                    hx-post="/cpr/compute"
+                    hx-target="#result-panel"
+                    hx-swap="outerHTML"
+                    hx-trigger="input changed delay:250ms, change, load"
+                >
+                    <fieldset>
+                        <legend>Patient weight</legend>
+                        <div class="field field--inline">
+                            <label for="weight_value">Weight</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input
+                                    type="number"
+                                    id="weight_value"
+                                    name="weight_value"
+                                    value="{{ weight_value }}"
+                                    min="0.5"
+                                    max="350"
+                                    step="any"
+                                    required
+                                    style="width: 8rem;"
+                                >
+                                <div class="segmented">
+                                    <input type="radio" name="weight_unit" value="lb" id="wu-lb" {% if weight_unit == 'lb' %}checked{% endif %}>
+                                    <label for="wu-lb">lb</label>
+                                    <input type="radio" name="weight_unit" value="kg" id="wu-kg" {% if weight_unit == 'kg' %}checked{% endif %}>
+                                    <label for="wu-kg">kg</label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+
+                <div style="margin-top: 2rem; padding: 1rem; background: var(--paper-warm); border-radius: var(--radius); font-size: 0.88rem; color: var(--ink-soft); line-height: 1.6;">
+                    <div class="eyebrow" style="margin-bottom: 0.5rem;">Quick reference</div>
+                    <p style="margin: 0 0 0.5rem;"><strong>BLS cycle:</strong> 30 compressions : 2 breaths (1-rescuer) or 30:2 / continuous with async ventilation (2-rescuer). Rate 100–120/min, depth ⅓ chest.</p>
+                    <p style="margin: 0 0 0.5rem;"><strong>Epinephrine:</strong> every 3–5 min after first dose.</p>
+                    <p style="margin: 0;"><strong>Check rhythm</strong> every 2 min. Minimize interruptions.</p>
+                </div>
+            </div>
+
+            <!-- Result panel -->
+            <div class="calc-result-col">
+                {% if result %}
+                    {% include "partials/cpr_result.html" %}
+                {% else %}
+                    {% include "partials/_invalid_input_placeholder.html" %}
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="calc-tabs" style="margin-top: 3rem;">
+            <a href="#calculator" class="active">Calculator</a>
+            <a href="#algorithm">Algorithm overview</a>
+            <a href="#sources">Sources</a>
+        </nav>
+
+        <section id="algorithm" style="margin-top: 3rem;">
+            <div class="eyebrow">Reference</div>
+            <h2>CPR algorithm overview</h2>
+            <p style="color: var(--ink-soft); line-height: 1.7;">
+                The RECOVER guidelines follow a BLS-first approach. Establish IV/IO access as early as possible but do not interrupt compressions to do so.
+            </p>
+            <ol style="color: var(--ink-soft); line-height: 2; padding-left: 1.5rem;">
+                <li>Begin chest compressions immediately. Rate 100–120/min.</li>
+                <li>Establish airway, intubate if possible; bag-mask if not.</li>
+                <li>Attach ECG as soon as available, identify rhythm.</li>
+                <li><strong>Shockable (VF/pVT):</strong> defibrillate → resume CPR immediately → recheck in 2 min.</li>
+                <li><strong>Non-shockable (PEA/asystole):</strong> epinephrine IV/IO every 3–5 min; identify and treat reversible causes (4 Hs &amp; 4 Ts).</li>
+                <li>Consider vasopressin as alternative or adjunct to epinephrine.</li>
+                <li>Atropine for PEA/asystole, rapid bolus.</li>
+                <li>Anti-arrhythmics (amiodarone or lidocaine) for refractory VF/pVT after 2nd shock.</li>
+                <li>Reversal agents if opioid, benzo, or alpha-2 sedation may be contributing.</li>
+            </ol>
+        </section>
+
+        <section id="sources" style="margin-top: 3rem;">
+            <h2>Sources</h2>
+            <ul style="color: var(--ink-soft); line-height: 1.7;">
+                <li style="margin-bottom: 0.5rem;">
+                    Wolf J, Buckley GJ, Rozanski EA, et al.
+                2024 RECOVER Guidelines: Advanced Life Support, evidence and knowledge gap analysis
+                with treatment recommendations for small animal CPR.
+                <em>Journal of Veterinary Emergency and Critical Care.</em> 26 June 2024.
+                <a href="https://onlinelibrary.wiley.com/doi/10.1111/vec.13393" target="_blank" rel="noopener" style="color: var(--accent);">doi:10.1111/vec.13393</a>
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    Always verify drug concentrations against the vial in front of you. Stock concentrations vary by supplier and formulary.
+                </li>
+            </ul>
+        </section>
+
+    </div>
+</section>
+{% endblock %}
