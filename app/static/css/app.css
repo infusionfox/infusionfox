@@ -3312,11 +3312,11 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
 }
 
 .hero__shot--animation {
-    /* Aspect matches the screen recording (1010x852, ~1.185:1).
+    /* Aspect matches the screen recording (994x798, ~1.245:1).
      * max-width keeps the tile from growing absurdly wide on huge
      * displays; the column itself sets the upper bound on most
      * viewports. */
-    aspect-ratio: 1010 / 852;
+    aspect-ratio: 994 / 798;
     width: 100%;
     max-width: 600px;
 }

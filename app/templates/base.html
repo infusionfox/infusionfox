@@ -6,10 +6,16 @@
     <title>{% block title %}{{ site_name }}{% endblock %}</title>
     <meta name="description" content="{% block description %}{{ tagline }}{% endblock %}">
 
-    <!-- Favicons & PWA manifest -->
-    <link rel="icon" type="image/svg+xml" href="/static/brand/favicons/favicon.svg">
+    <!-- Favicons & PWA manifest.
+         Light-mode + dark-mode PNG variants. The dark variants
+         color-swap the navy outline of the logo to white so the
+         mark stays readable on dark browser tabs. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicons/favicon-32.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/brand/favicons/favicon-16.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicons/favicon-32-dark.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/brand/favicons/favicon-16-dark.png" media="(prefers-color-scheme: dark)">
+    <!-- Fallback for browsers that ignore the media attribute. -->
     <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicons/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/brand/favicons/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/brand/favicons/apple-touch-icon.png">
     <link rel="manifest" href="/static/site.webmanifest">
     <meta name="theme-color" content="#1C3A57">
