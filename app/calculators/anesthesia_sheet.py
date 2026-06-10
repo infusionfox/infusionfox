@@ -1299,7 +1299,7 @@ def _calculate_impl(
         # support on an IV pump.
         norepi_cri = CRILine(
             name="Norepinephrine",
-            dose_label="0.1–0.5 µg/kg/min",
+            dose_label="0.1–1.0 µg/kg/min",
             rate_low_ml_per_hr=0.0,
             rate_high_ml_per_hr=0.0,
             prep_note=(
@@ -1318,7 +1318,7 @@ def _calculate_impl(
         norepi_prep_note = norepi_recipe
         norepi_cri = CRILine(
             name="Norepinephrine",
-            dose_label="0.1–0.5 µg/kg/min",
+            dose_label="0.1–1.0 µg/kg/min",
             rate_low_ml_per_hr=norepi_low,
             rate_high_ml_per_hr=norepi_high,
             prep_note=norepi_prep_note,
