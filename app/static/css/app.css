@@ -3319,11 +3319,11 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
 }
 
 .hero__shot--animation {
-    /* Aspect matches the screen recording (1320x798, ~1.654:1).
+    /* Aspect matches the screen recording (1330x800, ~1.663:1).
      * max-width keeps the tile from growing absurdly wide on huge
      * displays; the column itself sets the upper bound on most
      * viewports. */
-    aspect-ratio: 1320 / 798;
+    aspect-ratio: 1330 / 800;
     width: 100%;
     max-width: 850px;
 }
@@ -3332,7 +3332,13 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;  /* video aspect matches tile aspect; fill cleanly */
+    /* `contain` instead of `cover` so the full screencast is always
+     * visible — no cropping at top or bottom if the tile's computed
+     * aspect drifts from the video's native aspect (e.g. when the
+     * grid's align-items:stretch resolves the right column taller
+     * than the aspect-ratio alone would compute). Any extra space
+     * shows the paper-warm tile background, matching the page. */
+    object-fit: contain;
     background: var(--paper-warm);
 }
 
