@@ -285,7 +285,7 @@ code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
 
 .hero__grid {
     display: grid;
-    grid-template-columns: 1.3fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 4rem;
     /* `align-items: stretch` makes both columns the same height (whichever
      * is taller wins). Combined with the .hero__left flex layout below
@@ -3318,7 +3318,7 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
      * viewports. */
     aspect-ratio: 994 / 784;
     width: 100%;
-    max-width: 600px;
+    max-width: 720px;
 }
 
 .hero__shot-video {
