@@ -38,7 +38,7 @@ class TestDoseInjectionClamping:
         })
         assert r.status_code == 200
         # 0.25 mg/kg × 20 kg / 10 mg/mL = 0.5 mL
-        assert "0.500 mL" in r.text
+        assert "0.50 mL" in r.text
 
     def test_dose_above_range_clamps_to_high(self):
         """Submitting a dose above the published high end clamps to high.
@@ -53,7 +53,7 @@ class TestDoseInjectionClamping:
         })
         assert r.status_code == 200
         # Clamps to 0.3 mg/kg × 20 kg / 10 mg/mL = 0.6 mL
-        assert "0.600 mL" in r.text
+        assert "0.60 mL" in r.text
 
     def test_dose_below_range_clamps_to_low(self):
         """Submitting a dose below the published low end clamps to low."""
@@ -66,7 +66,7 @@ class TestDoseInjectionClamping:
         })
         assert r.status_code == 200
         # Clamps to 0.1 mg/kg × 20 kg / 10 mg/mL = 0.2 mL
-        assert "0.200 mL" in r.text
+        assert "0.20 mL" in r.text
 
     def test_empty_dose_falls_back_to_default(self):
         """Empty dose_* value should NOT inject — natural default applies."""
@@ -78,7 +78,7 @@ class TestDoseInjectionClamping:
         })
         assert r.status_code == 200
         # Dog methadone default is 0.2 mg/kg → 0.4 mL
-        assert "0.400 mL" in r.text
+        assert "0.40 mL" in r.text
 
     def test_missing_dose_field_falls_back_to_default(self):
         """Not submitting the dose_* key at all is equivalent to empty."""
@@ -89,7 +89,7 @@ class TestDoseInjectionClamping:
             # no dose_methadone key
         })
         assert r.status_code == 200
-        assert "0.400 mL" in r.text
+        assert "0.40 mL" in r.text
 
     def test_invalid_dose_string_falls_back_to_default(self):
         """Non-numeric dose value gets ignored (suppress(ValueError) in
@@ -101,7 +101,7 @@ class TestDoseInjectionClamping:
             "dose_methadone": "abc",
         })
         assert r.status_code == 200
-        assert "0.400 mL" in r.text
+        assert "0.40 mL" in r.text
 
 
 class TestSpeciesToggleDoseHandling:
@@ -131,7 +131,7 @@ class TestSpeciesToggleDoseHandling:
         })
         assert r.status_code == 200
         # 0.01 mg/kg × 4 kg / 0.3 mg/mL = 0.133 mL (cat low end)
-        assert "0.133 mL" in r.text
+        assert "0.13 mL" in r.text
 
     def test_cat_with_empty_dose_uses_cat_default(self):
         """When dose_* is cleared (the species-change JS handler's job),
@@ -146,7 +146,7 @@ class TestSpeciesToggleDoseHandling:
         })
         assert r.status_code == 200
         # Cat default is 0.02 mg/kg × 4 kg / 0.3 mg/mL = 0.267 mL
-        assert "0.267 mL" in r.text
+        assert "0.27 mL" in r.text
 
 
 class TestDrugSelectionFiltering:

@@ -73,11 +73,11 @@
                     <td style="color: var(--ink-mute);">{{ d.stock_label }}</td>
                     <td class="col-vol">
                         {% if d.name == 'Atipamezole' %}
-                        <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                        <strong>{{ "%.2f"|format(d.vol_low_ml) }}–{{ "%.2f"|format(d.vol_high_ml) }} mL</strong>
                         {% elif d.vol_low_ml == d.vol_high_ml %}
-                        <strong>{{ "%.3f"|format(d.vol_low_ml) }} mL</strong>
+                        <strong>{{ "%.2f"|format(d.vol_low_ml) }} mL</strong>
                         {% else %}
-                        <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                        <strong>{{ "%.2f"|format(d.vol_low_ml) }}–{{ "%.2f"|format(d.vol_high_ml) }} mL</strong>
                         {% endif %}
                     </td>
                     <td>{{ d.route }}</td>

@@ -533,3 +533,146 @@ class TestFeedbackDetail:
             follow_redirects=False,
         )
         assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Trusted-network bypass (LAN/Tailscale direct access without Cloudflare Access)
+# ---------------------------------------------------------------------------
+
+
+def _scope_request(client_ip: str = "", extra_headers: dict[str, str] | None = None):
+    """Build a Starlette Request with a controllable client IP and headers.
+
+    Used to test admin_auth without the TestClient indirection, which
+    can't simulate arbitrary client IPs.
+    """
+    from starlette.requests import Request
+
+    hdrs = extra_headers or {}
+    scope: dict = {
+        "type": "http",
+        "method": "GET",
+        "path": "/admin/",
+        "headers": [(k.lower().encode(), v.encode()) for k, v in hdrs.items()],
+        "query_string": b"",
+    }
+    if client_ip:
+        scope["client"] = (client_ip, 12345)
+    return Request(scope)
+
+
+class TestTrustedNetworks:
+    def test_lan_ip_grants_access_when_in_range(self, monkeypatch):
+        from app.admin_auth import require_admin
+
+        monkeypatch.setenv(
+            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24"
+        )
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
+
+        req = _scope_request(client_ip="192.168.25.50")
+        assert require_admin(req) == "trusted-network:192.168.25.50"
+
+    def test_tailscale_ip_grants_access_when_in_range(self, monkeypatch):
+        from app.admin_auth import require_admin
+
+        monkeypatch.setenv(
+            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "100.64.0.0/10"
+        )
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
+
+        req = _scope_request(client_ip="100.101.50.12")
+        assert require_admin(req) == "trusted-network:100.101.50.12"
+
+    def test_multiple_networks_supported(self, monkeypatch):
+        from app.admin_auth import require_admin
+
+        monkeypatch.setenv(
+            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS",
+            "192.168.25.0/24,100.64.0.0/10,10.0.0.0/8",
+        )
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
+
+        for ip in ("192.168.25.5", "100.99.1.1", "10.1.2.3"):
+            req = _scope_request(client_ip=ip)
+            assert require_admin(req).startswith("trusted-network:")
+
+    def test_cloudflare_request_does_not_use_trusted_bypass(self, monkeypatch):
+        """Security: a request through Cloudflare must NOT use the
+        trusted-network bypass, even if the apparent client IP matches a
+        trusted range. This blocks an attacker who'd otherwise spoof
+        X-Forwarded-For to a LAN IP.
+        """
+        from fastapi import HTTPException
+
+        from app.admin_auth import require_admin
+
+        monkeypatch.setenv(
+            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24"
+        )
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
+
+        # Cf-Connecting-IP present means the request came through Cloudflare,
+        # which strips/replaces it from incoming requests — its presence is
+        # an authentic signal that we are not in a direct-connection state.
+        req = _scope_request(
+            client_ip="192.168.25.50",
+            extra_headers={"cf-connecting-ip": "8.8.8.8"},
+        )
+        with pytest.raises(HTTPException) as exc:
+            require_admin(req)
+        assert exc.value.status_code == 403
+
+    def test_ip_outside_trusted_range_falls_back_to_email(self, monkeypatch):
+        from app.admin_auth import require_admin
+
+        monkeypatch.setenv(
+            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24"
+        )
+        monkeypatch.setenv("INFUSIONFOX_ADMIN_EMAILS", "tim@example.com")
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
+
+        # Public IP, valid email: admitted via email path.
+        req = _scope_request(
+            client_ip="8.8.8.8",
+            extra_headers={
+                "cf-access-authenticated-user-email": "tim@example.com"
+            },
+        )
+        assert require_admin(req) == "tim@example.com"
+
+        # Public IP, no email: rejected.
+        from fastapi import HTTPException
+
+        req2 = _scope_request(client_ip="8.8.8.8")
+        with pytest.raises(HTTPException):
+            require_admin(req2)
+
+    def test_invalid_cidr_in_env_is_skipped(self, monkeypatch):
+        from app.admin_auth import require_admin
+
+        monkeypatch.setenv(
+            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "not-a-cidr,192.168.0.0/16"
+        )
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
+
+        req = _scope_request(client_ip="192.168.1.1")
+        assert require_admin(req) == "trusted-network:192.168.1.1"
+
+    def test_empty_trusted_networks_env_does_not_grant_access(self, monkeypatch):
+        from fastapi import HTTPException
+
+        from app.admin_auth import require_admin
+
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", raising=False)
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
+        monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
+
+        req = _scope_request(client_ip="192.168.25.50")
+        with pytest.raises(HTTPException):
+            require_admin(req)

@@ -236,16 +236,22 @@
                 {% for d in result.premed_opioids %}{% if not selected_opioids or d.name in selected_opioids %}
                 <tr>
                     <td><strong>{{ d.name }}</strong></td>
-                    <td>{{ d.dose_label }}</td>
+                    <td>
+                        {% if d.chosen_dose_mg_per_kg > 0 %}
+                        <strong>{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</strong>
+                        <div style="font-size: 0.78rem; color: var(--ink-mute);">({{ d.dose_label }})</div>
+                        {% else %}
+                        {{ d.dose_label }}
+                        {% endif %}
+                    </td>
                     <td style="color: var(--ink-mute);">{{ d.stock_label }}</td>
                     <td class="col-vol">
                         {% if d.chosen_dose_mg_per_kg > 0 %}
-                        <strong>{{ "%.3f"|format(d.chosen_vol_ml) }} mL</strong>
-                        <div style="font-size: 0.78rem; color: var(--ink-mute);">{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</div>
+                        <strong>{{ "%.2f"|format(d.chosen_vol_ml) }} mL</strong>
                         {% elif d.vol_low_ml == d.vol_high_ml %}
-                        <strong>{{ "%.3f"|format(d.vol_low_ml) }} mL</strong>
+                        <strong>{{ "%.2f"|format(d.vol_low_ml) }} mL</strong>
                         {% else %}
-                        <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                        <strong>{{ "%.2f"|format(d.vol_low_ml) }}–{{ "%.2f"|format(d.vol_high_ml) }} mL</strong>
                         {% endif %}
                     </td>
                     <td>{{ d.route }}</td>
@@ -274,16 +280,22 @@
                 {% for d in result.premed_sedatives %}{% if not selected_sedatives or d.name in selected_sedatives %}
                 <tr>
                     <td><strong>{{ d.name }}</strong></td>
-                    <td>{{ d.dose_label }}</td>
+                    <td>
+                        {% if d.chosen_dose_mg_per_kg > 0 %}
+                        <strong>{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</strong>
+                        <div style="font-size: 0.78rem; color: var(--ink-mute);">({{ d.dose_label }})</div>
+                        {% else %}
+                        {{ d.dose_label }}
+                        {% endif %}
+                    </td>
                     <td style="color: var(--ink-mute);">{{ d.stock_label }}</td>
                     <td class="col-vol">
                         {% if d.chosen_dose_mg_per_kg > 0 %}
-                        <strong>{{ "%.3f"|format(d.chosen_vol_ml) }} mL</strong>
-                        <div style="font-size: 0.78rem; color: var(--ink-mute);">{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</div>
+                        <strong>{{ "%.2f"|format(d.chosen_vol_ml) }} mL</strong>
                         {% elif d.vol_low_ml == d.vol_high_ml %}
-                        <strong>{{ "%.3f"|format(d.vol_low_ml) }} mL</strong>
+                        <strong>{{ "%.2f"|format(d.vol_low_ml) }} mL</strong>
                         {% else %}
-                        <strong>{{ "%.3f"|format(d.vol_low_ml) }}–{{ "%.3f"|format(d.vol_high_ml) }} mL</strong>
+                        <strong>{{ "%.2f"|format(d.vol_low_ml) }}–{{ "%.2f"|format(d.vol_high_ml) }} mL</strong>
                         {% endif %}
                     </td>
                     <td>{{ d.route }}</td>
@@ -311,12 +323,18 @@
                 {% for d in result.induction_drugs %}{% if not selected_induction or d.name in selected_induction %}
                 <tr>
                     <td><strong>{{ d.name }}</strong></td>
-                    <td>{{ d.dose_label }}</td>
+                    <td>
+                        {% if d.chosen_dose_mg_per_kg > 0 %}
+                        <strong>{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</strong>
+                        <div style="font-size: 0.78rem; color: var(--ink-mute);">({{ d.dose_label }})</div>
+                        {% else %}
+                        {{ d.dose_label }}
+                        {% endif %}
+                    </td>
                     <td style="color: var(--ink-mute);">{{ d.stock_label }}</td>
                     <td class="col-vol">
                         {% if d.chosen_dose_mg_per_kg > 0 %}
                         <strong>{{ "%.2f"|format(d.chosen_vol_ml) }} mL</strong>
-                        <div style="font-size: 0.78rem; color: var(--ink-mute);">{{ "%.4g"|format(d.effective_dose_mg_per_kg * d.dose_display_multiplier) }} {{ d.dose_display_unit }}</div>
                         {% else %}
                         <strong>{{ "%.2f"|format(d.vol_low_ml) }}–{{ "%.2f"|format(d.vol_high_ml) }} mL</strong>
                         {% endif %}
@@ -355,16 +373,16 @@
                     <td style="white-space: nowrap;"><strong>{{ p.label.split(':')[0].strip() }}</strong><br><span style="font-size: 0.75rem; color: var(--ink-mute);">{{ p.label.split(':')[1].strip() if ':' in p.label else '' }}</span></td>
                     <td class="col-vol">
                         {% if p.vol_low == p.vol_high %}
-                        <strong>{{ "%.3f"|format(p.vol_low) }} mL</strong>
+                        <strong>{{ "%.2f"|format(p.vol_low) }} mL</strong>
                         {% else %}
-                        <strong>{{ "%.3f"|format(p.vol_low) }}–{{ "%.3f"|format(p.vol_high) }} mL</strong>
+                        <strong>{{ "%.2f"|format(p.vol_low) }}–{{ "%.2f"|format(p.vol_high) }} mL</strong>
                         {% endif %}
                     </td>
                     <td class="col-vol">
                         {% if p.total_low == p.total_high %}
-                        <strong>{{ "%.3f"|format(p.total_low) }} mL</strong>
+                        <strong>{{ "%.2f"|format(p.total_low) }} mL</strong>
                         {% else %}
-                        <strong>{{ "%.3f"|format(p.total_low) }}–{{ "%.3f"|format(p.total_high) }} mL</strong>
+                        <strong>{{ "%.2f"|format(p.total_low) }}–{{ "%.2f"|format(p.total_high) }} mL</strong>
                         {% endif %}
                     </td>
                     <td>{{ p.dex_label }}<br><span style="font-size: 0.75rem; color: var(--ink-mute);">{{ p.dex_per_kg }}</span></td>
@@ -373,9 +391,9 @@
                     <td>{{ p.bup_label }}<br><span style="font-size: 0.75rem; color: var(--ink-mute);">{{ p.bup_per_kg }}</span></td>
                     <td>
                         {% if p.atipa_vol_low == p.atipa_vol_high %}
-                        {{ "%.3f"|format(p.atipa_vol_low) }} mL IM
+                        {{ "%.2f"|format(p.atipa_vol_low) }} mL IM
                         {% else %}
-                        {{ "%.3f"|format(p.atipa_vol_low) }}–{{ "%.3f"|format(p.atipa_vol_high) }} mL IM
+                        {{ "%.2f"|format(p.atipa_vol_low) }}–{{ "%.2f"|format(p.atipa_vol_high) }} mL IM
                         {% endif %}
                     </td>
                 </tr>
