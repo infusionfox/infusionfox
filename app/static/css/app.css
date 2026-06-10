@@ -285,10 +285,9 @@ code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
 
 .hero__container {
     /* Hero is wider than the default 1180px container so the
-     * landscape screencast on the right doesn't get cramped. The
-     * left column (headline + CTA) still reads fine at the larger
-     * width because the headline anchors visually. */
-    max-width: 1600px;
+     * landscape screencast on the right doesn't get cramped. Narrow
+     * page-side margins, not full-bleed. */
+    max-width: 1400px;
 }
 
 .hero__grid {
@@ -3326,7 +3325,7 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
      * viewports. */
     aspect-ratio: 1320 / 798;
     width: 100%;
-    max-width: 1000px;
+    max-width: 850px;
 }
 
 .hero__shot-video {
