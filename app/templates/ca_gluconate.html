@@ -159,7 +159,17 @@
             <div class="eyebrow">Reference</div>
             <h2>How the calculation works</h2>
             <p style="color: var(--ink-soft); line-height: 1.7;">
-                Total volume is dose (mL/kg) × weight. Infusion rate divides that volume over the chosen duration:
+                {% if result and result.stock_concentration.value == '23' %}
+                Total volume is dose (mL/kg) × weight, expressed as
+                10% equivalent. Infusion rate divides that volume over
+                the chosen duration. From 23% stock, the volume drawn
+                scales by 10/23 (100 mg/mL ÷ 230 mg/mL); the balance is
+                topped up with 0.9% NaCl to the same total volume, so
+                the diluted product delivers identical calcium mass:
+                {% else %}
+                Total volume is dose (mL/kg) × weight. Infusion rate
+                divides that volume over the chosen duration:
+                {% endif %}
             </p>
             <div class="formula-display">
                 $$\text{total volume (mL)} = \text{dose}_{\text{mL/kg}} \times \text{weight}_{\text{kg}}$$
@@ -167,29 +177,14 @@
             <div class="formula-display">
                 $$\text{rate (mL/min)} = \frac{\text{total volume (mL)}}{\text{duration (min)}}$$
             </div>
-
             {% if result and result.stock_concentration.value == '23' %}
-            <h3 style="margin-top: 2rem;">Dilution math (23% stock → 10% equivalent)</h3>
-            <p style="color: var(--ink-soft); line-height: 1.7;">
-                23% calcium gluconate is 230 mg/mL; 10% is 100 mg/mL.
-                To deliver the standard mL/kg dose without over-dosing
-                calcium, draw a smaller volume of 23% and top up with
-                saline to the same total volume. The ratio is 10 : 23:
-            </p>
             <div class="formula-display">
-                $$V_{23\%} = V_{\text{total}} \times \frac{10}{23}$$
+                $$\text{volume of 23\% (mL)} = \text{total volume} \times \frac{10}{23}$$
             </div>
             <div class="formula-display">
-                $$V_{\text{diluent}} = V_{\text{total}} - V_{23\%}$$
+                $$\text{diluent (mL)} = \text{total volume} - \text{volume of 23\%}$$
             </div>
-            <p style="color: var(--ink-soft); line-height: 1.7;">
-                The diluted product contains exactly the same mass of
-                calcium gluconate salt (and therefore elemental Ca and
-                mEq Ca²⁺) as the same total volume of 10% stock, and is
-                administered over the standard 10–20 min window.
-            </p>
             {% endif %}
-
             <h3>Worked example with current inputs</h3>
             <div id="worked-example" class="formula-display">
                 {% if result %}
@@ -205,13 +200,12 @@
                 <p style="color: var(--ink-mute); font-style: italic; margin: 0;">Enter a patient weight to see the worked example.</p>
                 {% endif %}
             </div>
-
             {% if result and result.stock_concentration.value == '23' %}
             <div class="formula-display">
-                $$V_{23\%} = {{ "%.2f"|format(result.total_volume_ml) }} \times \frac{10}{23} = {{ "%.2f"|format(result.stock_23pct_volume_ml) }}\,\text{mL of 23\% stock}$$
+                $$\text{volume of 23\%} = {{ "%.2f"|format(result.total_volume_ml) }} \times \frac{10}{23} = {{ "%.2f"|format(result.stock_23pct_volume_ml) }}\,\text{mL}$$
             </div>
             <div class="formula-display">
-                $$V_{\text{diluent}} = {{ "%.2f"|format(result.total_volume_ml) }} - {{ "%.2f"|format(result.stock_23pct_volume_ml) }} = {{ "%.2f"|format(result.diluent_volume_ml) }}\,\text{mL of 0.9\% NaCl}$$
+                $$\text{diluent} = {{ "%.2f"|format(result.total_volume_ml) }} - {{ "%.2f"|format(result.stock_23pct_volume_ml) }} = {{ "%.2f"|format(result.diluent_volume_ml) }}\,\text{mL of 0.9\% NaCl}$$
             </div>
             {% endif %}
         </section>
