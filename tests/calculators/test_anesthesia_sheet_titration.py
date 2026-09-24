@@ -66,9 +66,7 @@ class TestDopamineMath:
 
     def test_known_value_dog(self, dog_20kg):
         # 20 kg × 5 µg/kg/min × 60 / 1600 = 3.75 mL/hr
-        step_5 = next(
-            s for s in dog_20kg.dopamine_cri.titration_steps if s.dose_ug_per_kg_per_min == 5.0
-        )
+        step_5 = next(s for s in dog_20kg.dopamine_cri.titration_steps if s.dose_ug_per_kg_per_min == 5.0)
         assert step_5.ml_per_hr == pytest.approx(3.75)
 
     def test_cat_auto_dilutes_to_400_ug_per_ml(self, cat_4kg):
@@ -76,9 +74,7 @@ class TestDopamineMath:
         # Auto-selected dilution is 400 µg/mL.
         assert "400 µg/mL" in cat_4kg.dopamine_cri.titration_concentration_label
         # 4 kg × 5 µg/kg/min × 60 / 400 = 3.0 mL/hr
-        step_5 = next(
-            s for s in cat_4kg.dopamine_cri.titration_steps if s.dose_ug_per_kg_per_min == 5.0
-        )
+        step_5 = next(s for s in cat_4kg.dopamine_cri.titration_steps if s.dose_ug_per_kg_per_min == 5.0)
         assert step_5.ml_per_hr == pytest.approx(3.0)
 
     def test_ladder_starts_at_recommended_low(self, dog_20kg):
@@ -154,8 +150,12 @@ class TestCautionThresholds:
 
     def test_dobutamine_caution_species_specific(self, dog_20kg, cat_4kg):
         # Dog threshold = 10, cat threshold = 5. Caution fires ABOVE threshold.
-        dog_caution = {s.dose_ug_per_kg_per_min for s in dog_20kg.dobutamine_cri.titration_steps if s.is_caution}
-        cat_caution = {s.dose_ug_per_kg_per_min for s in cat_4kg.dobutamine_cri.titration_steps if s.is_caution}
+        dog_caution = {
+            s.dose_ug_per_kg_per_min for s in dog_20kg.dobutamine_cri.titration_steps if s.is_caution
+        }
+        cat_caution = {
+            s.dose_ug_per_kg_per_min for s in cat_4kg.dobutamine_cri.titration_steps if s.is_caution
+        }
         # Cat sees caution above 5: 7.5, 10, ... — dog only above 10: 12.5, ...
         assert 5.0 not in cat_caution
         assert 7.5 in cat_caution
@@ -239,7 +239,9 @@ class TestBelowSupportedRangeFallback:
         ]:
             assert "syringe pump" not in cri.prep_note.lower(), f"{name} should not fall back at 1.5 kg"
             assert len(cri.titration_steps) > 0, f"{name} ladder should be present at 1.5 kg"
-            assert cri.titration_concentration_label != "", f"{name} concentration label should be present at 1.5 kg"
+            assert (
+                cri.titration_concentration_label != ""
+            ), f"{name} concentration label should be present at 1.5 kg"
 
 
 class TestAutoDilutionHelper:
@@ -248,6 +250,7 @@ class TestAutoDilutionHelper:
 
     def test_helper_picks_most_concentrated_when_all_qualify(self):
         from app.calculators.anesthesia_sheet import _pick_cri_dilution
+
         # Large patient: even the most concentrated bag gives ≥ 2 mL/hr.
         conc, below = _pick_cri_dilution(
             weight_kg=40.0,
@@ -260,6 +263,7 @@ class TestAutoDilutionHelper:
 
     def test_helper_picks_next_most_concentrated_when_first_fails(self):
         from app.calculators.anesthesia_sheet import _pick_cri_dilution
+
         # Medium-small patient: 1600 fails (0.75 mL/hr), 800 fails (1.5),
         # 400 passes (3.0).
         conc, below = _pick_cri_dilution(
@@ -272,6 +276,7 @@ class TestAutoDilutionHelper:
 
     def test_helper_falls_back_when_no_dilution_qualifies(self):
         from app.calculators.anesthesia_sheet import _pick_cri_dilution
+
         # Tiny patient + high threshold dose: even the most dilute prep
         # can't hit 2 mL/hr. Falls back to most dilute with below=True.
         conc, below = _pick_cri_dilution(
@@ -285,6 +290,7 @@ class TestAutoDilutionHelper:
 
     def test_helper_handles_empty_list_defensively(self):
         from app.calculators.anesthesia_sheet import _pick_cri_dilution
+
         # Defensive path: caller should never do this, but the helper
         # should not crash.
         with pytest.raises((IndexError, ValueError)):
@@ -331,8 +337,12 @@ class TestBridgeBoluses:
         # Doubling weight should double both bolus volumes for both drugs.
         r10 = calculate(10.0, WeightUnit.KG, AnesthSpecies.DOG, "T", "5y")
         r20 = calculate(20.0, WeightUnit.KG, AnesthSpecies.DOG, "T", "5y")
-        assert r20.phenylephrine_bolus.volume_low_ml == pytest.approx(2 * r10.phenylephrine_bolus.volume_low_ml)
-        assert r20.phenylephrine_bolus.volume_high_ml == pytest.approx(2 * r10.phenylephrine_bolus.volume_high_ml)
+        assert r20.phenylephrine_bolus.volume_low_ml == pytest.approx(
+            2 * r10.phenylephrine_bolus.volume_low_ml
+        )
+        assert r20.phenylephrine_bolus.volume_high_ml == pytest.approx(
+            2 * r10.phenylephrine_bolus.volume_high_ml
+        )
         assert r20.ephedrine_bolus.volume_low_ml == pytest.approx(2 * r10.ephedrine_bolus.volume_low_ml)
         assert r20.ephedrine_bolus.volume_high_ml == pytest.approx(2 * r10.ephedrine_bolus.volume_high_ml)
 

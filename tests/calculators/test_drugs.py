@@ -78,6 +78,7 @@ class TestCatalogContents:
         # The analgesia builder's spec must share the same dose data
         # — they should be referencing the same dict, not a copy.
         from app.calculators.analgesia_builder import DEXMEDETOMIDINE_SPEC
+
         assert DEXMEDETOMIDINE_SPEC.dose_ranges is DEXMEDETOMIDINE.dose_ranges
 
 

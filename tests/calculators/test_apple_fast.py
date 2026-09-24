@@ -360,9 +360,7 @@ class TestRoutes:
         import re
 
         for match in re.finditer(r'<input[^>]*name="mentation"[^>]*>', r.text):
-            assert "checked" not in match.group(0), (
-                f"Mentation radio is pre-checked: {match.group(0)}"
-            )
+            assert "checked" not in match.group(0), f"Mentation radio is pre-checked: {match.group(0)}"
 
     def test_get_page_does_not_load_compute_immediately(self):
         """Safety: hx-trigger must not include `load`, which would fire

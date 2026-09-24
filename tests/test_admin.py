@@ -203,9 +203,9 @@ class TestAuthGating:
         ]
         for path in paths:
             resp = client.get(path)
-            assert resp.status_code == 403, (
-                f"{path} should require admin auth but returned {resp.status_code}"
-            )
+            assert (
+                resp.status_code == 403
+            ), f"{path} should require admin auth but returned {resp.status_code}"
 
     def test_status_post_also_gated(self, no_admin_config):
         resp = client.post(
@@ -221,18 +221,14 @@ class TestAuthGating:
 
 
 class TestDashboard:
-    def test_dashboard_shows_disclaimer_total(
-        self, admin_allowlist, seed_disclaimer_acceptances
-    ):
+    def test_dashboard_shows_disclaimer_total(self, admin_allowlist, seed_disclaimer_acceptances):
         resp = client.get("/admin/", headers=_admin_headers())
         assert resp.status_code == 200
         body = resp.text
         # The seed adds at least 3 rows; total should be visible
         assert "Disclaimer acceptances" in body
 
-    def test_dashboard_shows_feedback_kinds(
-        self, admin_allowlist, seed_feedback
-    ):
+    def test_dashboard_shows_feedback_kinds(self, admin_allowlist, seed_feedback):
         resp = client.get("/admin/", headers=_admin_headers())
         body = resp.text
         # Feedback section labels
@@ -240,17 +236,13 @@ class TestDashboard:
         # At least one of the seeded kinds appears
         assert "dose_concern" in body or "suggestion" in body or "bug" in body
 
-    def test_dashboard_highlights_dose_concern(
-        self, admin_allowlist, seed_feedback
-    ):
+    def test_dashboard_highlights_dose_concern(self, admin_allowlist, seed_feedback):
         """A NEW dose_concern row should produce the highlight count."""
         resp = client.get("/admin/", headers=_admin_headers())
         body = resp.text
         assert "dose-concern" in body or "dose_concern" in body
 
-    def test_dashboard_has_links_to_lists_and_exports(
-        self, admin_allowlist
-    ):
+    def test_dashboard_has_links_to_lists_and_exports(self, admin_allowlist):
         resp = client.get("/admin/", headers=_admin_headers())
         body = resp.text
         assert "/admin/disclaimer-acceptances" in body
@@ -298,9 +290,7 @@ class TestDisclaimerList:
         )
         assert resp.status_code == 200
 
-    def test_csv_export_content_type(
-        self, admin_allowlist, seed_disclaimer_acceptances
-    ):
+    def test_csv_export_content_type(self, admin_allowlist, seed_disclaimer_acceptances):
         resp = client.get(
             "/admin/disclaimer-acceptances/export.csv",
             headers=_admin_headers(),
@@ -310,9 +300,7 @@ class TestDisclaimerList:
         assert "attachment" in resp.headers["content-disposition"]
         assert ".csv" in resp.headers["content-disposition"]
 
-    def test_csv_export_header_row(
-        self, admin_allowlist, seed_disclaimer_acceptances
-    ):
+    def test_csv_export_header_row(self, admin_allowlist, seed_disclaimer_acceptances):
         resp = client.get(
             "/admin/disclaimer-acceptances/export.csv",
             headers=_admin_headers(),
@@ -330,9 +318,7 @@ class TestDisclaimerList:
             "session_token",
         ]
 
-    def test_csv_export_has_data_rows(
-        self, admin_allowlist, seed_disclaimer_acceptances
-    ):
+    def test_csv_export_has_data_rows(self, admin_allowlist, seed_disclaimer_acceptances):
         resp = client.get(
             "/admin/disclaimer-acceptances/export.csv",
             headers=_admin_headers(),
@@ -433,9 +419,7 @@ class TestFeedbackDetail:
         )
         assert resp.status_code == 404
 
-    def test_status_update_changes_status(
-        self, admin_allowlist, seed_feedback
-    ):
+    def test_status_update_changes_status(self, admin_allowlist, seed_feedback):
         feedback_id = seed_feedback[0]
         resp = client.post(
             f"/admin/feedback/{feedback_id}/status",
@@ -451,9 +435,7 @@ class TestFeedbackDetail:
             row = db.get(Feedback, feedback_id)
             assert row.status == FeedbackStatus.SEEN
 
-    def test_status_resolved_sets_resolved_at(
-        self, admin_allowlist, seed_feedback
-    ):
+    def test_status_resolved_sets_resolved_at(self, admin_allowlist, seed_feedback):
         feedback_id = seed_feedback[0]
         resp = client.post(
             f"/admin/feedback/{feedback_id}/status",
@@ -467,9 +449,7 @@ class TestFeedbackDetail:
             assert row.status == FeedbackStatus.RESOLVED
             assert row.resolved_at is not None
 
-    def test_status_update_appends_admin_note_with_stamp(
-        self, admin_allowlist, seed_feedback
-    ):
+    def test_status_update_appends_admin_note_with_stamp(self, admin_allowlist, seed_feedback):
         feedback_id = seed_feedback[1]
         resp = client.post(
             f"/admin/feedback/{feedback_id}/status",
@@ -490,9 +470,7 @@ class TestFeedbackDetail:
             assert "tim@example.com" in row.admin_note
             assert "UTC" in row.admin_note
 
-    def test_status_update_multiple_notes_accumulate(
-        self, admin_allowlist, seed_feedback
-    ):
+    def test_status_update_multiple_notes_accumulate(self, admin_allowlist, seed_feedback):
         """Repeated status updates append notes rather than overwriting."""
         feedback_id = seed_feedback[2]
         client.post(
@@ -513,9 +491,7 @@ class TestFeedbackDetail:
             assert "First triage pass." in row.admin_note
             assert "Fixed in v1.2." in row.admin_note
 
-    def test_invalid_status_value_returns_400(
-        self, admin_allowlist, seed_feedback
-    ):
+    def test_invalid_status_value_returns_400(self, admin_allowlist, seed_feedback):
         feedback_id = seed_feedback[0]
         resp = client.post(
             f"/admin/feedback/{feedback_id}/status",
@@ -565,9 +541,7 @@ class TestTrustedNetworks:
     def test_lan_ip_grants_access_when_in_range(self, monkeypatch):
         from app.admin_auth import require_admin
 
-        monkeypatch.setenv(
-            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24"
-        )
+        monkeypatch.setenv("INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24")
         monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
         monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
 
@@ -577,9 +551,7 @@ class TestTrustedNetworks:
     def test_tailscale_ip_grants_access_when_in_range(self, monkeypatch):
         from app.admin_auth import require_admin
 
-        monkeypatch.setenv(
-            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "100.64.0.0/10"
-        )
+        monkeypatch.setenv("INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "100.64.0.0/10")
         monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
         monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
 
@@ -610,9 +582,7 @@ class TestTrustedNetworks:
 
         from app.admin_auth import require_admin
 
-        monkeypatch.setenv(
-            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24"
-        )
+        monkeypatch.setenv("INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24")
         monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
         monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
 
@@ -630,18 +600,14 @@ class TestTrustedNetworks:
     def test_ip_outside_trusted_range_falls_back_to_email(self, monkeypatch):
         from app.admin_auth import require_admin
 
-        monkeypatch.setenv(
-            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24"
-        )
+        monkeypatch.setenv("INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "192.168.25.0/24")
         monkeypatch.setenv("INFUSIONFOX_ADMIN_EMAILS", "tim@example.com")
         monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
 
         # Public IP, valid email: admitted via email path.
         req = _scope_request(
             client_ip="8.8.8.8",
-            extra_headers={
-                "cf-access-authenticated-user-email": "tim@example.com"
-            },
+            extra_headers={"cf-access-authenticated-user-email": "tim@example.com"},
         )
         assert require_admin(req) == "tim@example.com"
 
@@ -655,9 +621,7 @@ class TestTrustedNetworks:
     def test_invalid_cidr_in_env_is_skipped(self, monkeypatch):
         from app.admin_auth import require_admin
 
-        monkeypatch.setenv(
-            "INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "not-a-cidr,192.168.0.0/16"
-        )
+        monkeypatch.setenv("INFUSIONFOX_ADMIN_TRUSTED_NETWORKS", "not-a-cidr,192.168.0.0/16")
         monkeypatch.delenv("INFUSIONFOX_ADMIN_EMAILS", raising=False)
         monkeypatch.delenv("INFUSIONFOX_ADMIN_OPEN", raising=False)
 

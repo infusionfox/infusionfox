@@ -156,9 +156,7 @@ class TestDogCompensationAcuteRespiratoryAcidosis:
 
     def test_simple_compensation(self):
         """PCO2 rose 28 (37 -> 65); expected HCO3 rise = 4.2; expected HCO3 = 26."""
-        r = compute_blood_gas(
-            _inputs(pH=7.25, pco2=65, hco3=26, acuity=Acuity.ACUTE)
-        )
+        r = compute_blood_gas(_inputs(pH=7.25, pco2=65, hco3=26, acuity=Acuity.ACUTE))
         assert r.compensation.expected == pytest.approx(26, abs=0.5)
         assert r.compensation.is_simple is True
 
@@ -169,21 +167,15 @@ class TestDogCompensationChronicRespiratoryAcidosis:
     def test_chronic_uses_higher_coefficient(self):
         """PCO2 rose ~18 (36.8 -> 55); chronic expected rise = 6.4; HCO3 ~ 28.6.
         Use a mildly acidemic pH so primary is identified as resp acidosis."""
-        r = compute_blood_gas(
-            _inputs(pH=7.34, pco2=55, hco3=28, acuity=Acuity.CHRONIC)
-        )
+        r = compute_blood_gas(_inputs(pH=7.34, pco2=55, hco3=28, acuity=Acuity.CHRONIC))
         assert r.primary == PrimaryDisturbance.RESPIRATORY_ACIDOSIS
         assert r.compensation.expected == pytest.approx(28.6, abs=0.5)
         assert r.compensation.is_simple is True
 
     def test_chronic_coefficient_differs_from_acute(self):
         """Same PCO2 elevation, different acuity, different expected HCO3."""
-        acute = compute_blood_gas(
-            _inputs(pH=7.25, pco2=55, hco3=22, acuity=Acuity.ACUTE)
-        )
-        chronic = compute_blood_gas(
-            _inputs(pH=7.25, pco2=55, hco3=22, acuity=Acuity.CHRONIC)
-        )
+        acute = compute_blood_gas(_inputs(pH=7.25, pco2=55, hco3=22, acuity=Acuity.ACUTE))
+        chronic = compute_blood_gas(_inputs(pH=7.25, pco2=55, hco3=22, acuity=Acuity.CHRONIC))
         assert acute.primary == PrimaryDisturbance.RESPIRATORY_ACIDOSIS
         assert chronic.primary == PrimaryDisturbance.RESPIRATORY_ACIDOSIS
         assert acute.compensation.expected != chronic.compensation.expected
@@ -196,19 +188,13 @@ class TestDogCompensationRespiratoryAlkalosis:
 
     def test_acute_compensation(self):
         """PCO2 dropped 15 (37 -> 22); acute expected HCO3 drop = 3.75; HCO3 = 18."""
-        r = compute_blood_gas(
-            _inputs(pH=7.55, pco2=22, hco3=18, acuity=Acuity.ACUTE)
-        )
+        r = compute_blood_gas(_inputs(pH=7.55, pco2=22, hco3=18, acuity=Acuity.ACUTE))
         assert r.compensation.expected == pytest.approx(18, abs=0.5)
         assert r.compensation.is_simple is True
 
     def test_chronic_coefficient_drops_more(self):
-        chronic = compute_blood_gas(
-            _inputs(pH=7.50, pco2=22, hco3=14, acuity=Acuity.CHRONIC)
-        )
-        acute = compute_blood_gas(
-            _inputs(pH=7.50, pco2=22, hco3=14, acuity=Acuity.ACUTE)
-        )
+        chronic = compute_blood_gas(_inputs(pH=7.50, pco2=22, hco3=14, acuity=Acuity.CHRONIC))
+        acute = compute_blood_gas(_inputs(pH=7.50, pco2=22, hco3=14, acuity=Acuity.ACUTE))
         assert chronic.primary == PrimaryDisturbance.RESPIRATORY_ALKALOSIS
         assert acute.primary == PrimaryDisturbance.RESPIRATORY_ALKALOSIS
         # Chronic predicts MORE HCO3 drop (lower expected HCO3)
@@ -229,9 +215,7 @@ class TestCatMetabolicAcidosisCaveat:
     """
 
     def test_no_expected_pco2_for_cat_metabolic_acidosis(self):
-        r = compute_blood_gas(
-            _inputs(species=Species.CAT, pH=7.22, pco2=33, hco3=14)
-        )
+        r = compute_blood_gas(_inputs(species=Species.CAT, pH=7.22, pco2=33, hco3=14))
         assert r.primary == PrimaryDisturbance.METABOLIC_ACIDOSIS
         assert r.compensation is not None
         # The defining contract: no expected value, no simple/mixed judgment.
@@ -240,9 +224,7 @@ class TestCatMetabolicAcidosisCaveat:
 
     def test_cat_metabolic_acidosis_emits_caveat_warning(self):
         """The DiBartola Ch. 12 caveat must surface as a top-level warning."""
-        r = compute_blood_gas(
-            _inputs(species=Species.CAT, pH=7.22, pco2=33, hco3=14)
-        )
+        r = compute_blood_gas(_inputs(species=Species.CAT, pH=7.22, pco2=33, hco3=14))
         warnings_text = " ".join(r.warnings)
         assert "cat" in warnings_text.lower() or "feline" in warnings_text.lower()
         # The page number citation must be present for traceability.
@@ -254,9 +236,7 @@ class TestCatChronicRespiratoryAcidosisUnknown:
     The calculator must NOT substitute the dog value."""
 
     def test_no_expected_hco3_for_cat_chronic_resp_acidosis(self):
-        r = compute_blood_gas(
-            _inputs(species=Species.CAT, pH=7.30, pco2=55, hco3=28, acuity=Acuity.CHRONIC)
-        )
+        r = compute_blood_gas(_inputs(species=Species.CAT, pH=7.30, pco2=55, hco3=28, acuity=Acuity.CHRONIC))
         assert r.primary == PrimaryDisturbance.RESPIRATORY_ACIDOSIS
         assert r.compensation.expected is None
         assert r.compensation.is_simple is None
@@ -270,12 +250,8 @@ class TestCatChronicRespiratoryAcidosisUnknown:
 class TestSampleTypeReferenceRanges:
     def test_venous_sample_uses_different_ranges(self):
         """Venous samples have different pH/PCO2 reference ranges than arterial."""
-        arterial = compute_blood_gas(
-            _inputs(sample=SampleType.ARTERIAL, pH=7.40, pco2=37, hco3=22)
-        )
-        venous = compute_blood_gas(
-            _inputs(sample=SampleType.VENOUS, pH=7.40, pco2=37, hco3=22)
-        )
+        arterial = compute_blood_gas(_inputs(sample=SampleType.ARTERIAL, pH=7.40, pco2=37, hco3=22))
+        venous = compute_blood_gas(_inputs(sample=SampleType.VENOUS, pH=7.40, pco2=37, hco3=22))
         assert arterial.ref_pco2.lo != venous.ref_pco2.lo or arterial.ref_pco2.hi != venous.ref_pco2.hi
 
 
@@ -303,25 +279,19 @@ class TestAnionGap:
 
     def test_high_ag_metabolic_acidosis_dka_pattern(self):
         """DKA: Na 140, Cl 100, HCO3 8 => AG = 32 (high)."""
-        r = compute_blood_gas(
-            _inputs(pH=7.10, pco2=15, hco3=8, na=140, cl=100)
-        )
+        r = compute_blood_gas(_inputs(pH=7.10, pco2=15, hco3=8, na=140, cl=100))
         assert r.anion_gap == pytest.approx(32, abs=0.5)
         assert r.anion_gap_high is True
 
     def test_normal_ag_metabolic_acidosis_diarrhea_pattern(self):
         """Hyperchloremic acidosis: Na 145, Cl 122, HCO3 12 => AG = 11 (normal)."""
-        r = compute_blood_gas(
-            _inputs(pH=7.25, pco2=28, hco3=12, na=145, cl=122)
-        )
+        r = compute_blood_gas(_inputs(pH=7.25, pco2=28, hco3=12, na=145, cl=122))
         assert r.anion_gap == pytest.approx(11, abs=0.5)
         assert r.anion_gap_high is False
 
     def test_cat_anion_gap_uses_higher_reference(self):
         """Cat AG reference is 17-31 (vs dog 13-25). AG of 22 is normal in cat."""
-        r = compute_blood_gas(
-            _inputs(species=Species.CAT, pH=7.40, pco2=30, hco3=18, na=152, cl=112)
-        )
+        r = compute_blood_gas(_inputs(species=Species.CAT, pH=7.40, pco2=30, hco3=18, na=152, cl=112))
         assert r.anion_gap == pytest.approx(22, abs=0.5)
         # 22 is within the cat reference range 17-31
         assert r.anion_gap_high is False
@@ -436,12 +406,9 @@ class TestReferenceRangeHints:
 
         r = client.get("/blood-gas")
         assert r.status_code == 200
-        contexts = re.findall(
-            r'class="help bg-range" data-bg-context="([^"]+)"', r.text
-        )
+        contexts = re.findall(r'class="help bg-range" data-bg-context="([^"]+)"', r.text)
         assert len(contexts) == 12, (
-            f"expected 12 .bg-range elements (3 inputs × 4 contexts), "
-            f"got {len(contexts)}"
+            f"expected 12 .bg-range elements (3 inputs × 4 contexts), " f"got {len(contexts)}"
         )
         # Each context appears exactly 3 times (once per input).
         from collections import Counter
@@ -487,5 +454,3 @@ class TestReferenceRangeHints:
         silently reduce the page to that state."""
         r = client.get("/blood-gas")
         assert 'class="bg-form"' in r.text
-
-

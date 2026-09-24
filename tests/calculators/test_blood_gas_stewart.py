@@ -60,9 +60,7 @@ class TestHealthyBaseline:
             if c.label == "Unmeasured anions":
                 # Falls out as the residual after measured components
                 continue
-            assert abs(c.mEq_per_l) < 0.5, (
-                f"{c.label} = {c.mEq_per_l} should be near 0 in healthy patient"
-            )
+            assert abs(c.mEq_per_l) < 0.5, f"{c.label} = {c.mEq_per_l} should be near 0 in healthy patient"
 
     def test_healthy_dog_sig_near_zero(self):
         r = compute(
@@ -434,9 +432,7 @@ class TestRoutes:
             m = re.search(rf'name="{fld}"[^>]*value="([^"]*)"', r.text)
             if m:
                 # Must be empty string — no physiologic default substituted
-                assert m.group(1) == "", (
-                    f"Field {fld} has pre-filled value {m.group(1)!r} on initial GET"
-                )
+                assert m.group(1) == "", f"Field {fld} has pre-filled value {m.group(1)!r} on initial GET"
 
     def test_post_compute_returns_result(self):
         r = client.post(

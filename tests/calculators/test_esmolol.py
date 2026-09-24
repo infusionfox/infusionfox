@@ -170,7 +170,8 @@ class TestEsmololAutoRecommendation:
     def test_large_patient_direct_premix(self):
         # 20 kg → 10 mg/mL premix direct (≥15 kg).
         recommended = next(
-            p for p in ESMOLOL.concentration_presets
+            p
+            for p in ESMOLOL.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 20)
             and (p.weight_max_kg is None or p.weight_max_kg > 20)
         )
@@ -179,7 +180,8 @@ class TestEsmololAutoRecommendation:
     def test_medium_patient_1_to_1_dilution(self):
         # 5 kg → 5 mg/mL 1:1 dilution band (3-15 kg).
         recommended = next(
-            p for p in ESMOLOL.concentration_presets
+            p
+            for p in ESMOLOL.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 5)
             and (p.weight_max_kg is None or p.weight_max_kg > 5)
         )
@@ -188,7 +190,8 @@ class TestEsmololAutoRecommendation:
     def test_small_cat_1_to_4_dilution(self):
         # 2 kg cat → 2 mg/mL 1:4 dilution band (<3 kg).
         recommended = next(
-            p for p in ESMOLOL.concentration_presets
+            p
+            for p in ESMOLOL.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 2)
             and (p.weight_max_kg is None or p.weight_max_kg > 2)
         )

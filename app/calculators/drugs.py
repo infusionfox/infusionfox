@@ -461,9 +461,7 @@ VASOPRESSIN = CalculatorConfig(
     # change; it's a numeric, not a unit-aware, computation.
     # 20 U/mL × 1000 mU/U = 20,000 mU/mL stored stock concentration.
     stock_concentration_ug_per_ml=20000.0,
-    stock_concentration_display=(
-        "20 U/mL (20 000 mU/mL), 1 mL vial (20 units per vial)"
-    ),
+    stock_concentration_display=("20 U/mL (20 000 mU/mL), 1 mL vial (20 units per vial)"),
     dose_unit=DoseUnit.MU_PER_KG_PER_MIN,
     concentration_unit_label="mU/mL",
     dose_mass_unit="mU",
@@ -512,10 +510,7 @@ VASOPRESSIN = CalculatorConfig(
                 "Above this rate, ischemia risk rises and clinical "
                 "benefit plateaus."
             ),
-            note=(
-                "Same dose range as dogs (0.5–5 mU/kg/min). Plumb's "
-                "preferred range 0.5–2.5 for shock."
-            ),
+            note=("Same dose range as dogs (0.5–5 mU/kg/min). Plumb's " "preferred range 0.5–2.5 for shock."),
         ),
     },
     concentration_presets=(
@@ -609,8 +604,7 @@ VASOPRESSIN = CalculatorConfig(
         "preferred given extravasation risk."
     ),
     catalog_blurb=(
-        "Second-line / catecholamine-refractory vasopressor for "
-        "vasodilatory shock in dogs and cats."
+        "Second-line / catecholamine-refractory vasopressor for " "vasodilatory shock in dogs and cats."
     ),
     supports_print=True,
     sources=(
@@ -753,7 +747,7 @@ PHENYLEPHRINE = CalculatorConfig(
         "resulting concentration depends on bag size: 100 mL gives "
         "100 µg/mL, 250 mL gives 40 µg/mL, and 500 mL gives 20 µg/mL. "
         "The 250 mL bag is the textbook preparation cited in Plumb's "
-        "(\"10 mg in 250 mL NaCl\") and is the right default for most "
+        '("10 mg in 250 mL NaCl") and is the right default for most '
         "patients."
         "\n\n"
         "Carrier fluid: 0.9% NaCl is the conventional diluent; 5% "
@@ -835,8 +829,7 @@ NITROPRUSSIDE = CalculatorConfig(
     # (it's vial mass ÷ bag volume).
     stock_concentration_ug_per_ml=25000.0,
     stock_concentration_display=(
-        "50 mg lyophilized vial; reconstitute with 2 mL D5W "
-        "to 25 mg/mL working stock"
+        "50 mg lyophilized vial; reconstitute with 2 mL D5W " "to 25 mg/mL working stock"
     ),
     dose_unit=DoseUnit.UG_PER_KG_PER_MIN,
     # 1 µg/kg/min is the standard starting rate (Plumb's), titrated
@@ -943,7 +936,7 @@ NITROPRUSSIDE = CalculatorConfig(
         ConcentrationPreset(
             200,
             "1 vial (50 mg, reconstituted to 25 mg/mL in 2 mL D5W) into a 250 mL bag of 5% dextrose. Foil-wrap.",
-            "Plumb's textbook preparation (\"50 mg in 250 mL D5W\"). Recommended for patients 3–15 kg and most general clinical use.",
+            'Plumb\'s textbook preparation ("50 mg in 250 mL D5W"). Recommended for patients 3–15 kg and most general clinical use.',
             weight_min_kg=3,
             weight_max_kg=15,
         ),
@@ -1531,8 +1524,7 @@ FENTANYL = CalculatorConfig(
         LoadingDose(
             label="Emergent severe pain",
             description=(
-                "Titrated to effect up to 50 µg/kg; the effective dose "
-                "becomes the hourly CRI rate."
+                "Titrated to effect up to 50 µg/kg; the effective dose " "becomes the hourly CRI rate."
             ),
             matches_cri_rate=False,
             dose_per_kg={
@@ -1573,8 +1565,7 @@ FENTANYL = CalculatorConfig(
             "Remove 10 mL from a 50 mL bag of 0.9% NaCl, then add "
             "10 mL of 50 µg/mL stock (500 µg in 50 mL final = "
             "10 µg/mL)",
-            "Larger patients or higher-dose work where carrier-fluid "
-            "load matters",
+            "Larger patients or higher-dose work where carrier-fluid " "load matters",
             weight_min_kg=40.0,
         ),
         ConcentrationPreset(
@@ -1909,8 +1900,7 @@ DEXMEDETOMIDINE = CalculatorConfig(
                 Species.CAT: (1.0, 2.0),
             },
             note=(
-                "Cats are more sensitive to α₂ effects; stay at the "
-                "low end and monitor for bradycardia."
+                "Cats are more sensitive to α₂ effects; stay at the " "low end and monitor for bradycardia."
             ),
         ),
     ),
@@ -2187,8 +2177,7 @@ MIDAZOLAM = CalculatorConfig(
         "pulmonary compromise."
     ),
     catalog_blurb=(
-        "Short-acting benzodiazepine CRI for ICU sedation, "
-        "anxiolysis, and status epilepticus management."
+        "Short-acting benzodiazepine CRI for ICU sedation, " "anxiolysis, and status epilepticus management."
     ),
     sources=(
         Source(
@@ -2220,10 +2209,7 @@ MAGNESIUM_SULFATE = CalculatorConfig(
     # the calculator works in mg of salt, not mEq, to match the most
     # common veterinary CRI workflow).
     stock_concentration_ug_per_ml=500000.0,
-    stock_concentration_display=(
-        "50% magnesium sulfate (500 mg/mL, 4.06 mEq/mL), "
-        "50 mL multi-dose vial"
-    ),
+    stock_concentration_display=("50% magnesium sulfate (500 mg/mL, 4.06 mEq/mL), " "50 mL multi-dose vial"),
     dose_unit=DoseUnit.MG_PER_KG_PER_HR,
     # 25 mg/kg/hr, middle of the Silverstein SACCM published range,
     # common starting point for ventricular arrhythmia management.
@@ -2592,7 +2578,7 @@ ESMOLOL = CalculatorConfig(
         "Ultra-short-acting β-blocker CRI for supraventricular "
         "tachyarrhythmias (SVT, atrial fibrillation / atrial flutter "
         "rate control), perioperative tachycardia or hypertension, "
-        "thyrotoxic crisis (cats), and as a \"trial of beta-blockade\" "
+        'thyrotoxic crisis (cats), and as a "trial of beta-blockade" '
         "before committing to longer-acting oral agents. Sometimes "
         "used in pheochromocytoma management AFTER alpha-blockade is "
         "established, NEVER as monotherapy. Continuous ECG, BP, and "
@@ -2645,8 +2631,7 @@ LIDOCAINE = CalculatorConfig(
     # 20 mL multi-dose vial = 400 mg total. 1% (10 mg/mL) also exists.
     stock_concentration_ug_per_ml=20000.0,
     stock_concentration_display=(
-        "2% lidocaine (20 mg/mL, 20 000 µg/mL), "
-        "20 mL multi-dose vial (400 mg per vial)"
+        "2% lidocaine (20 mg/mL, 20 000 µg/mL), " "20 mL multi-dose vial (400 mg per vial)"
     ),
     dose_unit=DoseUnit.UG_PER_KG_PER_MIN,
     # 50 µg/kg/min, typical dog starting maintenance after the
@@ -2801,7 +2786,7 @@ LIDOCAINE = CalculatorConfig(
         "directly via syringe pump; smaller patients need progressive "
         "dilution to keep pump rate in the precision range."
         "\n\n"
-        "Use the PRESERVATIVE-FREE (\"plain\") 2% formulation, NOT "
+        'Use the PRESERVATIVE-FREE ("plain") 2% formulation, NOT '
         "lidocaine with epinephrine; the epinephrine-containing "
         "products are for local infiltration only and would produce "
         "unwanted systemic effects on IV infusion."
@@ -2878,9 +2863,7 @@ FUROSEMIDE = CalculatorConfig(
     # Stock: 50 mg/mL injectable, 50 mL multi-dose vial (2 500 mg).
     # 10 mg/mL formulation also exists; the 50 mg/mL is most common.
     stock_concentration_ug_per_ml=50000.0,
-    stock_concentration_display=(
-        "50 mg/mL (50 000 µg/mL), 50 mL multi-dose vial (2 500 mg per vial)"
-    ),
+    stock_concentration_display=("50 mg/mL (50 000 µg/mL), 50 mL multi-dose vial (2 500 mg per vial)"),
     dose_unit=DoseUnit.MG_PER_KG_PER_HR,
     # 0.5 mg/kg/hr, typical maintenance for refractory CHF in dogs,
     # middle of the Plumb's range. Cats commonly run at the lower end.
@@ -3076,8 +3059,7 @@ FUROSEMIDE = CalculatorConfig(
         "creatinine/BUN, body weight, urine output, blood pressure."
     ),
     catalog_blurb=(
-        "Loop diuretic CRI for refractory CHF, acute pulmonary "
-        "edema, and select oliguric AKI cases."
+        "Loop diuretic CRI for refractory CHF, acute pulmonary " "edema, and select oliguric AKI cases."
     ),
     supports_print=True,
     sources=(
@@ -3129,9 +3111,7 @@ DILTIAZEM = CalculatorConfig(
     # per vial. Some 10 mL vials available (50 mg); the 5 mL/25 mg
     # is the most common veterinary stock.
     stock_concentration_ug_per_ml=5000.0,
-    stock_concentration_display=(
-        "5 mg/mL (5 000 µg/mL), 5 mL vial (25 mg per vial)"
-    ),
+    stock_concentration_display=("5 mg/mL (5 000 µg/mL), 5 mL vial (25 mg per vial)"),
     dose_unit=DoseUnit.UG_PER_KG_PER_MIN,
     # 3 µg/kg/min, typical starting maintenance after the loading
     # bolus for A-fib rate control. Silverstein SACCM range: 2–6
@@ -3364,9 +3344,7 @@ METHOCARBAMOL = CalculatorConfig(
     # Stock: methocarbamol injectable (Robaxin-V IV), 100 mg/mL,
     # 20 mL multi-dose vial = 2 000 mg per vial.
     stock_concentration_ug_per_ml=100000.0,
-    stock_concentration_display=(
-        "100 mg/mL (100 000 µg/mL), 20 mL multi-dose vial (2 000 mg)"
-    ),
+    stock_concentration_display=("100 mg/mL (100 000 µg/mL), 20 mL multi-dose vial (2 000 mg)"),
     dose_unit=DoseUnit.MG_PER_KG_PER_HR,
     # 10 mg/kg/hr, typical maintenance for tetanus and tremorogenic
     # toxicosis (Silverstein SACCM). Conservative anchor.
@@ -3771,9 +3749,7 @@ METOCLOPRAMIDE = CalculatorConfig(
     loading_doses=(
         LoadingDose(
             label="Laryngeal paralysis (intraoperative)",
-            description=(
-                "1 mg/kg IV bolus before the 1 mg/kg/hr intraoperative CRI."
-            ),
+            description=("1 mg/kg IV bolus before the 1 mg/kg/hr intraoperative CRI."),
             # Not a CRI-rate-matched dose. The 1 mg/kg loading is a
             # fixed protocol value, not derived from whatever CRI rate
             # the user entered (the standard antiemetic CRI of
@@ -3897,9 +3873,7 @@ def pick_preset_for_patient(
 
     if drug.recommendation_strategy == "pump-precision":
         floor = drug.min_pump_rate_ml_per_hr or NOREPI_DEFAULT_MIN_PUMP_RATE_ML_PER_HR
-        presets_high_to_low = sorted(
-            pump_safe, key=lambda p: p.concentration_ug_per_ml, reverse=True
-        )
+        presets_high_to_low = sorted(pump_safe, key=lambda p: p.concentration_ug_per_ml, reverse=True)
         ug_per_hr = dose_ug_kg_min * weight_kg * 60.0
         for preset in presets_high_to_low:
             if ug_per_hr / preset.concentration_ug_per_ml >= floor:
@@ -3914,18 +3888,12 @@ def pick_preset_for_patient(
         # None on ConcentrationPreset; None = unbounded on that side.
         for preset in pump_safe:
             lo = preset.weight_min_kg if preset.weight_min_kg is not None else 0.0
-            hi = (
-                preset.weight_max_kg
-                if preset.weight_max_kg is not None
-                else float("inf")
-            )
+            hi = preset.weight_max_kg if preset.weight_max_kg is not None else float("inf")
             if lo <= weight_kg < hi:
                 return preset
         # No band matched (weight at exact boundary, or no bands defined).
         # Fall back: lightest band for small patients, heaviest for big.
-        sorted_by_lo = sorted(
-            pump_safe, key=lambda p: p.weight_min_kg or 0.0
-        )
+        sorted_by_lo = sorted(pump_safe, key=lambda p: p.weight_min_kg or 0.0)
         smallest_lo = sorted_by_lo[0].weight_min_kg or 0.0
         if weight_kg < smallest_lo:
             return sorted_by_lo[0]
@@ -3933,11 +3901,7 @@ def pick_preset_for_patient(
 
     # Unrecognized strategy: caller-default preset.
     return next(
-        (
-            p
-            for p in pump_safe
-            if p.concentration_ug_per_ml == drug.default_concentration_ug_per_ml
-        ),
+        (p for p in pump_safe if p.concentration_ug_per_ml == drug.default_concentration_ug_per_ml),
         pump_safe[0],
     )
 
@@ -4169,9 +4133,7 @@ def compute_loading_doses(
             matched_per_kg = cri_dose_value
             matched_total = matched_per_kg * weight_kg
             matched_ml_stock = (matched_total * ug_per_display_unit) / stock_ug_per_ml
-            matched_outside_range = (
-                matched_per_kg < lo or matched_per_kg > hi
-            )
+            matched_outside_range = matched_per_kg < lo or matched_per_kg > hi
 
         out.append(
             LoadingDoseComputation(

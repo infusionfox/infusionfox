@@ -39,9 +39,9 @@ class TestNavEntryClassification:
         all_hrefs_cal = {e.href for entries in cal.values() for e in entries}
         all_hrefs_hub = {e.href for entries in hub.values() for e in entries}
         assert all_hrefs_cal | all_hrefs_hub == all_hrefs_full
-        assert all_hrefs_cal & all_hrefs_hub == set(), (
-            "An entry shouldn't appear on both /calculators and /hubs."
-        )
+        assert (
+            all_hrefs_cal & all_hrefs_hub == set()
+        ), "An entry shouldn't appear on both /calculators and /hubs."
 
     @pytest.mark.parametrize(
         "href",
@@ -110,9 +110,8 @@ class TestCatalogRoutes:
         # section itself. The catalog `<section class="catalog">` ends with
         # the closing `</section>` tag right before the footer.
         import re
-        section_match = re.search(
-            r'<section class="catalog">(.*?)</section>', r.text, re.DOTALL
-        )
+
+        section_match = re.search(r'<section class="catalog">(.*?)</section>', r.text, re.DOTALL)
         assert section_match, "Catalog section not found"
         body = section_match.group(1)
         # Contains calculator-side entries
@@ -127,9 +126,8 @@ class TestCatalogRoutes:
         r = fastapi_client.get("/hubs")
         assert r.status_code == 200
         import re
-        section_match = re.search(
-            r'<section class="catalog">(.*?)</section>', r.text, re.DOTALL
-        )
+
+        section_match = re.search(r'<section class="catalog">(.*?)</section>', r.text, re.DOTALL)
         assert section_match, "Catalog section not found"
         body = section_match.group(1)
         # Contains hub-side entries

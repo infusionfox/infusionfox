@@ -177,4 +177,3 @@ class TestPlaceholderText:
         # Match the substantive tokens, not the exact wording.
         assert "cortisol" in r.text.lower()
         assert "baseline" in r.text.lower()
-

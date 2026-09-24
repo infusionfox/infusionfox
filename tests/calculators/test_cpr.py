@@ -114,9 +114,7 @@ class TestDefibrillation:
     def test_biphasic_escalate_is_double_first(self):
         """RECOVER 2024 doubles the first-shock dose if refractory."""
         result = calculate(weight_kg=15)
-        assert result.defib.biphasic_escalate_ext_j == pytest.approx(
-            2 * result.defib.biphasic_first_ext_j
-        )
+        assert result.defib.biphasic_escalate_ext_j == pytest.approx(2 * result.defib.biphasic_first_ext_j)
 
     def test_small_patient_uses_decimal_format(self):
         """2.5 kg cat: biphasic internal 0.5–1 J → display retains decimal."""

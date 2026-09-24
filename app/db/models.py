@@ -71,9 +71,7 @@ class Feedback(Base):
     # The page the submitter was on — helps reproduce issues
     page_url: Mapped[str | None] = mapped_column(String(500))
 
-    kind: Mapped[FeedbackKind] = mapped_column(
-        Enum(FeedbackKind), nullable=False, default=FeedbackKind.OTHER
-    )
+    kind: Mapped[FeedbackKind] = mapped_column(Enum(FeedbackKind), nullable=False, default=FeedbackKind.OTHER)
     message: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Optional contact for follow-up; the submission flow always
@@ -118,9 +116,7 @@ class DisclaimerAcceptance(Base):
     # of acceptance. Bumping that constant invalidates prior acceptances
     # at the client (localStorage) layer; this table preserves the
     # historical record of which version each user accepted.
-    disclaimer_version: Mapped[str] = mapped_column(
-        String(32), nullable=False, index=True
-    )
+    disclaimer_version: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
 
     # Originating IP per app/util/client_ip.py (CF-Connecting-IP first).
     # Nullable because in pathological cases (e.g. test client without

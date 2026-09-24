@@ -373,8 +373,7 @@ def calculate(inputs: AppleFullInputs) -> AppleFullResult:
     ]
 
     total = (
-        cr_pts + wbc_pts + alb_pts + spo2_pts + bili_pts
-        + ment_pts + rr_pts + age_pts + fluid_pts + lac_pts
+        cr_pts + wbc_pts + alb_pts + spo2_pts + bili_pts + ment_pts + rr_pts + age_pts + fluid_pts + lac_pts
     )
 
     # Mortality equation (Hayes 2010 eq. 2): R = 0.237×score − 8.294
@@ -515,20 +514,11 @@ async def apple_full_compute(
         if len(missing) == 1:
             msg = f"Enter {missing[0]} to compute the APPLE-full score."
         elif len(missing) == 2:
-            msg = (
-                f"Enter {missing[0]} and {missing[1]} "
-                "to compute the APPLE-full score."
-            )
+            msg = f"Enter {missing[0]} and {missing[1]} " "to compute the APPLE-full score."
         elif len(missing) <= 4:
-            msg = (
-                "Enter " + ", ".join(missing[:-1])
-                + f", and {missing[-1]} to compute the APPLE-full score."
-            )
+            msg = "Enter " + ", ".join(missing[:-1]) + f", and {missing[-1]} to compute the APPLE-full score."
         else:
-            msg = (
-                f"Enter all 10 variables ({len(missing)} still missing) "
-                "to compute the APPLE-full score."
-            )
+            msg = f"Enter all 10 variables ({len(missing)} still missing) " "to compute the APPLE-full score."
 
         return templates.TemplateResponse(
             "partials/_invalid_input_placeholder.html",

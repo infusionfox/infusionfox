@@ -58,9 +58,7 @@ class TestIrisGate:
 
     def test_both_uses_worse(self):
         """When both are entered the worse markers wins."""
-        result = iris_calculate(
-            IrisInputs(creatinine_mg_dl=2.0, sdma_ug_dl=40.0)
-        )
+        result = iris_calculate(IrisInputs(creatinine_mg_dl=2.0, sdma_ug_dl=40.0))
         assert result.computed is True
         assert result.stage_creatinine == 2
         assert result.stage_sdma == 3

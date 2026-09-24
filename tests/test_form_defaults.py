@@ -217,6 +217,6 @@ def test_help_text_combines_when_ranges_match():
     for slug in ("norepinephrine", "epinephrine", "fentanyl"):
         body = client.get(f"/{slug}").text
         help_text = _dose_help_text(body)
-        assert "(dogs and cats)" in help_text.lower(), (
-            f"/{slug}: expected combined-species phrasing, got: {help_text!r}"
-        )
+        assert (
+            "(dogs and cats)" in help_text.lower()
+        ), f"/{slug}: expected combined-species phrasing, got: {help_text!r}"

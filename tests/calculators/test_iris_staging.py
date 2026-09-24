@@ -26,15 +26,15 @@ class TestDogCreatinineStaging:
     @pytest.mark.parametrize(
         "creat,expected",
         [
-            (1.0, 1),    # below 1.4
+            (1.0, 1),  # below 1.4
             (1.39, 1),
-            (1.4, 2),    # boundary, start of stage 2
+            (1.4, 2),  # boundary, start of stage 2
             (2.0, 2),
-            (2.8, 2),    # boundary, IRIS-inclusive upper of stage 2
-            (2.9, 3),    # boundary, start of stage 3
+            (2.8, 2),  # boundary, IRIS-inclusive upper of stage 2
+            (2.9, 3),  # boundary, start of stage 3
             (3.0, 3),
-            (5.0, 3),    # boundary, IRIS-inclusive upper of stage 3
-            (5.1, 4),    # >5.0 is stage 4
+            (5.0, 3),  # boundary, IRIS-inclusive upper of stage 3
+            (5.1, 4),  # >5.0 is stage 4
             (10.0, 4),
         ],
     )
@@ -49,13 +49,13 @@ class TestCatCreatinineStaging:
         [
             (1.0, 1),
             (1.59, 1),
-            (1.6, 2),    # cat boundary differs from dog
+            (1.6, 2),  # cat boundary differs from dog
             (2.5, 2),
-            (2.8, 2),    # IRIS-inclusive upper of stage 2
-            (2.9, 3),    # start of stage 3
+            (2.8, 2),  # IRIS-inclusive upper of stage 2
+            (2.9, 3),  # start of stage 3
             (4.0, 3),
-            (5.0, 3),    # IRIS-inclusive upper of stage 3
-            (5.1, 4),    # >5.0 is stage 4
+            (5.0, 3),  # IRIS-inclusive upper of stage 3
+            (5.1, 4),  # >5.0 is stage 4
         ],
     )
     def test_cat_creatinine_stage(self, creat: float, expected: int):
@@ -69,19 +69,19 @@ class TestSDMAStaging:
         [
             ("dog", 10.0, 1),
             ("dog", 17.9, 1),
-            ("dog", 18.0, 2),    # start of stage 2
+            ("dog", 18.0, 2),  # start of stage 2
             ("dog", 30.0, 2),
-            ("dog", 35.0, 2),    # IRIS-inclusive upper of stage 2
-            ("dog", 36.0, 3),    # start of stage 3
-            ("dog", 54.0, 3),    # IRIS-inclusive upper of stage 3
-            ("dog", 55.0, 4),    # >54 is stage 4
+            ("dog", 35.0, 2),  # IRIS-inclusive upper of stage 2
+            ("dog", 36.0, 3),  # start of stage 3
+            ("dog", 54.0, 3),  # IRIS-inclusive upper of stage 3
+            ("dog", 55.0, 4),  # >54 is stage 4
             ("cat", 17.0, 1),
-            ("cat", 18.0, 2),    # start of stage 2
-            ("cat", 25.0, 2),    # IRIS-inclusive upper of stage 2
-            ("cat", 26.0, 3),    # start of stage 3
-            ("cat", 38.0, 3),    # IRIS-inclusive upper of stage 3 (was incorrectly 45)
-            ("cat", 39.0, 4),    # >38 is stage 4 (was incorrectly ≥45)
-            ("cat", 45.0, 4),    # well into stage 4
+            ("cat", 18.0, 2),  # start of stage 2
+            ("cat", 25.0, 2),  # IRIS-inclusive upper of stage 2
+            ("cat", 26.0, 3),  # start of stage 3
+            ("cat", 38.0, 3),  # IRIS-inclusive upper of stage 3 (was incorrectly 45)
+            ("cat", 39.0, 4),  # >38 is stage 4 (was incorrectly ≥45)
+            ("cat", 45.0, 4),  # well into stage 4
         ],
     )
     def test_sdma_stage(self, species: str, sdma: float, expected: int):

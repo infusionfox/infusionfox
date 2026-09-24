@@ -873,9 +873,7 @@ class TestOpioidFreeComposition:
         assert "ketamine" in slugs
         assert "lidocaine" in slugs
         assert "dexmedetomidine" in slugs
-        assert all(
-            r.spec.role != "opioid" for r in result.combined_bag.drug_recipes
-        )
+        assert all(r.spec.role != "opioid" for r in result.combined_bag.drug_recipes)
 
     def test_opioid_free_with_no_adjuncts_warns(self) -> None:
         # Opioid-free + no adjuncts toggled = nothing to compute.

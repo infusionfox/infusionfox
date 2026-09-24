@@ -61,25 +61,29 @@ class TestBasicMath:
         """40 percent should equal 0.40 decimal."""
         as_pct = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=100, fio2_value=40, fio2_unit=FiO2Unit.PERCENT,
+                pao2_mmhg=100,
+                fio2_value=40,
+                fio2_unit=FiO2Unit.PERCENT,
                 paco2_mmhg=40,
             )
         )
         as_dec = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=100, fio2_value=0.40, fio2_unit=FiO2Unit.DECIMAL,
+                pao2_mmhg=100,
+                fio2_value=0.40,
+                fio2_unit=FiO2Unit.DECIMAL,
                 paco2_mmhg=40,
             )
         )
         assert as_pct.pf_ratio == pytest.approx(as_dec.pf_ratio, abs=0.5)
-        assert as_pct.a_a_gradient_mmhg == pytest.approx(
-            as_dec.a_a_gradient_mmhg, abs=0.5
-        )
+        assert as_pct.a_a_gradient_mmhg == pytest.approx(as_dec.a_a_gradient_mmhg, abs=0.5)
 
     def test_severe_ards_pattern(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=60, fio2_value=0.6, paco2_mmhg=35,
+                pao2_mmhg=60,
+                fio2_value=0.6,
+                paco2_mmhg=35,
             )
         )
         assert result.pf_ratio == pytest.approx(100, abs=0.5)
@@ -93,7 +97,9 @@ class TestBasicMath:
     def test_very_severe_below_100(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=50, fio2_value=0.8, paco2_mmhg=40,
+                pao2_mmhg=50,
+                fio2_value=0.8,
+                paco2_mmhg=40,
             )
         )
         # P:F = 50 / 0.8 = 62.5
@@ -107,7 +113,9 @@ class TestPFClassificationCutoffs:
     def test_normal_at_400(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=84, fio2_value=0.21, paco2_mmhg=40,
+                pao2_mmhg=84,
+                fio2_value=0.21,
+                paco2_mmhg=40,
             )
         )
         # 84 / 0.21 = 400 exactly
@@ -117,7 +125,9 @@ class TestPFClassificationCutoffs:
     def test_mild_at_399(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=83.9, fio2_value=0.21, paco2_mmhg=40,
+                pao2_mmhg=83.9,
+                fio2_value=0.21,
+                paco2_mmhg=40,
             )
         )
         # ~ 399
@@ -126,7 +136,9 @@ class TestPFClassificationCutoffs:
     def test_moderate_at_250(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=100, fio2_value=0.4, paco2_mmhg=40,
+                pao2_mmhg=100,
+                fio2_value=0.4,
+                paco2_mmhg=40,
             )
         )
         assert result.pf_ratio == pytest.approx(250, abs=0.5)
@@ -135,7 +147,9 @@ class TestPFClassificationCutoffs:
     def test_severe_at_150(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=75, fio2_value=0.5, paco2_mmhg=40,
+                pao2_mmhg=75,
+                fio2_value=0.5,
+                paco2_mmhg=40,
             )
         )
         assert result.pf_ratio == pytest.approx(150, abs=0.5)
@@ -148,7 +162,9 @@ class TestHypoventilationPattern:
     def test_normal_a_a_with_high_paco2(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=60, fio2_value=0.21, paco2_mmhg=70,
+                pao2_mmhg=60,
+                fio2_value=0.21,
+                paco2_mmhg=70,
             )
         )
         # PAO2 = 0.21 × 713 − 70/0.8 = 62.23
@@ -160,7 +176,9 @@ class TestHypoventilationPattern:
     def test_hypercapnia_warning_fires(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=80, fio2_value=0.21, paco2_mmhg=70,
+                pao2_mmhg=80,
+                fio2_value=0.21,
+                paco2_mmhg=70,
             )
         )
         combined = " ".join(result.warnings).lower()
@@ -174,7 +192,9 @@ class TestVQMismatchPattern:
         # PaO2 60, FiO2 0.21, PaCO2 40 → A-a should be elevated
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=60, fio2_value=0.21, paco2_mmhg=40,
+                pao2_mmhg=60,
+                fio2_value=0.21,
+                paco2_mmhg=40,
             )
         )
         # PAO2 = 149.7 − 50 = 99.7
@@ -189,13 +209,17 @@ class TestAltitudeEffect:
         """Denver Patm ~630 mmHg should reduce PAO2."""
         sea_level = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=80, fio2_value=0.21, paco2_mmhg=40,
+                pao2_mmhg=80,
+                fio2_value=0.21,
+                paco2_mmhg=40,
                 patm_mmhg=760,
             )
         )
         denver = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=80, fio2_value=0.21, paco2_mmhg=40,
+                pao2_mmhg=80,
+                fio2_value=0.21,
+                paco2_mmhg=40,
                 patm_mmhg=630,
             )
         )
@@ -208,41 +232,33 @@ class TestAltitudeEffect:
 
 class TestValidation:
     def test_missing_pao2_rejected(self):
-        result = compute_oxygenation(
-            OxygenationInputs(pao2_mmhg=0, fio2_value=0.4, paco2_mmhg=40)
-        )
+        result = compute_oxygenation(OxygenationInputs(pao2_mmhg=0, fio2_value=0.4, paco2_mmhg=40))
         assert result.valid is False
 
     def test_missing_fio2_rejected(self):
-        result = compute_oxygenation(
-            OxygenationInputs(pao2_mmhg=80, fio2_value=0, paco2_mmhg=40)
-        )
+        result = compute_oxygenation(OxygenationInputs(pao2_mmhg=80, fio2_value=0, paco2_mmhg=40))
         assert result.valid is False
 
     def test_missing_paco2_rejected(self):
-        result = compute_oxygenation(
-            OxygenationInputs(pao2_mmhg=80, fio2_value=0.4, paco2_mmhg=0)
-        )
+        result = compute_oxygenation(OxygenationInputs(pao2_mmhg=80, fio2_value=0.4, paco2_mmhg=0))
         assert result.valid is False
 
     def test_fio2_below_room_air_rejected(self):
         """FiO2 below 0.21 isn't physiological at sea level."""
-        result = compute_oxygenation(
-            OxygenationInputs(pao2_mmhg=80, fio2_value=0.15, paco2_mmhg=40)
-        )
+        result = compute_oxygenation(OxygenationInputs(pao2_mmhg=80, fio2_value=0.15, paco2_mmhg=40))
         assert result.valid is False
 
     def test_fio2_above_100_pct_rejected(self):
-        result = compute_oxygenation(
-            OxygenationInputs(pao2_mmhg=80, fio2_value=1.5, paco2_mmhg=40)
-        )
+        result = compute_oxygenation(OxygenationInputs(pao2_mmhg=80, fio2_value=1.5, paco2_mmhg=40))
         assert result.valid is False
 
     def test_fio2_percent_below_21_rejected(self):
         """21% is room-air floor; 15% should be rejected."""
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=80, fio2_value=15, fio2_unit=FiO2Unit.PERCENT,
+                pao2_mmhg=80,
+                fio2_value=15,
+                fio2_unit=FiO2Unit.PERCENT,
                 paco2_mmhg=40,
             )
         )
@@ -251,7 +267,9 @@ class TestValidation:
     def test_extreme_patm_rejected(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=80, fio2_value=0.21, paco2_mmhg=40,
+                pao2_mmhg=80,
+                fio2_value=0.21,
+                paco2_mmhg=40,
                 patm_mmhg=900,
             )
         )
@@ -277,7 +295,9 @@ class TestSevereHypoxemiaWarning:
     def test_pf_below_100_triggers_warning(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=50, fio2_value=0.8, paco2_mmhg=40,
+                pao2_mmhg=50,
+                fio2_value=0.8,
+                paco2_mmhg=40,
             )
         )
         combined = " ".join(result.warnings).lower()
@@ -286,7 +306,9 @@ class TestSevereHypoxemiaWarning:
     def test_pf_above_100_no_severe_warning(self):
         result = compute_oxygenation(
             OxygenationInputs(
-                pao2_mmhg=120, fio2_value=0.4, paco2_mmhg=40,
+                pao2_mmhg=120,
+                fio2_value=0.4,
+                paco2_mmhg=40,
             )
         )
         # P:F = 300 → moderate, not severe. No mechanical-ventilation warning.

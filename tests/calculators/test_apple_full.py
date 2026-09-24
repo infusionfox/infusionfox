@@ -51,15 +51,15 @@ class TestCreatininePoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (0.30, 0),   # 0–0.62 referent
-            (0.62, 0),   # band end
-            (0.63, 1),   # 0.63–1.35 band start (NORMAL range, but 1 pt)
-            (1.0, 1),    # mid-normal
-            (1.35, 1),   # band end
-            (1.36, 8),   # 1.36–2.26 band start
-            (2.26, 8),   # band end
-            (2.27, 9),   # >2.26 band
-            (10.0, 9),   # severe azotemia
+            (0.30, 0),  # 0–0.62 referent
+            (0.62, 0),  # band end
+            (0.63, 1),  # 0.63–1.35 band start (NORMAL range, but 1 pt)
+            (1.0, 1),  # mid-normal
+            (1.35, 1),  # band end
+            (1.36, 8),  # 1.36–2.26 band start
+            (2.26, 8),  # band end
+            (2.27, 9),  # >2.26 band
+            (10.0, 9),  # severe azotemia
         ],
     )
     def test_band_boundaries(self, value, expected_points):
@@ -94,15 +94,15 @@ class TestWBCPoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (2.0, 9),    # leukopenia (9 pts — highest)
-            (5.0, 9),    # just under referent
-            (5.1, 0),    # 5.1–8.5 referent band start
-            (7.0, 0),    # mid-referent
-            (8.5, 0),    # band end
-            (8.6, 2),    # 8.6–18 band
-            (18.0, 2),   # band end
-            (18.1, 3),   # >18 band
-            (50.0, 3),   # marked leukocytosis
+            (2.0, 9),  # leukopenia (9 pts — highest)
+            (5.0, 9),  # just under referent
+            (5.1, 0),  # 5.1–8.5 referent band start
+            (7.0, 0),  # mid-referent
+            (8.5, 0),  # band end
+            (8.6, 2),  # 8.6–18 band
+            (18.0, 2),  # band end
+            (18.1, 3),  # >18 band
+            (50.0, 3),  # marked leukocytosis
         ],
     )
     def test_band_boundaries(self, value, expected_points):
@@ -134,17 +134,17 @@ class TestAlbuminFullPoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (20, 6),     # <26
-            (25, 6),     # just under
-            (26, 7),     # 26–30 band start
-            (28, 7),     # mid
-            (30, 7),     # band end
-            (31, 9),     # 31–32 band — the multivariable artifact
-            (32, 9),     # band end
-            (33, 0),     # 33–35 referent start
-            (35, 0),     # band end
-            (36, 2),     # >35 band
-            (50, 2),     # high albumin
+            (20, 6),  # <26
+            (25, 6),  # just under
+            (26, 7),  # 26–30 band start
+            (28, 7),  # mid
+            (30, 7),  # band end
+            (31, 9),  # 31–32 band — the multivariable artifact
+            (32, 9),  # band end
+            (33, 0),  # 33–35 referent start
+            (35, 0),  # band end
+            (36, 2),  # >35 band
+            (50, 2),  # high albumin
         ],
     )
     def test_band_boundaries(self, value, expected_points):
@@ -183,14 +183,14 @@ class TestSpo2Points:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (75, 10),    # <90 severe
-            (89, 10),    # just under
-            (90, 4),     # 90–94 band start
-            (94, 4),     # band end
-            (95, 1),     # 95–97 band start
-            (97, 1),     # band end
-            (98, 0),     # 98–100 referent
-            (100, 0),    # band end
+            (75, 10),  # <90 severe
+            (89, 10),  # just under
+            (90, 4),  # 90–94 band start
+            (94, 4),  # band end
+            (95, 1),  # 95–97 band start
+            (97, 1),  # band end
+            (98, 0),  # 98–100 referent
+            (100, 0),  # band end
         ],
     )
     def test_band_boundaries(self, value, expected_points):
@@ -215,15 +215,15 @@ class TestBilirubinPoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (0.1, 0),    # 0–0.23 referent
-            (0.23, 0),   # band end
-            (0.24, 6),   # 0.24–0.46 band — HIGHEST score (6)
-            (0.40, 6),   # mid-band
-            (0.46, 6),   # band end
-            (0.47, 4),   # 0.47–0.93 band — score drops to 4
-            (0.93, 4),   # band end
-            (0.94, 3),   # >0.93 band — score drops to 3
-            (5.0, 3),    # severe bili
+            (0.1, 0),  # 0–0.23 referent
+            (0.23, 0),  # band end
+            (0.24, 6),  # 0.24–0.46 band — HIGHEST score (6)
+            (0.40, 6),  # mid-band
+            (0.46, 6),  # band end
+            (0.47, 4),  # 0.47–0.93 band — score drops to 4
+            (0.93, 4),  # band end
+            (0.94, 3),  # >0.93 band — score drops to 3
+            (5.0, 3),  # severe bili
         ],
     )
     def test_band_boundaries(self, value, expected_points):
@@ -251,11 +251,11 @@ class TestMentationFullPoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (0, 0),    # normal — referent
+            (0, 0),  # normal — referent
             (1, 5),
             (2, 7),
             (3, 8),
-            (4, 13),   # unresponsive — top of scale
+            (4, 13),  # unresponsive — top of scale
         ],
     )
     def test_all_levels(self, value, expected_points):
@@ -298,17 +298,17 @@ class TestRespRatePoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (15, 3),     # <25 bradypnea
-            (24, 3),     # just under
-            (25, 0),     # 25–36 referent start
-            (30, 0),     # normal
-            (36, 0),     # band end
-            (37, 5),     # 37–48 band start
-            (48, 5),     # band end
-            (49, 6),     # 49–60 band — HIGHEST
-            (60, 6),     # band end
-            (61, 5),     # >60 — counterintuitive drop
-            (100, 5),    # frank tachypnea
+            (15, 3),  # <25 bradypnea
+            (24, 3),  # just under
+            (25, 0),  # 25–36 referent start
+            (30, 0),  # normal
+            (36, 0),  # band end
+            (37, 5),  # 37–48 band start
+            (48, 5),  # band end
+            (49, 6),  # 49–60 band — HIGHEST
+            (60, 6),  # band end
+            (61, 5),  # >60 — counterintuitive drop
+            (100, 5),  # frank tachypnea
         ],
     )
     def test_band_boundaries(self, value, expected_points):
@@ -333,15 +333,15 @@ class TestAgePoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (0.5, 3),    # 0–2 band (young)
-            (2.0, 3),    # band end
-            (3.0, 0),    # 3–5 referent start
-            (4.0, 0),    # mid
-            (5.0, 0),    # band end
-            (5.5, 6),    # 6–8 band (mature)
-            (8.0, 6),    # band end
-            (8.5, 8),    # >8 band (geriatric)
-            (14.0, 8),   # senior
+            (0.5, 3),  # 0–2 band (young)
+            (2.0, 3),  # band end
+            (3.0, 0),  # 3–5 referent start
+            (4.0, 0),  # mid
+            (5.0, 0),  # band end
+            (5.5, 6),  # 6–8 band (mature)
+            (8.0, 6),  # band end
+            (8.5, 8),  # >8 band (geriatric)
+            (14.0, 8),  # senior
         ],
     )
     def test_band_boundaries(self, value, expected_points):
@@ -364,9 +364,9 @@ class TestFluidScorePoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (0, 0),    # no free fluid — referent
-            (1, 3),    # one cavity
-            (2, 4),    # two or more cavities
+            (0, 0),  # no free fluid — referent
+            (1, 3),  # one cavity
+            (2, 4),  # two or more cavities
         ],
     )
     def test_all_levels(self, value, expected_points):
@@ -394,15 +394,15 @@ class TestLactateFullPoints:
     @pytest.mark.parametrize(
         "value, expected_points",
         [
-            (0.5, 0),    # 0–1.9 referent
-            (1.9, 0),    # band end
-            (2.0, 2),    # 2.0–7.9 band start
-            (5.0, 2),    # mid
-            (7.9, 2),    # band end
-            (8.0, 3),    # 8.0–11.0 band start
-            (11.0, 3),   # band end
-            (11.1, 6),   # >11 band
-            (20.0, 6),   # severe
+            (0.5, 0),  # 0–1.9 referent
+            (1.9, 0),  # band end
+            (2.0, 2),  # 2.0–7.9 band start
+            (5.0, 2),  # mid
+            (7.9, 2),  # band end
+            (8.0, 3),  # 8.0–11.0 band start
+            (11.0, 3),  # band end
+            (11.1, 6),  # >11 band
+            (20.0, 6),  # severe
         ],
     )
     def test_band_boundaries(self, value, expected_points):
@@ -436,8 +436,16 @@ class TestMortalityEquation:
     def test_score_zero(self):
         inputs = AppleFullInputs(
             units="si",
-            creatinine=40, wbc=7, albumin=34, spo2=99, bilirubin=2,
-            mentation=0, resp_rate=30, age=4, fluid_score=0, lactate=1.0,
+            creatinine=40,
+            wbc=7,
+            albumin=34,
+            spo2=99,
+            bilirubin=2,
+            mentation=0,
+            resp_rate=30,
+            age=4,
+            fluid_score=0,
+            lactate=1.0,
         )
         r = calculate(inputs)
         assert r.total_score == 0
@@ -448,21 +456,22 @@ class TestMortalityEquation:
         inputs = AppleFullInputs(
             units="si",
             creatinine=300,  # 9
-            wbc=20,          # 3
-            albumin=34,      # 0
-            spo2=99,         # 0
-            bilirubin=2,     # 0
-            mentation=4,     # 13
-            resp_rate=30,    # 0
-            age=4,           # 0
-            fluid_score=0,   # 0
-            lactate=5.0,     # 2 → total 9+3+0+0+0+13+0+0+0+2 = 27
+            wbc=20,  # 3
+            albumin=34,  # 0
+            spo2=99,  # 0
+            bilirubin=2,  # 0
+            mentation=4,  # 13
+            resp_rate=30,  # 0
+            age=4,  # 0
+            fluid_score=0,  # 0
+            lactate=5.0,  # 2 → total 9+3+0+0+0+13+0+0+0+2 = 27
         )
         r = calculate(inputs)
         assert r.total_score == 27
         # The mortality equation at score=30 yields ~23.4%
         # Spot-check the equation itself rather than the constructed score
         from math import exp
+
         target_R = 0.237 * 30 - 8.294
         target_P = 100.0 * exp(target_R) / (1 + exp(target_R))
         assert 22.0 < target_P < 25.0
@@ -470,8 +479,16 @@ class TestMortalityEquation:
     def test_score_max_approaches_100pct(self):
         inputs = AppleFullInputs(
             units="si",
-            creatinine=400, wbc=2.0, albumin=31, spo2=80, bilirubin=6,
-            mentation=4, resp_rate=55, age=14, fluid_score=2, lactate=15,
+            creatinine=400,
+            wbc=2.0,
+            albumin=31,
+            spo2=80,
+            bilirubin=6,
+            mentation=4,
+            resp_rate=55,
+            age=14,
+            fluid_score=2,
+            lactate=15,
         )
         r = calculate(inputs)
         assert r.total_score == 80
@@ -483,15 +500,23 @@ class TestMortalityEquation:
         for level in [0, 1, 2, 3, 4]:
             inputs = AppleFullInputs(
                 units="si",
-                creatinine=40, wbc=7, albumin=34, spo2=99, bilirubin=2,
-                mentation=level, resp_rate=30, age=4, fluid_score=0, lactate=1.0,
+                creatinine=40,
+                wbc=7,
+                albumin=34,
+                spo2=99,
+                bilirubin=2,
+                mentation=level,
+                resp_rate=30,
+                age=4,
+                fluid_score=0,
+                lactate=1.0,
             )
             r = calculate(inputs)
             scores_and_morts.append((r.total_score, r.mortality_pct))
         # Both score and mortality should monotonically increase
         for i in range(1, len(scores_and_morts)):
-            assert scores_and_morts[i][0] >= scores_and_morts[i-1][0]
-            assert scores_and_morts[i][1] >= scores_and_morts[i-1][1]
+            assert scores_and_morts[i][0] >= scores_and_morts[i - 1][0]
+            assert scores_and_morts[i][1] >= scores_and_morts[i - 1][1]
 
 
 # ---------------------------------------------------------------------------
@@ -504,13 +529,29 @@ class TestUnitConversion:
         """3.4 g/dL = 34 g/L → both should land in referent band."""
         us = AppleFullInputs(
             units="us",
-            creatinine=1.0, wbc=7, albumin=3.4, spo2=99, bilirubin=0.1,
-            mentation=0, resp_rate=30, age=4, fluid_score=0, lactate=10,
+            creatinine=1.0,
+            wbc=7,
+            albumin=3.4,
+            spo2=99,
+            bilirubin=0.1,
+            mentation=0,
+            resp_rate=30,
+            age=4,
+            fluid_score=0,
+            lactate=10,
         )
         si = AppleFullInputs(
             units="si",
-            creatinine=88.4, wbc=7, albumin=34, spo2=99, bilirubin=1.7,
-            mentation=0, resp_rate=30, age=4, fluid_score=0, lactate=1.1,
+            creatinine=88.4,
+            wbc=7,
+            albumin=34,
+            spo2=99,
+            bilirubin=1.7,
+            mentation=0,
+            resp_rate=30,
+            age=4,
+            fluid_score=0,
+            lactate=1.1,
         )
         us_r = calculate(us)
         si_r = calculate(si)
@@ -522,24 +563,24 @@ class TestUnitConversion:
         """Severe patient in both unit systems produces same score (within 1 pt)."""
         us = AppleFullInputs(
             units="us",
-            creatinine=3.0,    # → 9 pts (>2.26)
-            wbc=3.0,           # → 9 pts (<5.1)
-            albumin=2.0,       # 20 g/L → 6 pts (<26)
-            spo2=85,           # → 10 pts (<90)
-            bilirubin=2.0,     # → 3 pts (>0.93)
-            mentation=4,       # → 13 pts
-            resp_rate=55,      # → 6 pts (49-60)
-            age=12,            # → 8 pts (>8)
-            fluid_score=2,     # → 4 pts
-            lactate=140,       # 15.55 mmol/L → 6 pts (>11)
+            creatinine=3.0,  # → 9 pts (>2.26)
+            wbc=3.0,  # → 9 pts (<5.1)
+            albumin=2.0,  # 20 g/L → 6 pts (<26)
+            spo2=85,  # → 10 pts (<90)
+            bilirubin=2.0,  # → 3 pts (>0.93)
+            mentation=4,  # → 13 pts
+            resp_rate=55,  # → 6 pts (49-60)
+            age=12,  # → 8 pts (>8)
+            fluid_score=2,  # → 4 pts
+            lactate=140,  # 15.55 mmol/L → 6 pts (>11)
         )
         si = AppleFullInputs(
             units="si",
-            creatinine=265,    # 3.0 mg/dL ≈ 265 umol/L → 9 pts
+            creatinine=265,  # 3.0 mg/dL ≈ 265 umol/L → 9 pts
             wbc=3.0,
             albumin=20,
             spo2=85,
-            bilirubin=34,      # 2.0 mg/dL → 34 umol/L → >16 → 3 pts
+            bilirubin=34,  # 2.0 mg/dL → 34 umol/L → >16 → 3 pts
             mentation=4,
             resp_rate=55,
             age=12,
@@ -566,16 +607,22 @@ class TestCalculate:
         inputs = AppleFullInputs()
         r = calculate(inputs)
         assert r.total_score == 0
-        not_entered_count = sum(
-            1 for c in r.components if "Not entered" in c.value_str
-        )
+        not_entered_count = sum(1 for c in r.components if "Not entered" in c.value_str)
         assert not_entered_count == 10
 
     def test_max_severity(self):
         inputs = AppleFullInputs(
             units="si",
-            creatinine=400, wbc=2.0, albumin=31, spo2=80, bilirubin=6,
-            mentation=4, resp_rate=55, age=14, fluid_score=2, lactate=15,
+            creatinine=400,
+            wbc=2.0,
+            albumin=31,
+            spo2=80,
+            bilirubin=6,
+            mentation=4,
+            resp_rate=55,
+            age=14,
+            fluid_score=2,
+            lactate=15,
         )
         r = calculate(inputs)
         assert r.total_score == 80
@@ -583,8 +630,16 @@ class TestCalculate:
     def test_all_referent_zone_zero_score(self):
         inputs = AppleFullInputs(
             units="si",
-            creatinine=40, wbc=7, albumin=34, spo2=99, bilirubin=2,
-            mentation=0, resp_rate=30, age=4, fluid_score=0, lactate=1.0,
+            creatinine=40,
+            wbc=7,
+            albumin=34,
+            spo2=99,
+            bilirubin=2,
+            mentation=0,
+            resp_rate=30,
+            age=4,
+            fluid_score=0,
+            lactate=1.0,
         )
         r = calculate(inputs)
         assert r.total_score == 0
@@ -594,22 +649,45 @@ class TestCalculate:
     def test_components_in_canonical_order(self):
         inputs = AppleFullInputs(
             units="si",
-            creatinine=40, wbc=7, albumin=34, spo2=99, bilirubin=2,
-            mentation=0, resp_rate=30, age=4, fluid_score=0, lactate=1.0,
+            creatinine=40,
+            wbc=7,
+            albumin=34,
+            spo2=99,
+            bilirubin=2,
+            mentation=0,
+            resp_rate=30,
+            age=4,
+            fluid_score=0,
+            lactate=1.0,
         )
         r = calculate(inputs)
         labels = [c.label for c in r.components]
         assert labels == [
-            "Creatinine", "WBC count", "Albumin", "SpO₂",
-            "Total bilirubin", "Mentation", "Respiratory rate",
-            "Age", "Fluid score (FAST/TFAST)", "Lactate",
+            "Creatinine",
+            "WBC count",
+            "Albumin",
+            "SpO₂",
+            "Total bilirubin",
+            "Mentation",
+            "Respiratory rate",
+            "Age",
+            "Fluid score (FAST/TFAST)",
+            "Lactate",
         ]
 
     def test_sources_present(self):
         inputs = AppleFullInputs(
             units="si",
-            creatinine=40, wbc=7, albumin=34, spo2=99, bilirubin=2,
-            mentation=0, resp_rate=30, age=4, fluid_score=0, lactate=1.0,
+            creatinine=40,
+            wbc=7,
+            albumin=34,
+            spo2=99,
+            bilirubin=2,
+            mentation=0,
+            resp_rate=30,
+            age=4,
+            fluid_score=0,
+            lactate=1.0,
         )
         r = calculate(inputs)
         assert len(r.sources) >= 1
@@ -623,8 +701,15 @@ class TestCalculate:
         for level in [0, 1, 2, 3, 4]:
             inputs = AppleFullInputs(
                 units="si",
-                creatinine=40, wbc=7, albumin=34, spo2=99, bilirubin=2,
-                mentation=level, resp_rate=30, age=4, fluid_score=0,
+                creatinine=40,
+                wbc=7,
+                albumin=34,
+                spo2=99,
+                bilirubin=2,
+                mentation=level,
+                resp_rate=30,
+                age=4,
+                fluid_score=0,
                 lactate=1.0,
             )
             r = calculate(inputs)
@@ -639,8 +724,16 @@ class TestCalculate:
         # Push into higher bands with severe-everything patients
         severe = AppleFullInputs(
             units="si",
-            creatinine=400, wbc=2.0, albumin=31, spo2=80, bilirubin=6,
-            mentation=4, resp_rate=55, age=14, fluid_score=2, lactate=15,
+            creatinine=400,
+            wbc=2.0,
+            albumin=31,
+            spo2=80,
+            bilirubin=6,
+            mentation=4,
+            resp_rate=55,
+            age=14,
+            fluid_score=2,
+            lactate=15,
         )
         r = calculate(severe)
         assert r.band_label == "Critical risk"
@@ -673,10 +766,9 @@ class TestRoutes:
         # We're not being too clever — just verify the radio buttons
         # don't all have a "checked" baked in
         import re
+
         # Find all mentation radio inputs
-        mentation_radios = re.findall(
-            r'<input[^>]*name="mentation"[^>]*>', body
-        )
+        mentation_radios = re.findall(r'<input[^>]*name="mentation"[^>]*>', body)
         assert len(mentation_radios) == 5  # 0-4
         # None should have 'checked'
         for radio in mentation_radios:
@@ -687,9 +779,8 @@ class TestRoutes:
         resp = client.get("/apple-full")
         body = resp.text
         import re
-        fluid_radios = re.findall(
-            r'<input[^>]*name="fluid_score"[^>]*>', body
-        )
+
+        fluid_radios = re.findall(r'<input[^>]*name="fluid_score"[^>]*>', body)
         assert len(fluid_radios) == 3  # 0, 1, 2
         for radio in fluid_radios:
             assert "checked" not in radio
@@ -701,6 +792,7 @@ class TestRoutes:
         body = resp.text
         # Find the hx-trigger attribute
         import re
+
         triggers = re.findall(r'hx-trigger="([^"]+)"', body)
         assert any("input changed" in t for t in triggers)
         for t in triggers:
@@ -862,10 +954,10 @@ class TestRoutes:
                 "albumin": "34",
                 "spo2": "99",
                 "bilirubin": "2",
-                "mentation": "0",      # explicit zero
+                "mentation": "0",  # explicit zero
                 "resp_rate": "30",
                 "age": "4",
-                "fluid_score": "0",    # explicit zero
+                "fluid_score": "0",  # explicit zero
                 "lactate": "1.0",
             },
         )
@@ -918,7 +1010,7 @@ class TestRoutes:
                 "bilirubin": "2",
                 "mentation": "0",
                 "resp_rate": "30",
-                "age": "0.5",           # 6-month-old puppy
+                "age": "0.5",  # 6-month-old puppy
                 "fluid_score": "0",
                 "lactate": "1.0",
             },
@@ -938,8 +1030,12 @@ class TestRoutes:
 class TestCatalogEntry:
     def test_required_fields_present(self):
         for field in (
-            "slug", "display_name", "short_name",
-            "category", "kind", "mechanism_summary",
+            "slug",
+            "display_name",
+            "short_name",
+            "category",
+            "kind",
+            "mechanism_summary",
         ):
             assert field in APPLE_FULL_CATALOG_ENTRY
             assert APPLE_FULL_CATALOG_ENTRY[field]  # non-empty

@@ -59,8 +59,7 @@ async def oxygenation_compute(
             {
                 "request": request,
                 "placeholder_message": (
-                    "Enter PaO₂, FiO₂, and PaCO₂ to compute the P:F "
-                    "ratio and A-a gradient."
+                    "Enter PaO₂, FiO₂, and PaCO₂ to compute the P:F " "ratio and A-a gradient."
                 ),
             },
         )

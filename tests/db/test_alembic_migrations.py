@@ -99,6 +99,4 @@ class TestSchemaContents:
             "audit_log",
         }
         resurrected = tables & legacy_auth_tables
-        assert not resurrected, (
-            f"Auth-era tables resurrected by a migration: {resurrected}"
-        )
+        assert not resurrected, f"Auth-era tables resurrected by a migration: {resurrected}"

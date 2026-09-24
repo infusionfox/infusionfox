@@ -53,10 +53,7 @@ def _dose_range_summary(spec) -> str:  # type: ignore[no-untyped-def]
 
 
 def _all_dose_range_summaries() -> dict[str, str]:
-    return {
-        spec.slug: _dose_range_summary(spec)
-        for spec in OPIOID_SPECS + ADJUNCT_SPECS
-    }
+    return {spec.slug: _dose_range_summary(spec) for spec in OPIOID_SPECS + ADJUNCT_SPECS}
 
 
 @router.get("/analgesia-cri", response_class=HTMLResponse)
@@ -92,9 +89,7 @@ def get_analgesia_builder(
     # Parse adjuncts list — comma-separated. Filter to known adjuncts.
     valid_adjunct_slugs = {s.slug for s in ADJUNCT_SPECS}
     requested_adjuncts = tuple(
-        slug.strip()
-        for slug in adjuncts.split(",")
-        if slug.strip() in valid_adjunct_slugs
+        slug.strip() for slug in adjuncts.split(",") if slug.strip() in valid_adjunct_slugs
     )
 
     return templates.TemplateResponse(
@@ -176,9 +171,7 @@ async def post_analgesia_builder(request: Request) -> HTMLResponse:
     # per-drug mode), but only used by compute_analgesia in
     # combined-bag mode.
     bag_volume_ml = _parse_float(str(form.get("bag_volume_ml", "500") or "500"), 500.0)
-    shared_pump_rate = _parse_float(
-        str(form.get("shared_pump_rate_ml_per_kg_per_hr", "1.0") or "1.0"), 1.0
-    )
+    shared_pump_rate = _parse_float(str(form.get("shared_pump_rate_ml_per_kg_per_hr", "1.0") or "1.0"), 1.0)
 
     # Collect per-drug doses and concentrations. Pull defaults so a
     # newly toggled-on adjunct whose field is blank still computes.
@@ -188,9 +181,7 @@ async def post_analgesia_builder(request: Request) -> HTMLResponse:
     for spec in OPIOID_SPECS + ADJUNCT_SPECS:
         dose_field = f"dose_{spec.slug}"
         conc_field = f"concentration_{spec.slug}"
-        doses[spec.slug] = _parse_float(
-            str(form.get(dose_field, "") or ""), default_doses[spec.slug]
-        )
+        doses[spec.slug] = _parse_float(str(form.get(dose_field, "") or ""), default_doses[spec.slug])
         concentrations[spec.slug] = _parse_float(
             str(form.get(conc_field, "") or ""),
             default_concentrations[spec.slug],
@@ -198,11 +189,7 @@ async def post_analgesia_builder(request: Request) -> HTMLResponse:
 
     # Adjuncts: checkbox presence indicates selection. HTML checkboxes
     # only submit a value when checked; an absent field means unchecked.
-    adjunct_slugs = tuple(
-        spec.slug
-        for spec in ADJUNCT_SPECS
-        if form.get(f"adjunct_{spec.slug}") is not None
-    )
+    adjunct_slugs = tuple(spec.slug for spec in ADJUNCT_SPECS if form.get(f"adjunct_{spec.slug}") is not None)
 
     inputs = AnalgesiaBuilderInputs(
         weight_value=weight_value,

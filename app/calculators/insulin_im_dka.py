@@ -276,9 +276,7 @@ def compute_insulin_im(inputs: InsulinImInputs) -> InsulinImResult:
         "insulin is the only formulation appropriate for the "
         "intermittent IM protocol."
     )
-    warnings.append(
-        "IM only. Do NOT give SC in a dehydrated DKA patient; absorption is unreliable."
-    )
+    warnings.append("IM only. Do NOT give SC in a dehydrated DKA patient; absorption is unreliable.")
     warnings.append(
         "Goal: lower blood glucose by no more than 50–75 mg/dL/hr toward "
         "< 250 mg/dL. Re-check BG hourly, dose by the BG drop in the "

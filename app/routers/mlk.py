@@ -64,12 +64,7 @@ async def mlk_page() -> RedirectResponse:
     ketamine + lidocaine) preselected. Preserves the workflow for
     /mlk bookmarks while consolidating onto one calculator."""
     return RedirectResponse(
-        url=(
-            "/analgesia-cri"
-            "?prep_mode=combined_bag"
-            "&opioid=morphine"
-            "&adjuncts=ketamine,lidocaine"
-        ),
+        url=("/analgesia-cri" "?prep_mode=combined_bag" "&opioid=morphine" "&adjuncts=ketamine,lidocaine"),
         status_code=301,
     )
 

@@ -70,9 +70,9 @@ class TestEpinephrineConfig:
 
 class TestEpinephrinePresetPicker:
     """Weight-band picker. Bands from EPINEPHRINE config:
-        20 µg/mL  <5 kg
-        40 µg/mL  5–20 kg
-        80 µg/mL  >20 kg
+    20 µg/mL  <5 kg
+    40 µg/mL  5–20 kg
+    80 µg/mL  >20 kg
     """
 
     def test_small_patient_picks_20(self):
@@ -238,9 +238,7 @@ class TestDopamineBagSizeVariants:
 
     def test_800_x_250_is_full_vial(self):
         """800 µg/mL × 250 mL = 200 mg = 1 vial."""
-        v = next(
-            v for v in bag_size_variants_for_drug(DOPAMINE_STANDARD, 800) if v.bag_volume_ml == 250
-        )
+        v = next(v for v in bag_size_variants_for_drug(DOPAMINE_STANDARD, 800) if v.bag_volume_ml == 250)
         assert v.is_suggested is True
         assert "1 vial" in v.vial_note
 
@@ -248,21 +246,15 @@ class TestDopamineBagSizeVariants:
         """400 µg/mL × 500 mL = 200 mg = 1 vial. Both standard preps
         are full-vial; the suggested badge follows the concentration
         choice cleanly."""
-        v = next(
-            v for v in bag_size_variants_for_drug(DOPAMINE_STANDARD, 400) if v.bag_volume_ml == 500
-        )
+        v = next(v for v in bag_size_variants_for_drug(DOPAMINE_STANDARD, 400) if v.bag_volume_ml == 500)
         assert v.is_suggested is True
 
     def test_off_diagonal_combos_not_full_vial(self):
         """800 × 500 = 400 mg (2 vials); 400 × 250 = 100 mg (half-vial).
         Neither is the standard preparation; the suggested tag points
         away from them."""
-        v1 = next(
-            v for v in bag_size_variants_for_drug(DOPAMINE_STANDARD, 800) if v.bag_volume_ml == 500
-        )
-        v2 = next(
-            v for v in bag_size_variants_for_drug(DOPAMINE_STANDARD, 400) if v.bag_volume_ml == 250
-        )
+        v1 = next(v for v in bag_size_variants_for_drug(DOPAMINE_STANDARD, 800) if v.bag_volume_ml == 500)
+        v2 = next(v for v in bag_size_variants_for_drug(DOPAMINE_STANDARD, 400) if v.bag_volume_ml == 250)
         assert v1.is_suggested is False
         assert v2.is_suggested is False
 

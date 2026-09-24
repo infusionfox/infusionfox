@@ -62,52 +62,80 @@ CRI_TEST_CASES = [
     # is intentionally excluded because target-pump-rate mode is disabled
     # for it (vasopressor workflow doesn't apply to opioid CRIs). See
     # tests below for explicit fentanyl-no-toggle assertions.
-
     # Norepinephrine. The article's worked example.
     # 0.1 µg/kg/min × 15 kg × 60 = 90 µg/hr
     # 90 µg/hr ÷ 3 mL/hr = 30 µg/mL
     # 30 µg/mL × 250 mL = 7,500 µg = 7.5 mg
     # 7,500 µg ÷ 1,000 µg/mL = 7.5 mL of 1 mg/mL stock
     pytest.param(
-        "norepinephrine", "ug/kg/min", 15.0, 0.1, 16.0,
-        3.0, 250.0,
-        90.0, 30.0, 7.5, 7.5,
+        "norepinephrine",
+        "ug/kg/min",
+        15.0,
+        0.1,
+        16.0,
+        3.0,
+        250.0,
+        90.0,
+        30.0,
+        7.5,
+        7.5,
         id="norepinephrine_ug_per_kg_per_min",
     ),
-
     # Epinephrine. Same family math as norepi.
     # 0.05 µg/kg/min × 20 kg × 60 = 60 µg/hr
     # 60 ÷ 3 = 20 µg/mL bag
     # 20 × 250 = 5,000 µg = 5 mg
     # 5,000 µg ÷ 1,000 µg/mL = 5 mL of 1 mg/mL stock
     pytest.param(
-        "epinephrine", "ug/kg/min", 20.0, 0.05, 16.0,
-        3.0, 250.0,
-        60.0, 20.0, 5.0, 5.0,
+        "epinephrine",
+        "ug/kg/min",
+        20.0,
+        0.05,
+        16.0,
+        3.0,
+        250.0,
+        60.0,
+        20.0,
+        5.0,
+        5.0,
         id="epinephrine_ug_per_kg_per_min",
     ),
-
     # Dobutamine. Higher stock concentration.
     # 5 µg/kg/min × 25 kg × 60 = 7,500 µg/hr
     # 7,500 ÷ 5 = 1,500 µg/mL
     # 1,500 × 500 = 750,000 µg = 750 mg
     # 750,000 µg ÷ 12,500 µg/mL stock = 60 mL of 12.5 mg/mL stock
     pytest.param(
-        "dobutamine", "ug/kg/min", 25.0, 5.0, 1000.0,
-        5.0, 500.0,
-        7500.0, 1500.0, 750.0, 60.0,
+        "dobutamine",
+        "ug/kg/min",
+        25.0,
+        5.0,
+        1000.0,
+        5.0,
+        500.0,
+        7500.0,
+        1500.0,
+        750.0,
+        60.0,
         id="dobutamine_ug_per_kg_per_min",
     ),
-
     # Dopamine-CRI. Highest stock concentration.
     # 5 µg/kg/min × 30 kg × 60 = 9,000 µg/hr
     # 9,000 ÷ 5 = 1,800 µg/mL bag
     # 1,800 × 250 = 450,000 µg = 450 mg
     # 450,000 ÷ 40,000 = 11.25 mL of 40 mg/mL stock
     pytest.param(
-        "dopamine-cri", "ug/kg/min", 30.0, 5.0, 1600.0,
-        5.0, 250.0,
-        9000.0, 1800.0, 450.0, 11.25,
+        "dopamine-cri",
+        "ug/kg/min",
+        30.0,
+        5.0,
+        1600.0,
+        5.0,
+        250.0,
+        9000.0,
+        1800.0,
+        450.0,
+        11.25,
         id="dopamine_cri_ug_per_kg_per_min",
     ),
 ]
@@ -120,9 +148,17 @@ CRI_TEST_CASES = [
     CRI_TEST_CASES,
 )
 def test_cri_target_pump_rate_math(
-    slug, dose_unit_str, weight_kg, dose, conc_ug_per_ml,
-    target_rate, bag_vol,
-    expected_total_hr, expected_bag_conc, expected_total_mg, expected_stock_ml,
+    slug,
+    dose_unit_str,
+    weight_kg,
+    dose,
+    conc_ug_per_ml,
+    target_rate,
+    bag_vol,
+    expected_total_hr,
+    expected_bag_conc,
+    expected_total_mg,
+    expected_stock_ml,
 ):
     """Engine-level math in TARGET_PUMP_RATE mode is correct per drug.
 
@@ -168,8 +204,7 @@ def test_cri_target_pump_rate_math(
         f"got {result.bag_concentration_ug_per_ml}"
     )
     assert result.total_drug_in_bag_mg == pytest.approx(expected_total_mg, rel=1e-9), (
-        f"{slug}: total_drug_in_bag_mg expected {expected_total_mg}, "
-        f"got {result.total_drug_in_bag_mg}"
+        f"{slug}: total_drug_in_bag_mg expected {expected_total_mg}, " f"got {result.total_drug_in_bag_mg}"
     )
     assert result.stock_volume_to_add_ml == pytest.approx(expected_stock_ml, rel=1e-9), (
         f"{slug}: stock_volume_to_add_ml expected {expected_stock_ml}, "
@@ -184,9 +219,17 @@ def test_cri_target_pump_rate_math(
 )
 def test_cri_target_pump_rate_rendered_html(
     fastapi_client,
-    slug, dose_unit_str, weight_kg, dose, conc_ug_per_ml,
-    target_rate, bag_vol,
-    expected_total_hr, expected_bag_conc, expected_total_mg, expected_stock_ml,
+    slug,
+    dose_unit_str,
+    weight_kg,
+    dose,
+    conc_ug_per_ml,
+    target_rate,
+    bag_vol,
+    expected_total_hr,
+    expected_bag_conc,
+    expected_total_mg,
+    expected_stock_ml,
 ):
     """End-to-end HTML render: the worked-example template uses the right
     math per drug. Checks that the µg/kg/min drugs include a × 60 step
@@ -243,11 +286,8 @@ def test_cri_target_pump_rate_rendered_html(
     # Headline bag concentration matches engine math.
     # Render is %.1f so we format the expected the same way for the match.
     expected_bag_conc_str = f"{expected_bag_conc:.1f}"
-    assert (
-        f"{expected_bag_conc_str}<span class=\"unit\">µg/mL</span>" in r.text
-    ), (
-        f"{slug}: rendered bag concentration does not match expected "
-        f"{expected_bag_conc_str} µg/mL"
+    assert f'{expected_bag_conc_str}<span class="unit">µg/mL</span>' in r.text, (
+        f"{slug}: rendered bag concentration does not match expected " f"{expected_bag_conc_str} µg/mL"
     )
 
 
@@ -259,9 +299,17 @@ def test_cri_target_pump_rate_rendered_html(
 )
 def test_cri_standard_bag_mode_unchanged_by_toggle_addition(
     fastapi_client,
-    slug, _unit_str, weight_kg, dose, conc_ug_per_ml,
-    _target_rate, _bag_vol,
-    _expected_total_hr, _expected_bag_conc, _expected_total_mg, _expected_stock_ml,
+    slug,
+    _unit_str,
+    weight_kg,
+    dose,
+    conc_ug_per_ml,
+    _target_rate,
+    _bag_vol,
+    _expected_total_hr,
+    _expected_bag_conc,
+    _expected_total_mg,
+    _expected_stock_ml,
 ):
     """Regression guard: STANDARD_BAG mode still works on every drug
     that supports the toggle. The mode toggle was added as an opt-in;
@@ -281,9 +329,9 @@ def test_cri_standard_bag_mode_unchanged_by_toggle_addition(
     )
     assert r.status_code == 200, f"{slug} standard-mode compute failed: {r.status_code}"
     assert "CRI rate" in r.text, f"{slug} standard mode missing CRI rate headline"
-    assert "Target pump rate &rarr; bag concentration" not in r.text, (
-        f"{slug} standard mode is leaking the target-pump-rate mode banner"
-    )
+    assert (
+        "Target pump rate &rarr; bag concentration" not in r.text
+    ), f"{slug} standard mode is leaking the target-pump-rate mode banner"
 
 
 # ---------------------------------------------------------------------------
@@ -384,9 +432,7 @@ def test_low_pump_rate_warning_fires_below_2_ml_per_hr(fastapi_client):
         },
     )
     assert r.status_code == 200
-    assert "below 2 mL/hr" in r.text, (
-        "Low pump-rate warning did not fire on a sub-2 mL/hr calculation."
-    )
+    assert "below 2 mL/hr" in r.text, "Low pump-rate warning did not fire on a sub-2 mL/hr calculation."
     assert "Dilute the bag" in r.text or "syringe pump" in r.text
 
 

@@ -188,7 +188,8 @@ class TestDiltiazemAutoRecommendation:
     def test_medium_dog_recommended_default_band(self):
         # 10 kg → 0.5 mg/mL (3-15 kg band).
         recommended = next(
-            p for p in DILTIAZEM.concentration_presets
+            p
+            for p in DILTIAZEM.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 10)
             and (p.weight_max_kg is None or p.weight_max_kg > 10)
         )

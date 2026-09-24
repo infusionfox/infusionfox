@@ -87,9 +87,9 @@ class TestTierBoundaries:
     )
     def test_boundary(self, p: float, expected_severity: str):
         result = compute_hypophosphatemia(_inputs(p=p))
-        assert result.matched_tier.severity == expected_severity, (
-            f"P={p} should be {expected_severity}, got {result.matched_tier.severity}"
-        )
+        assert (
+            result.matched_tier.severity == expected_severity
+        ), f"P={p} should be {expected_severity}, got {result.matched_tier.severity}"
 
 
 class TestKInteraction:

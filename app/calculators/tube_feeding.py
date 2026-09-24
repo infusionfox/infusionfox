@@ -363,9 +363,7 @@ def compute_tube_feeding(inp: TubeFeedingInputs) -> TubeFeedingResult:
     # consistency issue, not a clinical one; we just note it.
     diet = diet_by_key(inp.diet_key)
     if diet is not None and diet.form != inp.diet_form:
-        notes.append(
-            f"Diet form set to {diet.form.value} to match the selected product."
-        )
+        notes.append(f"Diet form set to {diet.form.value} to match the selected product.")
         # Re-run safety gate against the catalog form, in case this fixed
         # things or broke them.
         adjusted = TubeFeedingInputs(

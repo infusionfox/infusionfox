@@ -90,9 +90,7 @@ async def blood_gas_compute(
             "partials/_invalid_input_placeholder.html",
             {
                 "request": request,
-                "placeholder_message": (
-                    "Enter pH, PCO₂, and HCO₃⁻ to interpret the blood gas."
-                ),
+                "placeholder_message": ("Enter pH, PCO₂, and HCO₃⁻ to interpret the blood gas."),
             },
         )
 

@@ -231,9 +231,7 @@ class TestArticleOpenCalculatorLink:
         assert r.status_code == 200
         m = self._BUTTON_RE.search(r.text)
         assert m is not None, "ketamine article must render an Open-calculator button"
-        assert m.group(1) == "/ketamine", (
-            f"ketamine article must link to /ketamine, got {m.group(1)!r}"
-        )
+        assert m.group(1) == "/ketamine", f"ketamine article must link to /ketamine, got {m.group(1)!r}"
 
     def test_blood_gas_article_links_to_blood_gas_route(self):
         """Specific pin: the original bug Tim reported."""

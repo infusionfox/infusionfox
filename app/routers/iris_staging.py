@@ -35,16 +35,16 @@ router = APIRouter()
 # so the table's `hi` values are shifted by 0.1 to keep stage 2 inclusive of
 # 2.8 and stage 3 inclusive of 5.0.
 DOG_CREATININE_STAGES = [
-    (1, 0.0, 1.4),    # Stage 1: <1.4 (with other CKD evidence)
-    (2, 1.4, 2.9),    # Stage 2: 1.4 to 2.8 inclusive
-    (3, 2.9, 5.1),    # Stage 3: 2.9 to 5.0 inclusive
+    (1, 0.0, 1.4),  # Stage 1: <1.4 (with other CKD evidence)
+    (2, 1.4, 2.9),  # Stage 2: 1.4 to 2.8 inclusive
+    (3, 2.9, 5.1),  # Stage 3: 2.9 to 5.0 inclusive
     (4, 5.1, 999.0),  # Stage 4: >5.0
 ]
 
 CAT_CREATININE_STAGES = [
-    (1, 0.0, 1.6),    # Stage 1: <1.6
-    (2, 1.6, 2.9),    # Stage 2: 1.6 to 2.8 inclusive
-    (3, 2.9, 5.1),    # Stage 3: 2.9 to 5.0 inclusive
+    (1, 0.0, 1.6),  # Stage 1: <1.6
+    (2, 1.6, 2.9),  # Stage 2: 1.6 to 2.8 inclusive
+    (3, 2.9, 5.1),  # Stage 3: 2.9 to 5.0 inclusive
     (4, 5.1, 999.0),  # Stage 4: >5.0
 ]
 
@@ -53,17 +53,17 @@ CAT_CREATININE_STAGES = [
 # spec-doc copy error). Shifted by 1 µg/dL since IRIS SDMA values are
 # integer-aligned in the source table.
 DOG_SDMA_STAGES = [
-    (1, 0.0, 18.0),    # Stage 1: <18
-    (2, 18.0, 36.0),   # Stage 2: 18 to 35 inclusive
-    (3, 36.0, 55.0),   # Stage 3: 36 to 54 inclusive
-    (4, 55.0, 9999.0), # Stage 4: >54
+    (1, 0.0, 18.0),  # Stage 1: <18
+    (2, 18.0, 36.0),  # Stage 2: 18 to 35 inclusive
+    (3, 36.0, 55.0),  # Stage 3: 36 to 54 inclusive
+    (4, 55.0, 9999.0),  # Stage 4: >54
 ]
 
 CAT_SDMA_STAGES = [
-    (1, 0.0, 18.0),    # Stage 1: <18
-    (2, 18.0, 26.0),   # Stage 2: 18 to 25 inclusive
-    (3, 26.0, 39.0),   # Stage 3: 26 to 38 inclusive (was incorrectly 25-45)
-    (4, 39.0, 9999.0), # Stage 4: >38 (was incorrectly ≥45)
+    (1, 0.0, 18.0),  # Stage 1: <18
+    (2, 18.0, 26.0),  # Stage 2: 18 to 25 inclusive
+    (3, 26.0, 39.0),  # Stage 3: 26 to 38 inclusive (was incorrectly 25-45)
+    (4, 39.0, 9999.0),  # Stage 4: >38 (was incorrectly ≥45)
 ]
 
 

@@ -144,13 +144,15 @@ class TestEthanolCorrection:
         """Ethanol 50 mg/dL = 10.87 mmol/L; should add ~11 to calc osm."""
         baseline = compute_osmolar_gap(
             OsmolarGapInputs(
-                na_meq_per_l=145, glucose_value=100,
+                na_meq_per_l=145,
+                glucose_value=100,
                 bun_value=20,
             )
         )
         with_etoh = compute_osmolar_gap(
             OsmolarGapInputs(
-                na_meq_per_l=145, glucose_value=100,
+                na_meq_per_l=145,
+                glucose_value=100,
                 bun_value=20,
                 ethanol_mg_per_dl=50,
             )
@@ -162,7 +164,8 @@ class TestEthanolCorrection:
     def test_ethanol_zero_no_contribution(self):
         result = compute_osmolar_gap(
             OsmolarGapInputs(
-                na_meq_per_l=145, glucose_value=100,
+                na_meq_per_l=145,
+                glucose_value=100,
                 bun_value=20,
                 ethanol_mg_per_dl=0,
             )
@@ -172,36 +175,30 @@ class TestEthanolCorrection:
 
 class TestValidation:
     def test_missing_na_rejected(self):
-        result = compute_osmolar_gap(
-            OsmolarGapInputs(na_meq_per_l=0, glucose_value=100, bun_value=20)
-        )
+        result = compute_osmolar_gap(OsmolarGapInputs(na_meq_per_l=0, glucose_value=100, bun_value=20))
         assert result.valid is False
         assert any("sodium" in e.lower() for e in result.errors)
 
     def test_missing_glucose_rejected(self):
-        result = compute_osmolar_gap(
-            OsmolarGapInputs(na_meq_per_l=145, glucose_value=0, bun_value=20)
-        )
+        result = compute_osmolar_gap(OsmolarGapInputs(na_meq_per_l=145, glucose_value=0, bun_value=20))
         assert result.valid is False
         assert any("glucose" in e.lower() for e in result.errors)
 
     def test_missing_bun_rejected(self):
-        result = compute_osmolar_gap(
-            OsmolarGapInputs(na_meq_per_l=145, glucose_value=100, bun_value=0)
-        )
+        result = compute_osmolar_gap(OsmolarGapInputs(na_meq_per_l=145, glucose_value=100, bun_value=0))
         assert result.valid is False
         assert any("bun" in e.lower() or "urea" in e.lower() for e in result.errors)
 
     def test_extreme_na_rejected(self):
-        result = compute_osmolar_gap(
-            OsmolarGapInputs(na_meq_per_l=250, glucose_value=100, bun_value=20)
-        )
+        result = compute_osmolar_gap(OsmolarGapInputs(na_meq_per_l=250, glucose_value=100, bun_value=20))
         assert result.valid is False
 
     def test_extreme_measured_osm_rejected(self):
         result = compute_osmolar_gap(
             OsmolarGapInputs(
-                na_meq_per_l=145, glucose_value=100, bun_value=20,
+                na_meq_per_l=145,
+                glucose_value=100,
+                bun_value=20,
                 measured_osm_mosm_per_kg=600,
             )
         )
@@ -221,7 +218,9 @@ class TestClassificationCutoffs:
         # calc with Na 145, glucose 100, BUN 20 → 302.7
         result = compute_osmolar_gap(
             OsmolarGapInputs(
-                na_meq_per_l=145, glucose_value=100, bun_value=20,
+                na_meq_per_l=145,
+                glucose_value=100,
+                bun_value=20,
                 measured_osm_mosm_per_kg=313,  # ≈ calc + 10.3
             )
         )
@@ -231,7 +230,9 @@ class TestClassificationCutoffs:
         """Boundary: gap >= 20.0 is elevated."""
         result = compute_osmolar_gap(
             OsmolarGapInputs(
-                na_meq_per_l=145, glucose_value=100, bun_value=20,
+                na_meq_per_l=145,
+                glucose_value=100,
+                bun_value=20,
                 measured_osm_mosm_per_kg=325,  # ≈ calc + 22.3
             )
         )
@@ -243,7 +244,9 @@ class TestInterpretationGuidance:
         """A normal gap must surface the late-EG warning."""
         result = compute_osmolar_gap(
             OsmolarGapInputs(
-                na_meq_per_l=145, glucose_value=100, bun_value=20,
+                na_meq_per_l=145,
+                glucose_value=100,
+                bun_value=20,
                 measured_osm_mosm_per_kg=300,
             )
         )
@@ -254,7 +257,9 @@ class TestInterpretationGuidance:
     def test_elevated_gap_lists_differentials(self):
         result = compute_osmolar_gap(
             OsmolarGapInputs(
-                na_meq_per_l=150, glucose_value=120, bun_value=30,
+                na_meq_per_l=150,
+                glucose_value=120,
+                bun_value=30,
                 measured_osm_mosm_per_kg=360,
             )
         )

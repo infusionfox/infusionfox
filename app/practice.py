@@ -56,19 +56,19 @@ class AnswerCheck:
     """
 
     label: str
-    expected: float           # numeric: the target value; choices: the index of the correct option
-    unit: str = ""            # e.g. "mL/hr", "mg", "mL"; blank for choice-style
+    expected: float  # numeric: the target value; choices: the index of the correct option
+    unit: str = ""  # e.g. "mL/hr", "mg", "mL"; blank for choice-style
     tolerance_percent: float = 2.0  # only meaningful for numeric inputs
     choices: tuple[str, ...] | None = None  # if set, render as multiple choice
 
 
 @dataclass(frozen=True)
 class PracticeProblem:
-    slug: str            # URL-stable id, kebab-case
-    title: str           # short headline, e.g. "Fentanyl CRI for a 12 kg dog"
-    topic: str           # grouping label, e.g. "CRI math"
-    difficulty: str      # "Intro" | "Clinical" | "Advanced"
-    scenario: str        # the problem statement (the question)
+    slug: str  # URL-stable id, kebab-case
+    title: str  # short headline, e.g. "Fentanyl CRI for a 12 kg dog"
+    topic: str  # grouping label, e.g. "CRI math"
+    difficulty: str  # "Intro" | "Clinical" | "Advanced"
+    scenario: str  # the problem statement (the question)
     # Hints are progressive nudges shown above the worked answer, each in
     # its own collapsible disclosure. By convention, hints[0] is a light
     # "where to start" nudge and hints[1] is a structural hint that shows
@@ -117,8 +117,7 @@ P1 = PracticeProblem(
     ],
     steps=[
         SolutionStep(
-            "Convert the patient's weight from lb to kg using the standard "
-            "clinical factor of 2.2 lb/kg.",
+            "Convert the patient's weight from lb to kg using the standard " "clinical factor of 2.2 lb/kg.",
             r"\frac{26.4 \,\cancel{lb}}{2.2 \,\cancel{lb}/kg} = 12 \,kg",
         ),
         SolutionStep(
@@ -250,13 +249,11 @@ P3 = PracticeProblem(
             "2 mEq/mL, so we need to convert mEq to mL."
         ),
         SolutionStep(
-            "Divide the 30 mEq target by the stock concentration. mEq "
-            "cancels, leaving mL.",
+            "Divide the 30 mEq target by the stock concentration. mEq " "cancels, leaving mL.",
             r"\frac{30 \,\cancel{mEq}}{2 \,\cancel{mEq}/mL} = 15 \,mL",
         ),
         SolutionStep(
-            "Now for the max pump rate. First convert the patient's weight "
-            "from lb to kg.",
+            "Now for the max pump rate. First convert the patient's weight " "from lb to kg.",
             r"\frac{33 \,\cancel{lb}}{2.2 \,\cancel{lb}/kg} = 15 \,kg",
         ),
         SolutionStep(
@@ -265,8 +262,7 @@ P3 = PracticeProblem(
             r"0.5 \,\tfrac{mEq}{\cancel{kg}\cdot hr} \times 15\,\cancel{kg} = 7.5 \,\tfrac{mEq}{hr}",
         ),
         SolutionStep(
-            "Convert mEq/hr to mL/hr using the bag's final concentration "
-            "(30 mEq in 1,000 mL).",
+            "Convert mEq/hr to mL/hr using the bag's final concentration " "(30 mEq in 1,000 mL).",
             r"\frac{7.5 \,\cancel{mEq}/hr}{30 \,\cancel{mEq}/L} = 0.25 \,\tfrac{L}{hr} = 250 \,\tfrac{mL}{hr}",
         ),
     ],
@@ -342,8 +338,7 @@ P4 = PracticeProblem(
             r"10\,\cancel{kg} \times 1 \,\tfrac{mL}{\cancel{kg}\cdot hr} = 10 \,\tfrac{mL}{hr}",
         ),
         SolutionStep(
-            "Bag volume needed for a 24-hour infusion = pump rate × duration. "
-            "hr cancels, leaves mL.",
+            "Bag volume needed for a 24-hour infusion = pump rate × duration. " "hr cancels, leaves mL.",
             r"10 \,\tfrac{mL}{\cancel{hr}} \times 24 \,\cancel{hr} = 240 \,mL",
         ),
         SolutionStep(
@@ -685,8 +680,7 @@ P8 = PracticeProblem(
             r"100 \,mg \times 0.4 = 40 \,mg \text{ ketamine (C-III)}",
         ),
         SolutionStep(
-            "Lidocaine is not federally controlled, but you can compute it the same way "
-            "for completeness.",
+            "Lidocaine is not federally controlled, but you can compute it the same way " "for completeness.",
             r"400 \,mg \times 0.4 = 160 \,mg \text{ lidocaine}",
         ),
         SolutionStep(
@@ -856,9 +850,7 @@ P10 = PracticeProblem(
             "Sum the two sources and divide by weight to check against the 0.5 mEq/kg/hr cap.",
             r"\frac{1.1 + 1.0 \,mEq/hr}{25\,kg} = 0.084 \,\tfrac{mEq}{kg\cdot hr}",
         ),
-        SolutionStep(
-            "0.084 mEq/kg/hr is well below the 0.5 mEq/kg/hr cap, so combined delivery is safe."
-        ),
+        SolutionStep("0.084 mEq/kg/hr is well below the 0.5 mEq/kg/hr cap, so combined delivery is safe."),
     ],
     final_answer=(
         "Run K-Phos at 0.25 mL/hr. Combined K delivery is ≈ 2.1 mEq/hr "
@@ -908,8 +900,7 @@ P11 = PracticeProblem(
     ],
     steps=[
         SolutionStep(
-            "pH is 7.25, which is below the dog reference range "
-            "(7.35–7.46). The patient is acidemic.",
+            "pH is 7.25, which is below the dog reference range " "(7.35–7.46). The patient is acidemic.",
         ),
         SolutionStep(
             "HCO₃⁻ is 12 mEq/L (reference 19–26), which is markedly low. "
@@ -1224,11 +1215,11 @@ P15 = PracticeProblem(
         ),
         SolutionStep(
             "But the dog rule should not be applied. DiBartola Ch. 12 "
-            "p. 304: \"the feline kidney apparently is unable to adapt "
+            'p. 304: "the feline kidney apparently is unable to adapt '
             "to metabolic acidosis ... cats may not compensate for "
             "metabolic acidosis to the same extent (if at all) as do "
             "dogs and humans. Thus formulas for dogs or humans should "
-            "not be extrapolated for use in cats.\"",
+            'not be extrapolated for use in cats."',
         ),
         SolutionStep(
             "The cat may simply not be hyperventilating in response to "
@@ -1383,8 +1374,7 @@ P17 = PracticeProblem(
     ],
     steps=[
         SolutionStep(
-            "Total body water is 60% of body weight for dogs and cats. "
-            "For a 10 kg dog:",
+            "Total body water is 60% of body weight for dogs and cats. " "For a 10 kg dog:",
             r"\text{TBW} = 0.6 \times 10 \,kg = 6 \,L",
         ),
         SolutionStep(
@@ -1394,8 +1384,7 @@ P17 = PracticeProblem(
             r"\text{deficit} = 6 \,L \times \left(\frac{168}{145} - 1\right) = 6 \times 0.159 \approx 0.95 \,L",
         ),
         SolutionStep(
-            "Convert to mL and spread over 48 hr (the standard DiBartola "
-            "replacement window).",
+            "Convert to mL and spread over 48 hr (the standard DiBartola " "replacement window).",
             r"\frac{950 \,mL}{48 \,hr} \approx 20 \,\tfrac{mL}{hr}",
         ),
         SolutionStep(
@@ -1596,7 +1585,27 @@ P19 = PracticeProblem(
 # Registry. Order here is the order they appear on the index page.
 # ---------------------------------------------------------------------------
 
-PROBLEMS: tuple[PracticeProblem, ...] = (P1, P2, P3, P4, P8, P5, P6, P7, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19)
+PROBLEMS: tuple[PracticeProblem, ...] = (
+    P1,
+    P2,
+    P3,
+    P4,
+    P8,
+    P5,
+    P6,
+    P7,
+    P9,
+    P10,
+    P11,
+    P12,
+    P13,
+    P14,
+    P15,
+    P16,
+    P17,
+    P18,
+    P19,
+)
 
 
 def get_problem(slug: str) -> PracticeProblem | None:

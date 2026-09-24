@@ -47,9 +47,6 @@ ignore = [
     "B008",  # function call in default argument — FastAPI uses this idiomatically
     "SIM108", # ternary if-else — sometimes if/else is more readable
     "UP042",  # str + Enum → StrEnum: stylistic only, would touch every enum class
-    "B039",   # mutable ContextVar default — deliberate in anesthesia_sheet
-    "RUF034", # useless if/else — false positive on branch-parity intentional code
-    "RUF046", # int(round()) — round() returns int in py3, but explicit is fine
 ]
 
 [tool.ruff.lint.per-file-ignores]

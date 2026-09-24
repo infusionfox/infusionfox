@@ -153,17 +153,13 @@ class TestDoseRangeWarnings:
     def test_in_range_no_warning(self):
         result = compute_mlk(_default_inputs(20.0))
         # Default mid-range doses are all in-range
-        in_range_warnings = [
-            w for w in result.warnings if "outside the published range" in w
-        ]
+        in_range_warnings = [w for w in result.warnings if "outside the published range" in w]
         assert len(in_range_warnings) == 0
 
 
 class TestInvalidInputs:
     def test_zero_weight_invalid(self):
-        result = compute_mlk(
-            MlkInputs(weight_value=0, weight_unit=WeightUnit.KG)
-        )
+        result = compute_mlk(MlkInputs(weight_value=0, weight_unit=WeightUnit.KG))
         assert not result.valid
 
     def test_negative_pump_rate_invalid(self):

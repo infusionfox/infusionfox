@@ -391,8 +391,7 @@ KETAMINE_SPEC = AnalgesiaDrugSpec(
         LoadingDose(
             label="Pre-CRI loading dose",
             description=(
-                "0.5 mg/kg IV before starting the CRI if anesthesia was "
-                "induced with a non-ketamine agent."
+                "0.5 mg/kg IV before starting the CRI if anesthesia was " "induced with a non-ketamine agent."
             ),
             matches_cri_rate=False,
             display_dose_unit="mg",
@@ -502,9 +501,7 @@ LIDOCAINE_SPEC = AnalgesiaDrugSpec(
     loading_doses=(
         LoadingDose(
             label="Pre-CRI loading dose",
-            description=(
-                "1–2 mg/kg IV slowly over 2–5 minutes before starting the CRI."
-            ),
+            description=("1–2 mg/kg IV slowly over 2–5 minutes before starting the CRI."),
             matches_cri_rate=False,
             display_dose_unit="mg",
             dose_per_kg={
@@ -826,11 +823,7 @@ def _drug_warnings(
     # under max, since the threshold is a deliberate signal that the
     # clinician is in a specialized-protocol zone (e.g., ketamine
     # surgical maintenance vs analgesia).
-    if (
-        dose_range.caution_threshold
-        and dose >= dose_range.caution_threshold
-        and dose_range.caution_note
-    ):
+    if dose_range.caution_threshold and dose >= dose_range.caution_threshold and dose_range.caution_note:
         warnings.append(dose_range.caution_note)
 
     # Exceeds-max warning.
@@ -870,9 +863,7 @@ def _compute_one_drug(
         )
 
     total_ug_per_hr = _dose_to_ug_per_hr(dose, spec.dose_unit, weight_kg)
-    total_ug_per_min = (
-        total_ug_per_hr / 60.0 if spec.dose_unit == DoseUnit.UG_PER_KG_PER_MIN else None
-    )
+    total_ug_per_min = total_ug_per_hr / 60.0 if spec.dose_unit == DoseUnit.UG_PER_KG_PER_MIN else None
     ml_per_hr_precise = total_ug_per_hr / concentration_ug_per_ml
     ml_per_hr_pump = _round_pump_rate(ml_per_hr_precise)
     ml_per_kg_per_hr = ml_per_hr_precise / weight_kg
@@ -1044,9 +1035,7 @@ def compute_analgesia(inputs: AnalgesiaBuilderInputs) -> AnalgesiaResult:
     global_warnings: list[str] = []
 
     if weight_kg is None:
-        global_warnings.append(
-            "Enter a positive patient weight to compute pump rates."
-        )
+        global_warnings.append("Enter a positive patient weight to compute pump rates.")
 
     # Resolve opioid spec. The sentinel "none" (or empty string) means
     # the user has chosen opioid-free composition (KL, DLK, monotherapy
@@ -1104,18 +1093,10 @@ def compute_analgesia(inputs: AnalgesiaBuilderInputs) -> AnalgesiaResult:
         )
 
     # Pump-rate sanity for combined-bag mode.
-    if (
-        inputs.prep_mode == "combined_bag"
-        and inputs.shared_pump_rate_ml_per_kg_per_hr <= 0
-    ):
-        global_warnings.append(
-            "Combined-bag mode requires a positive shared pump rate "
-            "(mL/kg/hr)."
-        )
+    if inputs.prep_mode == "combined_bag" and inputs.shared_pump_rate_ml_per_kg_per_hr <= 0:
+        global_warnings.append("Combined-bag mode requires a positive shared pump rate " "(mL/kg/hr).")
     if inputs.prep_mode == "combined_bag" and inputs.bag_volume_ml <= 0:
-        global_warnings.append(
-            "Combined-bag mode requires a positive bag volume (mL)."
-        )
+        global_warnings.append("Combined-bag mode requires a positive bag volume (mL).")
 
     if weight_kg is None:
         # Form-state shells for the chosen mode.
@@ -1131,9 +1112,7 @@ def compute_analgesia(inputs: AnalgesiaBuilderInputs) -> AnalgesiaResult:
                     selected_specs=selected_specs,
                     doses=inputs.doses,
                     bag_volume_ml=inputs.bag_volume_ml,
-                    shared_pump_rate_ml_per_kg_per_hr=(
-                        inputs.shared_pump_rate_ml_per_kg_per_hr
-                    ),
+                    shared_pump_rate_ml_per_kg_per_hr=(inputs.shared_pump_rate_ml_per_kg_per_hr),
                 ),
                 valid=False,
                 global_warnings=tuple(global_warnings),
@@ -1172,9 +1151,7 @@ def compute_analgesia(inputs: AnalgesiaBuilderInputs) -> AnalgesiaResult:
             selected_specs=selected_specs,
             doses=inputs.doses,
             bag_volume_ml=inputs.bag_volume_ml,
-            shared_pump_rate_ml_per_kg_per_hr=(
-                inputs.shared_pump_rate_ml_per_kg_per_hr
-            ),
+            shared_pump_rate_ml_per_kg_per_hr=(inputs.shared_pump_rate_ml_per_kg_per_hr),
         )
         return AnalgesiaResult(
             weight_kg=weight_kg,

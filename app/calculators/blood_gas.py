@@ -367,10 +367,10 @@ def _expected_hco3_for_respiratory_acidosis(
     species: Species, pco2: float, acuity: Acuity, pco2_ref_mid: float, hco3_ref_mid: float
 ) -> tuple[float | None, str, str, str | None]:
     """Respiratory acidosis compensation rules:
-        Dogs, acute:   HCO3- ↑ 0.15 mEq/L per 1 mm Hg ↑ PCO2
-        Dogs, chronic: HCO3- ↑ 0.35 mEq/L per 1 mm Hg ↑ PCO2
-        Cats, acute:   HCO3- ↑ 0.15 mEq/L per 1 mm Hg ↑ PCO2 (similar to dogs)
-        Cats, chronic: UNKNOWN
+    Dogs, acute:   HCO3- ↑ 0.15 mEq/L per 1 mm Hg ↑ PCO2
+    Dogs, chronic: HCO3- ↑ 0.35 mEq/L per 1 mm Hg ↑ PCO2
+    Cats, acute:   HCO3- ↑ 0.15 mEq/L per 1 mm Hg ↑ PCO2 (similar to dogs)
+    Cats, chronic: UNKNOWN
     """
     if species == Species.CAT and acuity == Acuity.CHRONIC:
         return (
@@ -592,27 +592,17 @@ def _assess_compensation(
         if observed < expected_lo:
             if observed_label == "PCO2":
                 deviation_note = (
-                    "PCO2 is lower than expected: suggests concurrent "
-                    "respiratory alkalosis."
+                    "PCO2 is lower than expected: suggests concurrent " "respiratory alkalosis."
                     if primary == PrimaryDisturbance.METABOLIC_ACIDOSIS
                     else "PCO2 is lower than expected: suggests concurrent respiratory alkalosis."
                 )
             else:  # HCO3-
-                deviation_note = (
-                    "HCO3- is lower than expected: suggests concurrent "
-                    "metabolic acidosis."
-                )
+                deviation_note = "HCO3- is lower than expected: suggests concurrent " "metabolic acidosis."
         else:  # observed > expected_hi
             if observed_label == "PCO2":
-                deviation_note = (
-                    "PCO2 is higher than expected: suggests concurrent "
-                    "respiratory acidosis."
-                )
+                deviation_note = "PCO2 is higher than expected: suggests concurrent " "respiratory acidosis."
             else:  # HCO3-
-                deviation_note = (
-                    "HCO3- is higher than expected: suggests concurrent "
-                    "metabolic alkalosis."
-                )
+                deviation_note = "HCO3- is higher than expected: suggests concurrent " "metabolic alkalosis."
 
     final_note = " ".join(s for s in (note, deviation_note) if s).strip()
 
@@ -742,9 +732,7 @@ def compute_blood_gas(inputs: BloodGasInputs) -> BloodGasResult:
 
     compensation = _assess_compensation(primary, inputs, refs)
 
-    anion_gap, anion_gap_ref, anion_gap_high, anion_gap_corrected = _compute_anion_gap(
-        inputs, inputs.species
-    )
+    anion_gap, anion_gap_ref, anion_gap_high, anion_gap_corrected = _compute_anion_gap(inputs, inputs.species)
 
     # Build the plain-English interpretation.
     interp: list[str] = []
@@ -778,10 +766,7 @@ def compute_blood_gas(inputs: BloodGasInputs) -> BloodGasResult:
     else:
         # A primary acid-base disorder. State it, then assess compensation.
         ac_al = "acidemia" if is_acidemic else "alkalemia"
-        interp.append(
-            f"Primary disturbance: {PRIMARY_LABELS[primary]} "
-            f"({ac_al}, pH {inputs.pH:.3f})."
-        )
+        interp.append(f"Primary disturbance: {PRIMARY_LABELS[primary]} " f"({ac_al}, pH {inputs.pH:.3f}).")
 
         if compensation is not None:
             if compensation.is_simple is True:

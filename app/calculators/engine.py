@@ -615,8 +615,7 @@ def compute(config: CalculatorConfig, inputs: CalcInputs) -> CalcResult:
                 ml_per_hr_display=0.0,
                 ml_per_kg_per_hr=0.0,
                 warnings=[
-                    "Target pump rate, bag volume, and stock concentration "
-                    "must all be greater than zero."
+                    "Target pump rate, bag volume, and stock concentration " "must all be greater than zero."
                 ],
                 sources=config.sources,
                 valid=False,

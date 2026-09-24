@@ -130,9 +130,7 @@ class TestDobutamineBagSizeVariants:
         for conc, bag in [(250, 50), (250, 250), (500, 50), (500, 250), (1000, 50)]:
             variants = bag_size_variants_for_drug(DOBUTAMINE, conc)
             v = next(v for v in variants if v.bag_volume_ml == bag)
-            assert v.is_suggested is False, (
-                f"{conc}×{bag} should not be flagged full-vial"
-            )
+            assert v.is_suggested is False, f"{conc}×{bag} should not be flagged full-vial"
 
     def test_recipe_text_uses_125_mg_per_ml_stock_label(self):
         """Stock is 12.5 mg/mL — the recipe should reflect this, not the
@@ -178,8 +176,7 @@ class TestDobutamineFormIntegration:
         assert 'data-combined-prep="1"' in body
         assert 'data-pick-strategy="weight-band"' in body
         # vial-size 250 (mg) — rendered with possible trailing zero
-        assert ('data-vial-size-mg="250"' in body
-                or 'data-vial-size-mg="250.0"' in body)
+        assert 'data-vial-size-mg="250"' in body or 'data-vial-size-mg="250.0"' in body
 
     def test_conc_tabs_carry_weight_bands(self, client):
         """Weight-band picker on the client reads data-weight-min and
@@ -202,16 +199,12 @@ class TestDobutamineFormIntegration:
         post-hoc."""
         body = client.get("/dobutamine").text
         # No is-suggested class on any bag-size-tab label.
-        assert re.search(
-            r'class="bag-size-tab is-suggested', body
-        ) is None
+        assert re.search(r'class="bag-size-tab is-suggested', body) is None
         # JS opt-out attribute is rendered.
         assert 'data-bag-size-suggestion="0"' in body
         # The "suggested" badge span itself is also gated; no badge
         # spans should appear inside bag-size-tab labels.
-        bag_size_section = re.search(
-            r'<div class="bag-size-tabs"[\s\S]+?</div>', body
-        )
+        bag_size_section = re.search(r'<div class="bag-size-tabs"[\s\S]+?</div>', body)
         assert bag_size_section is not None
         assert "bag-size-tab__badge" not in bag_size_section.group(0)
 

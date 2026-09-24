@@ -221,12 +221,13 @@ class BolusLine:
     covers the full clinical weight range cleanly. We render a volume range
     for the patient at the dose-range bounds, plus the prep note.
     """
+
     name: str
-    dose_label: str          # e.g., "1–10 µg/kg IV"
-    volume_low_ml: float     # volume at the low end of the dose range
-    volume_high_ml: float    # volume at the high end
-    prep_note: str           # how to prepare the bolus dilution
-    note: str                # when to use this drug; bridge-to-CRI guidance
+    dose_label: str  # e.g., "1–10 µg/kg IV"
+    volume_low_ml: float  # volume at the low end of the dose range
+    volume_high_ml: float  # volume at the high end
+    prep_note: str  # how to prepare the bolus dilution
+    note: str  # when to use this drug; bridge-to-CRI guidance
 
 
 @dataclass
@@ -313,8 +314,7 @@ def _build_cri_ladder(
     for dose in doses_ug_per_kg_per_min:
         ml_per_hr = (weight_kg * dose / concentration_ug_per_ml) * 60
         is_caution = (
-            caution_threshold_ug_per_kg_per_min is not None
-            and dose > caution_threshold_ug_per_kg_per_min
+            caution_threshold_ug_per_kg_per_min is not None and dose > caution_threshold_ug_per_kg_per_min
         )
         steps.append(
             CRITitrationStep(
@@ -371,9 +371,7 @@ def _pick_cri_dilution(
     sorted_concs = sorted(available_concentrations_ug_per_ml, reverse=True)
 
     for conc in sorted_concs:
-        ml_per_hr_at_threshold = (
-            weight_kg * threshold_dose_ug_per_kg_per_min * 60 / conc
-        )
+        ml_per_hr_at_threshold = weight_kg * threshold_dose_ug_per_kg_per_min * 60 / conc
         if ml_per_hr_at_threshold >= _MIN_RELIABLE_IV_PUMP_RATE_ML_PER_HR:
             return conc, False
 
@@ -381,9 +379,6 @@ def _pick_cri_dilution(
     # most dilute option so the worksheet still computes a rate; the
     # caller should add a "syringe pump required" note.
     return sorted_concs[-1], True
-
-
-
 
 
 def _drug(
@@ -420,11 +415,7 @@ def _drug(
     # For drugs not in STOCK_OPTIONS, the caller-provided label is used
     # as-is so callers can include extra detail like "(1:1000)" that
     # isn't in the STOCK_OPTIONS labels.
-    effective_label = (
-        _stock_label_for(stock_key)
-        if stock_key in STOCK_OPTIONS
-        else stock_label
-    )
+    effective_label = _stock_label_for(stock_key) if stock_key in STOCK_OPTIONS else stock_label
     is_dex = stock_key == "dexmedetomidine"
     multiplier = 1000.0 if is_dex else 1.0
     low_mg_per_kg = low / multiplier
@@ -462,9 +453,7 @@ def calculate(
     # at the end so concurrent requests don't leak state.
     _stocks_token = _chosen_stocks_var.set(chosen_stocks or {})
     try:
-        return _calculate_impl(
-            weight_value, weight_unit, species, patient_name, patient_age
-        )
+        return _calculate_impl(weight_value, weight_unit, species, patient_name, patient_age)
     finally:
         _chosen_stocks_var.reset(_stocks_token)
 
@@ -476,7 +465,6 @@ def _calculate_impl(
     patient_name: str = "",
     patient_age: str = "",
 ) -> AnesthesiaSheet:
-
     weight_kg = lb_to_kg(weight_value) if weight_unit == WeightUnit.LB else weight_value
     weight_display = (
         f"{weight_value:.1f} {'lb' if weight_unit == WeightUnit.LB else 'kg'} ({weight_kg:.2f} kg)"

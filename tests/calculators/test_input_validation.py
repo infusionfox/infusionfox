@@ -417,9 +417,7 @@ def test_blood_gas_invalid_pH_low():
     """pH below 6.5 is outside the validation range; result must be invalid."""
     from app.calculators.blood_gas import BloodGasInputs, compute_blood_gas
 
-    r = compute_blood_gas(
-        BloodGasInputs(pH=6.0, pco2_mm_hg=40.0, hco3_meq_per_l=22.0)
-    )
+    r = compute_blood_gas(BloodGasInputs(pH=6.0, pco2_mm_hg=40.0, hco3_meq_per_l=22.0))
     assert r.valid is False
     assert r.compensation is None
     assert r.anion_gap is None
@@ -430,9 +428,7 @@ def test_blood_gas_invalid_pH_low():
 def test_blood_gas_invalid_pH_high():
     from app.calculators.blood_gas import BloodGasInputs, compute_blood_gas
 
-    r = compute_blood_gas(
-        BloodGasInputs(pH=8.5, pco2_mm_hg=40.0, hco3_meq_per_l=22.0)
-    )
+    r = compute_blood_gas(BloodGasInputs(pH=8.5, pco2_mm_hg=40.0, hco3_meq_per_l=22.0))
     assert r.valid is False
     assert r.compensation is None
 
@@ -441,9 +437,7 @@ def test_blood_gas_invalid_pco2():
     """PCO2 outside 10-120 mm Hg is rejected."""
     from app.calculators.blood_gas import BloodGasInputs, compute_blood_gas
 
-    r = compute_blood_gas(
-        BloodGasInputs(pH=7.40, pco2_mm_hg=0.0, hco3_meq_per_l=22.0)
-    )
+    r = compute_blood_gas(BloodGasInputs(pH=7.40, pco2_mm_hg=0.0, hco3_meq_per_l=22.0))
     assert r.valid is False
     assert r.compensation is None
     assert any("PCO2" in e for e in r.errors)
@@ -453,9 +447,7 @@ def test_blood_gas_invalid_hco3():
     """HCO3- outside 5-50 mEq/L is rejected."""
     from app.calculators.blood_gas import BloodGasInputs, compute_blood_gas
 
-    r = compute_blood_gas(
-        BloodGasInputs(pH=7.40, pco2_mm_hg=40.0, hco3_meq_per_l=0.0)
-    )
+    r = compute_blood_gas(BloodGasInputs(pH=7.40, pco2_mm_hg=40.0, hco3_meq_per_l=0.0))
     assert r.valid is False
     assert r.compensation is None
     assert any("HCO3" in e for e in r.errors)
@@ -479,8 +471,11 @@ def test_blood_gas_invalid_na_for_anion_gap():
 
     r = compute_blood_gas(
         BloodGasInputs(
-            pH=7.20, pco2_mm_hg=28.0, hco3_meq_per_l=12.0,
-            na_meq_per_l=300.0, cl_meq_per_l=110.0,
+            pH=7.20,
+            pco2_mm_hg=28.0,
+            hco3_meq_per_l=12.0,
+            na_meq_per_l=300.0,
+            cl_meq_per_l=110.0,
         )
     )
     assert r.valid is False
@@ -595,9 +590,7 @@ def test_propofol_cat_tiva_is_invalid():
 def test_mlk_invalid_weight():
     from app.calculators.mlk import MlkInputs, compute_mlk
 
-    r = compute_mlk(
-        MlkInputs(weight_value=-1, weight_unit=WeightUnit.KG)
-    )
+    r = compute_mlk(MlkInputs(weight_value=-1, weight_unit=WeightUnit.KG))
     assert r.valid is False
     assert r.pump_rate_ml_per_hr == 0.0
     assert r.components == []
@@ -750,9 +743,7 @@ def test_solution_prep_zero_volume_invalid():
 def test_drop_factor_invalid_rate():
     from app.calculators.utilities import DropFactorInputs, compute_drop_factor
 
-    r = compute_drop_factor(
-        DropFactorInputs(ml_per_hour=0, drop_factor=20)
-    )
+    r = compute_drop_factor(DropFactorInputs(ml_per_hour=0, drop_factor=20))
     assert r.valid is False
     assert r.drops_per_minute == 0.0
 
@@ -760,9 +751,7 @@ def test_drop_factor_invalid_rate():
 def test_drop_factor_invalid_factor():
     from app.calculators.utilities import DropFactorInputs, compute_drop_factor
 
-    r = compute_drop_factor(
-        DropFactorInputs(ml_per_hour=100, drop_factor=0)
-    )
+    r = compute_drop_factor(DropFactorInputs(ml_per_hour=100, drop_factor=0))
     assert r.valid is False
 
 

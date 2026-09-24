@@ -108,9 +108,9 @@ class MlkComponent:
     name: str
     dose_mg_per_kg_per_hr: float
     stock_mg_per_ml: float
-    hourly_mg: float          # dose × weight  (mg/hr)
-    total_mg_in_bag: float    # hourly × bag duration (mg)
-    volume_ml_to_add: float   # total mg ÷ stock (mL)
+    hourly_mg: float  # dose × weight  (mg/hr)
+    total_mg_in_bag: float  # hourly × bag duration (mg)
+    volume_ml_to_add: float  # total mg ÷ stock (mL)
     dose_range_low: float
     dose_range_high: float
     in_range: bool
@@ -130,17 +130,17 @@ class MlkWasteComponent:
     name: str
     controlled: bool
     schedule: str | None
-    stock_mg_per_ml: float       # carried from MlkComponent, for labelling
-    total_mg_in_bag: float       # carried from MlkComponent
-    mg_given: float              # total × (volume_given / bag_volume)
-    mg_wasted: float             # total × (volume_wasted / bag_volume)
+    stock_mg_per_ml: float  # carried from MlkComponent, for labelling
+    total_mg_in_bag: float  # carried from MlkComponent
+    mg_given: float  # total × (volume_given / bag_volume)
+    mg_wasted: float  # total × (volume_wasted / bag_volume)
     # Stock-equivalent volumes: the mL of undiluted stock that the given /
     # wasted mg corresponds to (mg ÷ stock concentration). Informational —
     # the physical waste is the diluted bag remainder, not undiluted stock
     # — but some controlled-drug logs record the stock-equivalent volume
     # alongside the mg, so both are surfaced.
-    stock_ml_given: float        # mg_given ÷ stock concentration
-    stock_ml_wasted: float       # mg_wasted ÷ stock concentration
+    stock_ml_given: float  # mg_given ÷ stock concentration
+    stock_ml_wasted: float  # mg_wasted ÷ stock concentration
 
 
 @dataclass
@@ -157,12 +157,12 @@ class MlkWasteResult:
 class MlkResult:
     weight_kg: float
     pump_rate_ml_per_kg_per_hr: float
-    pump_rate_ml_per_hr: float        # weight × per-kg rate
+    pump_rate_ml_per_hr: float  # weight × per-kg rate
     bag_volume_ml: float
-    bag_duration_hr: float            # bag mL ÷ pump mL/hr
+    bag_duration_hr: float  # bag mL ÷ pump mL/hr
     components: list[MlkComponent] = field(default_factory=list)
     total_drug_volume_ml: float = 0.0  # sum of component volumes
-    saline_to_remove_ml: float = 0.0   # equals total drug volume
+    saline_to_remove_ml: float = 0.0  # equals total drug volume
     warnings: list[str] = field(default_factory=list)
     sources: tuple[Source, ...] = ()
     valid: bool = True

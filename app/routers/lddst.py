@@ -59,8 +59,7 @@ async def lddst_compute(
             {
                 "request": request,
                 "placeholder_message": (
-                    "Enter baseline, 4-hour, and 8-hour cortisol values "
-                    "to interpret the test."
+                    "Enter baseline, 4-hour, and 8-hour cortisol values " "to interpret the test."
                 ),
             },
         )

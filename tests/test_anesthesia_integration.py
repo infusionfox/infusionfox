@@ -99,9 +99,7 @@ class TestPatientBarLayout:
         # The container uses the cards class, not the old segmented one.
         assert 'class="species-cards"' in r.text
         # Each card is a <label class="species-card"> wrapping the name.
-        assert r.text.count('class="species-card"') == 2, (
-            "should be exactly two species cards (dog + cat)"
-        )
+        assert r.text.count('class="species-card"') == 2, "should be exactly two species cards (dog + cat)"
         # Each card has a name span.
         assert r.text.count('class="species-card__name"') == 2
         # Both species names render as text inside the cards.
@@ -127,45 +125,70 @@ class TestWorksheetPostRender:
     wrapper). Tab panes, picker, drug tables all included."""
 
     def test_post_returns_200_for_valid_input(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         assert r.status_code == 200
 
     def test_post_includes_both_tab_panes(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         assert 'id="anesthesia-sheet-preop"' in r.text
         assert 'id="anesthesia-sheet-intraop"' in r.text
 
     def test_post_includes_picker_section(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         assert 'id="preop-picker"' in r.text
 
     def test_picker_has_hx_preserve(self):
         """The picker must be marked hx-preserve so its DOM survives
         HTMX swaps. Without this, every checkbox change collapses the
         open <details>. See docs/anesthesia-worksheet.md."""
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         # Find the picker section opening tag
         i = r.text.find('id="preop-picker"')
         assert i > 0
         # hx-preserve should be on the same tag
-        tag_end = r.text.find('>', i)
+        tag_end = r.text.find(">", i)
         tag = r.text[i:tag_end]
         assert 'hx-preserve="true"' in tag
 
     def test_picker_data_category_attributes_present(self):
         """The drug-picker details elements each have data-category, which
         the JS count-updater relies on."""
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         for cat in ("opioids", "sedatives", "induction"):
             assert f'data-category="{cat}"' in r.text
 
@@ -174,43 +197,73 @@ class TestWorksheetDrugContent:
     """The printed drug tables contain the expected drugs for each species."""
 
     def test_dog_premed_opioids_present(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         for name in ("Hydromorphone", "Methadone", "Butorphanol", "Buprenorphine"):
             assert f"<strong>{name}</strong>" in r.text
 
     def test_cat_includes_dkb_table(self):
         """DKB (Kitty Magic) only appears on cat worksheets."""
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "4", "weight_unit": "kg", "species": "cat",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "4",
+                "weight_unit": "kg",
+                "species": "cat",
+            },
+        )
         assert "DKB" in r.text or "Kitty Magic" in r.text
 
     def test_dog_does_not_include_dkb_table(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         assert "Kitty Magic" not in r.text
 
     def test_intraop_includes_fluid_bolus(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         assert "Fluid bolus" in r.text
         assert "LRS" in r.text
 
     def test_intraop_includes_bridge_pressors(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         assert "Phenylephrine" in r.text
         assert "Ephedrine" in r.text
 
     def test_intraop_includes_cri_vasopressors(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         for name in ("Dopamine", "Dobutamine", "Norepinephrine"):
             assert name in r.text
 
@@ -220,9 +273,14 @@ class TestWorksheetSmallPatientFallback:
     CRI ladder. Practical CRI bag dosing doesn't work that small."""
 
     def test_sub_1_5kg_cat_gets_syringe_pump_message(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "1.0", "weight_unit": "kg", "species": "cat",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "1.0",
+                "weight_unit": "kg",
+                "species": "cat",
+            },
+        )
         assert r.status_code == 200
         # The syringe-pump fallback message appears in CRI prep notes
         assert "syringe pump" in r.text.lower()
@@ -233,23 +291,34 @@ class TestWorksheetActiveTabPreserved:
     submission so the response renders with the right tab active."""
 
     def test_preop_tab_default(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
+        )
         # The preop tab should have is-active class on its tab button
         # (we look for both a tab button and a pane with is-active)
-        assert 'class="anesthesia-tab-btn is-active"' in r.text or \
-               'is-active' in r.text  # may have other modifiers
+        assert (
+            'class="anesthesia-tab-btn is-active"' in r.text or "is-active" in r.text
+        )  # may have other modifiers
 
     def test_intraop_tab_explicit(self):
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-            "active_tab": "intraop",
-        })
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+                "active_tab": "intraop",
+            },
+        )
         # The intraop pane should have is-active
         i = r.text.find('id="anesthesia-sheet-intraop"')
         assert i > 0
-        tag_end = r.text.find('>', i)
+        tag_end = r.text.find(">", i)
         intraop_tag = r.text[i:tag_end]
         assert "is-active" in intraop_tag
 
@@ -279,12 +348,12 @@ class TestSpeciesReloadBlankSlate:
         i = r.text.find('id="sp-cat"')
         assert i > 0
         # Look at the radio tag for `checked`
-        tag_end = r.text.find('>', i)
+        tag_end = r.text.find(">", i)
         cat_tag = r.text[i:tag_end]
         assert "checked" in cat_tag, "Cat radio should be checked on ?species=cat"
         # And dog should not be checked
         i = r.text.find('id="sp-dog"')
-        tag_end = r.text.find('>', i)
+        tag_end = r.text.find(">", i)
         dog_tag = r.text[i:tag_end]
         assert "checked" not in dog_tag, "Dog radio should not be checked on ?species=cat"
 
@@ -292,7 +361,7 @@ class TestSpeciesReloadBlankSlate:
         r = client.get("/anesthesia?species=dog")
         assert r.status_code == 200
         i = r.text.find('id="sp-dog"')
-        tag_end = r.text.find('>', i)
+        tag_end = r.text.find(">", i)
         assert "checked" in r.text[i:tag_end]
 
     def test_get_default_species_is_dog(self):
@@ -300,7 +369,7 @@ class TestSpeciesReloadBlankSlate:
         r = client.get("/anesthesia")
         assert r.status_code == 200
         i = r.text.find('id="sp-dog"')
-        tag_end = r.text.find('>', i)
+        tag_end = r.text.find(">", i)
         assert "checked" in r.text[i:tag_end]
 
     def test_get_invalid_species_falls_back_to_dog(self):
@@ -309,7 +378,7 @@ class TestSpeciesReloadBlankSlate:
         r = client.get("/anesthesia?species=ferret")
         assert r.status_code == 200
         i = r.text.find('id="sp-dog"')
-        tag_end = r.text.find('>', i)
+        tag_end = r.text.find(">", i)
         assert "checked" in r.text[i:tag_end]
 
     def test_species_reload_is_blank_slate(self):
@@ -320,17 +389,15 @@ class TestSpeciesReloadBlankSlate:
         # Weight input should have value="" (or no value attribute)
         i = r.text.find('id="weight_value"')
         assert i > 0
-        tag_end = r.text.find('>', i)
+        tag_end = r.text.find(">", i)
         tag = r.text[i:tag_end]
         assert 'value=""' in tag, f"Weight input should be empty on species reload, got: {tag}"
         # Patient name and age similarly
         for field_id in ("patient_name", "patient_age"):
             i = r.text.find(f'id="{field_id}"')
             assert i > 0
-            tag_end = r.text.find('>', i)
-            assert 'value=""' in r.text[i:tag_end], (
-                f"{field_id} should be empty on species reload"
-            )
+            tag_end = r.text.find(">", i)
+            assert 'value=""' in r.text[i:tag_end], f"{field_id} should be empty on species reload"
 
     def test_species_radios_have_full_reload_wiring(self):
         """Structural pin: the radios MUST do hx-get → /anesthesia with
@@ -347,15 +414,13 @@ class TestSpeciesReloadBlankSlate:
             i = r.text.find(f'id="{radio_id}"')
             assert i > 0
             # Walk back to the opening < and forward to the closing >
-            tag_start = r.text.rfind('<', 0, i)
-            tag_end = r.text.find('>', i)
-            tag = r.text[tag_start:tag_end + 1]
-            assert f'hx-get="/anesthesia?species={species_val}"' in tag, (
-                f"{radio_id} missing hx-get for full page reload: {tag}"
-            )
-            assert 'hx-target="body"' in tag, (
-                f"{radio_id} must target body for full reload: {tag}"
-            )
+            tag_start = r.text.rfind("<", 0, i)
+            tag_end = r.text.find(">", i)
+            tag = r.text[tag_start : tag_end + 1]
+            assert (
+                f'hx-get="/anesthesia?species={species_val}"' in tag
+            ), f"{radio_id} missing hx-get for full page reload: {tag}"
+            assert 'hx-target="body"' in tag, f"{radio_id} must target body for full reload: {tag}"
             assert 'hx-include="this"' in tag, (
                 f"{radio_id} must hx-include only itself — no leaked "
                 f"form state to the species reload: {tag}"
@@ -372,13 +437,16 @@ class TestSpeciesReloadBlankSlate:
         inside the result partial (POST /anesthesia/compute), so test
         through that route — the page-shell GET only shows the patient
         bar + "Awaiting input" placeholder before a weight is provided."""
-        r = client.post("/anesthesia/compute", data={
-            "weight_value": "4", "weight_unit": "kg", "species": "cat",
-        })
-        assert r.status_code == 200
-        assert "10–40 µg/kg" in r.text, (
-            "Cat compute should render cat dex range (10–40 µg/kg)"
+        r = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "4",
+                "weight_unit": "kg",
+                "species": "cat",
+            },
         )
+        assert r.status_code == 200
+        assert "10–40 µg/kg" in r.text, "Cat compute should render cat dex range (10–40 µg/kg)"
 
     def test_species_reload_no_leaked_dose_inputs(self):
         """Defense-in-depth: a cat species compute must not render the
@@ -386,18 +454,24 @@ class TestSpeciesReloadBlankSlate:
         scoping the species reload to just the radio value, dog dose
         ranges could bleed onto a cat page (or the form's hx-post could
         carry stale dog state through). Pin both directions."""
-        r_cat = client.post("/anesthesia/compute", data={
-            "weight_value": "4", "weight_unit": "kg", "species": "cat",
-        })
+        r_cat = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "4",
+                "weight_unit": "kg",
+                "species": "cat",
+            },
+        )
         assert "10–40 µg/kg" in r_cat.text  # cat dex
-        assert "3–20 µg/kg" not in r_cat.text, (
-            "Cat compute should not render dog dex range"
-        )
+        assert "3–20 µg/kg" not in r_cat.text, "Cat compute should not render dog dex range"
 
-        r_dog = client.post("/anesthesia/compute", data={
-            "weight_value": "20", "weight_unit": "kg", "species": "dog",
-        })
-        assert "3–20 µg/kg" in r_dog.text  # dog dex
-        assert "10–40 µg/kg" not in r_dog.text, (
-            "Dog compute should not render cat dex range"
+        r_dog = client.post(
+            "/anesthesia/compute",
+            data={
+                "weight_value": "20",
+                "weight_unit": "kg",
+                "species": "dog",
+            },
         )
+        assert "3–20 µg/kg" in r_dog.text  # dog dex
+        assert "10–40 µg/kg" not in r_dog.text, "Dog compute should not render cat dex range"

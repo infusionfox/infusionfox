@@ -63,8 +63,7 @@ async def mannitol_compute(
             {
                 "request": request,
                 "placeholder_message": (
-                    "Enter patient weight, dose, and infusion duration "
-                    "to see the result."
+                    "Enter patient weight, dose, and infusion duration " "to see the result."
                 ),
             },
         )

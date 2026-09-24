@@ -44,9 +44,9 @@ def test_get_route_loads(client, path):
     response = client.get(path, follow_redirects=False)
     assert response.status_code < 500, f"GET {path} returned {response.status_code}: {response.text[:200]}"
     # Don't accept 404 on supposedly-registered routes
-    assert response.status_code != 404, (
-        f"GET {path} returned 404 — route is registered but handler is missing"
-    )
+    assert (
+        response.status_code != 404
+    ), f"GET {path} returned 404 — route is registered but handler is missing"
 
 
 def test_homepage_contains_app_name(client):

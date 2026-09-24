@@ -135,7 +135,8 @@ class TestVasopressinAutoRecommendation:
     def test_large_dog_recommended_concentrated_band(self):
         # 25 kg dog hits the ≥7 kg weight_min for 200 mU/mL.
         recommended = next(
-            p for p in VASOPRESSIN.concentration_presets
+            p
+            for p in VASOPRESSIN.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 25)
             and (p.weight_max_kg is None or p.weight_max_kg > 25)
         )
@@ -144,7 +145,8 @@ class TestVasopressinAutoRecommendation:
     def test_medium_patient_middle_band(self):
         # 5 kg patient (small dog / large cat) hits the 3-7 kg band.
         recommended = next(
-            p for p in VASOPRESSIN.concentration_presets
+            p
+            for p in VASOPRESSIN.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 5)
             and (p.weight_max_kg is None or p.weight_max_kg > 5)
         )
@@ -153,7 +155,8 @@ class TestVasopressinAutoRecommendation:
     def test_small_cat_most_dilute_band(self):
         # 2 kg cat falls into the <3 kg band → 40 mU/mL.
         recommended = next(
-            p for p in VASOPRESSIN.concentration_presets
+            p
+            for p in VASOPRESSIN.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 2)
             and (p.weight_max_kg is None or p.weight_max_kg > 2)
         )

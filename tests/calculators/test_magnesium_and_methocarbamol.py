@@ -148,7 +148,8 @@ class TestMagnesiumSulfateAutoRecommendation:
 
     def test_large_patient_recommended_100mg_per_ml(self):
         recommended = next(
-            p for p in MAGNESIUM_SULFATE.concentration_presets
+            p
+            for p in MAGNESIUM_SULFATE.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 20)
             and (p.weight_max_kg is None or p.weight_max_kg > 20)
         )

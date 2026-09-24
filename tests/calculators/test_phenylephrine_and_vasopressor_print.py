@@ -133,7 +133,8 @@ class TestPhenylephrineAutoRecommendation:
     def test_large_dog_recommended_100(self):
         # 25 kg → 100 µg/mL band.
         recommended = next(
-            p for p in PHENYLEPHRINE.concentration_presets
+            p
+            for p in PHENYLEPHRINE.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 25)
             and (p.weight_max_kg is None or p.weight_max_kg > 25)
         )
@@ -142,7 +143,8 @@ class TestPhenylephrineAutoRecommendation:
     def test_medium_patient_recommended_40(self):
         # 5 kg → 40 µg/mL band (textbook prep).
         recommended = next(
-            p for p in PHENYLEPHRINE.concentration_presets
+            p
+            for p in PHENYLEPHRINE.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 5)
             and (p.weight_max_kg is None or p.weight_max_kg > 5)
         )
@@ -151,7 +153,8 @@ class TestPhenylephrineAutoRecommendation:
     def test_small_cat_recommended_20(self):
         # 2 kg → 20 µg/mL band.
         recommended = next(
-            p for p in PHENYLEPHRINE.concentration_presets
+            p
+            for p in PHENYLEPHRINE.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 2)
             and (p.weight_max_kg is None or p.weight_max_kg > 2)
         )

@@ -46,14 +46,10 @@ async def accept_disclaimer(
     try:
         body = await request.json()
     except Exception:
-        return JSONResponse(
-            {"error": "invalid_json"}, status_code=400
-        )
+        return JSONResponse({"error": "invalid_json"}, status_code=400)
 
     if not isinstance(body, dict):
-        return JSONResponse(
-            {"error": "invalid_body"}, status_code=400
-        )
+        return JSONResponse({"error": "invalid_body"}, status_code=400)
 
     # Accept whatever version the client sends, but record it as-is —
     # the server's current version is exposed via templates.env.globals,
@@ -64,9 +60,7 @@ async def accept_disclaimer(
     version = str(version_raw)[:32]
 
     session_token_raw = body.get("session_token")
-    session_token = (
-        str(session_token_raw)[:64] if session_token_raw else None
-    )
+    session_token = str(session_token_raw)[:64] if session_token_raw else None
 
     acceptance = DisclaimerAcceptance(
         disclaimer_version=version,

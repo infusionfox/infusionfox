@@ -202,14 +202,16 @@ class TestDefaultsAreWithinRange:
     drug. A default outside the range would be clinically wrong AND would
     interact badly with the _inject_chosen_doses clamping logic."""
 
-    @pytest.mark.parametrize("species,weight", [
-        (AnesthSpecies.DOG, 20.0),
-        (AnesthSpecies.CAT, 4.0),
-    ])
+    @pytest.mark.parametrize(
+        "species,weight",
+        [
+            (AnesthSpecies.DOG, 20.0),
+            (AnesthSpecies.CAT, 4.0),
+        ],
+    )
     def test_all_defaults_within_published_range(self, species, weight):
         result = calculate(weight, WeightUnit.KG, species, "T", "5y")
-        for drug_list in (result.premed_opioids, result.premed_sedatives,
-                          result.induction_drugs):
+        for drug_list in (result.premed_opioids, result.premed_sedatives, result.induction_drugs):
             for d in drug_list:
                 if d.chosen_dose_mg_per_kg > 0:  # has a default set
                     assert d.dose_mg_per_kg_low <= d.chosen_dose_mg_per_kg <= d.dose_mg_per_kg_high, (

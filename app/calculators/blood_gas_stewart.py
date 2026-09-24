@@ -375,9 +375,7 @@ def _compute_sig(
 # ---------------------------------------------------------------------------
 
 
-def _compute_ag_views(
-    inputs: StewartInputs, ref: StewartReference
-) -> tuple[float | None, float | None]:
+def _compute_ag_views(inputs: StewartInputs, ref: StewartReference) -> tuple[float | None, float | None]:
     """Return (conventional AG, albumin-corrected AG) when computable.
 
     Conventional AG = Na − (Cl + HCO3) — the standard four-decade clinical
@@ -417,8 +415,7 @@ def _interpret(components: list[BEComponent], sig: float | None) -> tuple[str, l
         dominant = significant[0]
         direction = "alkalinizing" if dominant.mEq_per_l > 0 else "acidifying"
         headline = (
-            f"Dominant contributor: {dominant.label} "
-            f"({dominant.mEq_per_l:+.1f} mEq/L, {direction})."
+            f"Dominant contributor: {dominant.label} " f"({dominant.mEq_per_l:+.1f} mEq/L, {direction})."
         )
         lines = []
         for c in significant:
@@ -444,8 +441,7 @@ def _interpret(components: list[BEComponent], sig: float | None) -> tuple[str, l
     ]
     if sig is None:
         caveats.append(
-            "Strong ion gap not calculated. Supply Na, K, Cl, HCO3, and "
-            "albumin to enable the SID view."
+            "Strong ion gap not calculated. Supply Na, K, Cl, HCO3, and " "albumin to enable the SID view."
         )
     return headline, lines, caveats
 

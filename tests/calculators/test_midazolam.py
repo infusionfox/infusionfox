@@ -153,7 +153,8 @@ class TestMidazolamAutoRecommendation:
 
     def test_large_dog_recommended_1mg_per_ml(self):
         recommended = next(
-            p for p in MIDAZOLAM.concentration_presets
+            p
+            for p in MIDAZOLAM.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 25)
             and (p.weight_max_kg is None or p.weight_max_kg > 25)
         )
@@ -162,7 +163,8 @@ class TestMidazolamAutoRecommendation:
     def test_medium_patient_recommended_half_mg_per_ml(self):
         # 5 kg → 0.5 mg/mL band.
         recommended = next(
-            p for p in MIDAZOLAM.concentration_presets
+            p
+            for p in MIDAZOLAM.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 5)
             and (p.weight_max_kg is None or p.weight_max_kg > 5)
         )
@@ -171,7 +173,8 @@ class TestMidazolamAutoRecommendation:
     def test_small_cat_recommended_0_2_mg_per_ml(self):
         # 2 kg cat → 0.2 mg/mL band.
         recommended = next(
-            p for p in MIDAZOLAM.concentration_presets
+            p
+            for p in MIDAZOLAM.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 2)
             and (p.weight_max_kg is None or p.weight_max_kg > 2)
         )
@@ -185,9 +188,7 @@ class TestMidazolamLoadingDoses:
         assert len(MIDAZOLAM.loading_doses) == 2
 
     def test_sedation_loading_dose_range(self):
-        sedation = next(
-            ld for ld in MIDAZOLAM.loading_doses if "sedation" in ld.label.lower()
-        )
+        sedation = next(ld for ld in MIDAZOLAM.loading_doses if "sedation" in ld.label.lower())
         dog_range = sedation.dose_per_kg[Species.DOG]
         assert dog_range == (0.1, 0.3)
         cat_range = sedation.dose_per_kg[Species.CAT]
@@ -195,18 +196,14 @@ class TestMidazolamLoadingDoses:
         assert sedation.display_dose_unit == "mg"
 
     def test_status_epilepticus_loading_dose_range(self):
-        status = next(
-            ld for ld in MIDAZOLAM.loading_doses if "status" in ld.label.lower()
-        )
+        status = next(ld for ld in MIDAZOLAM.loading_doses if "status" in ld.label.lower())
         dog_range = status.dose_per_kg[Species.DOG]
         assert dog_range == (0.2, 0.5)
         cat_range = status.dose_per_kg[Species.CAT]
         assert cat_range == (0.2, 0.5)
 
     def test_sedation_note_mentions_paradoxical_cat_response(self):
-        sedation = next(
-            ld for ld in MIDAZOLAM.loading_doses if "sedation" in ld.label.lower()
-        )
+        sedation = next(ld for ld in MIDAZOLAM.loading_doses if "sedation" in ld.label.lower())
         assert "paradoxical" in sedation.note.lower()
 
     def test_neither_loading_matches_cri_rate(self):
@@ -296,6 +293,7 @@ class TestMidazolamTemplateRendering:
 class TestMidazolamCatalogPresence:
     def test_appears_in_nav_under_anesthesia_sedation(self):
         from app.nav import nav_index
+
         groups = nav_index()
         section = groups.get("Anesthesia & Sedation", [])
         hrefs = [e.href for e in section]

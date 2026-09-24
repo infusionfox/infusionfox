@@ -89,9 +89,7 @@ class TestIleConstants:
 
 class TestIleMath:
     def test_canonical_20kg_dog_bolus(self):
-        result = compute_ile(
-            IleInputs(weight_value=20.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=20.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         assert result.valid
         assert result.bolus_volume_ml == pytest.approx(30.0)
         assert result.rebolus_volume_ml == pytest.approx(30.0)
@@ -103,9 +101,7 @@ class TestIleMath:
         - Bolus + CRI: 30 + 150 = 180 mL
         - Per-kg: 180 / 20 = 9.0 mL/kg → within guideline
         """
-        result = compute_ile(
-            IleInputs(weight_value=20.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=20.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         p = result.fast_standard
         assert p.rate_ml_per_min == pytest.approx(5.0)
         assert p.rate_ml_per_hr == pytest.approx(300.0)
@@ -121,9 +117,7 @@ class TestIleMath:
         - Bolus + CRI: 30 + 300 = 330 mL
         - Per-kg: 330 / 20 = 16.5 mL/kg → high cumulative
         """
-        result = compute_ile(
-            IleInputs(weight_value=20.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=20.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         p = result.fast_extended
         assert p.rate_ml_per_hr == pytest.approx(300.0)
         assert p.duration_min == 60
@@ -138,9 +132,7 @@ class TestIleMath:
         - Bolus + CRI: 30 + 316.8 = 346.8 mL
         - Per-kg: 346.8 / 20 = 17.34 mL/kg → high cumulative
         """
-        result = compute_ile(
-            IleInputs(weight_value=20.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=20.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         p = result.slow_conservative
         assert p.rate_ml_per_kg_per_min == pytest.approx(0.066)
         assert p.rate_ml_per_min == pytest.approx(1.32)
@@ -154,9 +146,7 @@ class TestIleMath:
         """The slow protocol's volumetric rate is roughly one-quarter
         of the fast protocol's rate. This is the clinical reason for
         choosing it in smaller patients."""
-        result = compute_ile(
-            IleInputs(weight_value=11.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=11.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         # 0.066 / 0.25 ≈ 0.264 ≈ 1/4
         ratio = result.slow_conservative.rate_ml_per_hr / result.fast_standard.rate_ml_per_hr
         assert ratio == pytest.approx(0.264, rel=1e-2)
@@ -165,9 +155,7 @@ class TestIleMath:
         """24 lb (10.886 kg) dog. The user-visible case that prompted
         the two-protocol redesign: fast = 163 mL/hr, slow = 43 mL/hr.
         """
-        result = compute_ile(
-            IleInputs(weight_value=24.0, weight_unit=WeightUnit.LB, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=24.0, weight_unit=WeightUnit.LB, species=IleSpecies.DOG))
         assert result.fast_standard.rate_ml_per_hr == pytest.approx(163.3, abs=0.5)
         assert result.slow_conservative.rate_ml_per_hr == pytest.approx(43.1, abs=0.5)
 
@@ -177,18 +165,14 @@ class TestIleMath:
         - Fast rate: 0.25 × 4 = 1 mL/min = 60 mL/hr
         - Slow rate: 0.066 × 4 = 0.264 mL/min = 15.84 mL/hr
         """
-        result = compute_ile(
-            IleInputs(weight_value=4.0, weight_unit=WeightUnit.KG, species=IleSpecies.CAT)
-        )
+        result = compute_ile(IleInputs(weight_value=4.0, weight_unit=WeightUnit.KG, species=IleSpecies.CAT))
         assert result.bolus_volume_ml == pytest.approx(6.0)
         assert result.fast_standard.rate_ml_per_hr == pytest.approx(60.0)
         assert result.slow_conservative.rate_ml_per_hr == pytest.approx(15.84, rel=1e-3)
 
     def test_lb_conversion(self):
         # 44 lb ≈ 19.96 kg → bolus ~30 mL.
-        result = compute_ile(
-            IleInputs(weight_value=44.0, weight_unit=WeightUnit.LB, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=44.0, weight_unit=WeightUnit.LB, species=IleSpecies.DOG))
         assert result.bolus_volume_ml == pytest.approx(30.0, rel=1e-2)
 
 
@@ -210,9 +194,7 @@ class TestIleTierClassification:
     def test_fast_extended_is_high_cumulative(self):
         """Fast 60 min delivers 16.5 mL/kg, which is above the 15
         mL/kg high-cumulative threshold."""
-        result = compute_ile(
-            IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         assert result.fast_extended.cumulative_per_kg == pytest.approx(16.5)
         assert result.fast_extended.cumulative_tier == "high"
 
@@ -220,30 +202,22 @@ class TestIleTierClassification:
         """Slow 4 hr delivers ~17.34 mL/kg, above the 15 mL/kg
         threshold. This is intentional: the slow rate delivers more
         total volume at lower peak triglyceride load."""
-        result = compute_ile(
-            IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         assert result.slow_conservative.cumulative_per_kg == pytest.approx(17.34, rel=1e-3)
         assert result.slow_conservative.cumulative_tier == "high"
 
     def test_tier_label_within(self):
-        result = compute_ile(
-            IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         assert "Within conservative" in result.fast_standard.cumulative_label
 
     def test_tier_label_high(self):
-        result = compute_ile(
-            IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         assert "High" in result.slow_conservative.cumulative_label
 
     def test_rebolus_pushes_fast_standard_to_above_tier(self):
         """Fast standard alone is 9 mL/kg (within). Adding one
         rebolus brings it to 10.5 mL/kg (above)."""
-        result = compute_ile(
-            IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         p = result.fast_standard
         assert p.cumulative_after_rebolus_per_kg == pytest.approx(10.5)
         assert p.cumulative_after_rebolus_tier == "above"
@@ -251,9 +225,7 @@ class TestIleTierClassification:
     def test_rebolus_after_high_protocol_stays_high(self):
         """After the slow protocol (already at 17.34 mL/kg), a rebolus
         pushes cumulative to 18.84 mL/kg, still high tier."""
-        result = compute_ile(
-            IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         p = result.slow_conservative
         assert p.cumulative_after_rebolus_per_kg == pytest.approx(18.84, rel=1e-3)
         assert p.cumulative_after_rebolus_tier == "high"
@@ -262,9 +234,7 @@ class TestIleTierClassification:
 class TestIleClinicalNotes:
     def test_two_protocols_note_present(self):
         """Result notes describe when each protocol is preferred."""
-        result = compute_ile(
-            IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         notes_text = " ".join(result.notes).lower()
         assert "fast" in notes_text
         assert "slow" in notes_text
@@ -272,9 +242,7 @@ class TestIleClinicalNotes:
     def test_clinical_stopping_criteria_note(self):
         """Stopping criteria framed as clinical (response, lipemia,
         fat overload), not a fixed mL/kg/day."""
-        result = compute_ile(
-            IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=10.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         notes_text = " ".join(result.notes).lower()
         assert "stopping criteria" in notes_text
         assert "lipemia" in notes_text
@@ -282,9 +250,7 @@ class TestIleClinicalNotes:
 
 class TestIleSafetyRule8:
     def test_zero_weight_invalid(self):
-        result = compute_ile(
-            IleInputs(weight_value=0.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=0.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         assert result.valid is False
         # No numeric output.
         assert result.bolus_volume_ml == 0.0
@@ -292,9 +258,7 @@ class TestIleSafetyRule8:
         assert result.slow_conservative.rate_ml_per_hr == 0.0
 
     def test_negative_weight_invalid(self):
-        result = compute_ile(
-            IleInputs(weight_value=-5.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG)
-        )
+        result = compute_ile(IleInputs(weight_value=-5.0, weight_unit=WeightUnit.KG, species=IleSpecies.DOG))
         assert result.valid is False
 
     def test_empty_post_returns_placeholder(self):
@@ -389,6 +353,7 @@ class TestIleRoutes:
 class TestIleNav:
     def test_ile_in_emergency(self):
         from app.nav import nav_index
+
         emergency = [e.href for e in nav_index().get("Emergency", [])]
         assert "/ile" in emergency
         # Only once — no duplicate registration.

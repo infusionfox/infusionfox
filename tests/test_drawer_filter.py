@@ -82,12 +82,8 @@ class TestDrawerFilterDOM:
         # The hardcoded href should be "/search"
         import re
 
-        m = re.search(
-            r'href="(/search[^"]*)"[^>]*data-drawer-filter-fallback', r.text
-        )
-        m2 = re.search(
-            r'data-drawer-filter-fallback[^>]*href="(/search[^"]*)"', r.text
-        )
+        m = re.search(r'href="(/search[^"]*)"[^>]*data-drawer-filter-fallback', r.text)
+        m2 = re.search(r'data-drawer-filter-fallback[^>]*href="(/search[^"]*)"', r.text)
         href = (m and m.group(1)) or (m2 and m2.group(1))
         assert href is not None, "Fallback link href missing"
         assert href.startswith("/search")

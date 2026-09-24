@@ -72,18 +72,21 @@ class TestPickNorepiPresetForPatient:
         preset = pick_norepi_preset_for_patient(weight_kg=8, dose_ug_kg_min=0.1)
         assert preset.concentration_ug_per_ml == 16
 
-    @pytest.mark.parametrize("weight,dose,expected_conc", [
-        (40, 0.1, 16),
-        (20, 0.1, 16),
-        (10, 0.1, 16),
-        (8, 0.1, 16),
-        (6, 0.1, 16),  # 3.75 mL/hr — just above floor
-        (5, 0.1, 8),   # 1.88 at 16, 3.75 at 8
-        (4, 0.1, 8),
-        (3, 0.1, 8),   # 1.125 at 16, 2.25 at 8
-        (3, 0.05, 4),  # very low dose drops to 4
-        (2, 0.1, 4),   # 0.75 at 16, 1.5 at 8, 3.0 at 4
-    ])
+    @pytest.mark.parametrize(
+        "weight,dose,expected_conc",
+        [
+            (40, 0.1, 16),
+            (20, 0.1, 16),
+            (10, 0.1, 16),
+            (8, 0.1, 16),
+            (6, 0.1, 16),  # 3.75 mL/hr — just above floor
+            (5, 0.1, 8),  # 1.88 at 16, 3.75 at 8
+            (4, 0.1, 8),
+            (3, 0.1, 8),  # 1.125 at 16, 2.25 at 8
+            (3, 0.05, 4),  # very low dose drops to 4
+            (2, 0.1, 4),  # 0.75 at 16, 1.5 at 8, 3.0 at 4
+        ],
+    )
     def test_dose_weight_combinations(self, weight, dose, expected_conc):
         preset = pick_norepi_preset_for_patient(weight_kg=weight, dose_ug_kg_min=dose)
         assert preset.concentration_ug_per_ml == expected_conc, (
@@ -230,7 +233,7 @@ class TestNorepiFormIntegration:
         assert body.count("conc-bag-recipe is-active") == 1
         # And it's the 16/250 combination
         active_start = body.find("conc-bag-recipe is-active")
-        active_section = body[active_start:active_start + 500]
+        active_section = body[active_start : active_start + 500]
         assert 'data-conc="16"' in active_section
         assert 'data-bag="250"' in active_section
 
@@ -280,7 +283,7 @@ class TestNorepiFormIntegration:
         # And it's the 16 µg/mL one (the default)
         suggested_start = conc_section.find("conc-tab is-suggested")
         # The next ~250 chars should contain value="16"
-        assert 'value="16"' in conc_section[suggested_start:suggested_start + 300]
+        assert 'value="16"' in conc_section[suggested_start : suggested_start + 300]
 
     def test_initial_suggested_badge_on_default_bag_tab(self, client):
         """The 250 mL bag tab (full-vial match for 16 µg/mL default)
@@ -294,7 +297,7 @@ class TestNorepiFormIntegration:
         assert bag_section.count("bag-size-tab is-suggested") == 1
         # And it's the 250 mL one
         suggested_start = bag_section.find("bag-size-tab is-suggested")
-        assert 'value="250"' in bag_section[suggested_start:suggested_start + 300]
+        assert 'value="250"' in bag_section[suggested_start : suggested_start + 300]
 
     def test_every_tab_has_a_suggested_badge_span(self, client):
         """All three conc tabs and all three bag tabs render a badge
@@ -334,9 +337,9 @@ class TestNorepiFormIntegration:
             "fentanyl",
         ):
             resp = client.get(f"/{slug}")
-            assert "How this calculator works" in resp.text, (
-                f"/{slug} should include the how-it-works disclosure"
-            )
+            assert (
+                "How this calculator works" in resp.text
+            ), f"/{slug} should include the how-it-works disclosure"
 
 
 class TestNorepiResultPanelNotices:
@@ -405,7 +408,7 @@ class TestNorepiResultPanelNotices:
         # These classes only existed on the old result-panel bag-prep
         assert "norepi-prep__tabs" not in body
         assert "norepi-prep__recipes" not in body
-        assert 'norepi-prep__recipe ' not in body
+        assert "norepi-prep__recipe " not in body
 
     def test_too_low_concentration_shows_fluid_load_notice(self, client):
         """20 kg dog at 4 µg/mL: rate is 30 mL/hr — well above the
@@ -448,16 +451,12 @@ class TestNorepiResultPanelNotices:
         # Too-high case: only the precision notice
         resp = self._post(client, weight=4, dose=0.1, conc=16, species="cat")
         body = resp.text
-        assert ("More precise preparation available" in body) and (
-            "reduce fluid load" not in body
-        )
+        assert ("More precise preparation available" in body) and ("reduce fluid load" not in body)
 
         # Too-low case: only the fluid-load notice
         resp = self._post(client, weight=20, dose=0.1, conc=4)
         body = resp.text
-        assert ("reduce fluid load" in body) and (
-            "More precise preparation available" not in body
-        )
+        assert ("reduce fluid load" in body) and ("More precise preparation available" not in body)
 
 
 # ---------------------------------------------------------------------------

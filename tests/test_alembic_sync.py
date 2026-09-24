@@ -16,12 +16,12 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from alembic.autogenerate import compare_metadata
-from alembic.config import Config
-from alembic.runtime.migration import MigrationContext
 from sqlalchemy import create_engine
 
 from alembic import command
+from alembic.autogenerate import compare_metadata
+from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
 from app.db.models import Base
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -72,10 +72,7 @@ def test_alembic_head_matches_metadata(alembic_config, monkeypatch):
             # owned by a migration but not by the ORM model. See
             # alembic/env.py for the same filter applied to autogenerate.
             def _skip_fts(name, type_, parent_names):
-                return not (
-                    type_ == "table"
-                    and (name == "search_index" or name.startswith("search_index_"))
-                )
+                return not (type_ == "table" and (name == "search_index" or name.startswith("search_index_")))
 
             ctx = MigrationContext.configure(conn, opts={"include_name": _skip_fts})
             diff = compare_metadata(ctx, Base.metadata)

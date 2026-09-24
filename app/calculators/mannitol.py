@@ -323,10 +323,7 @@ def _validate(inputs: MannitolInputs) -> list[str]:
     if inputs.dose_g_per_kg <= 0:
         errors.append("Enter a dose in g/kg.")
     if inputs.dose_g_per_kg > 5.0:
-        errors.append(
-            "Dose exceeds 5 g/kg, which is above any published "
-            "indication range. Verify input."
-        )
+        errors.append("Dose exceeds 5 g/kg, which is above any published " "indication range. Verify input.")
     if inputs.concentration_percent not in (20, 25):
         errors.append("Concentration must be 20% or 25%.")
     if inputs.duration_min <= 0:
@@ -343,9 +340,7 @@ def _validate(inputs: MannitolInputs) -> list[str]:
 def compute_mannitol(inputs: MannitolInputs) -> MannitolResult:
     errors = _validate(inputs)
     if errors:
-        return MannitolResult(
-            inputs=inputs, valid=False, errors=errors, sources=_SOURCES
-        )
+        return MannitolResult(inputs=inputs, valid=False, errors=errors, sources=_SOURCES)
 
     # Weight conversion
     if inputs.weight_unit == WeightUnit.LB:
@@ -373,16 +368,10 @@ def compute_mannitol(inputs: MannitolInputs) -> MannitolResult:
         profile.cri_rate_low_mg_per_kg_per_hr is not None
         and profile.cri_rate_high_mg_per_kg_per_hr is not None
     ):
-        cri_low_ml_per_hr = (
-            profile.cri_rate_low_mg_per_kg_per_hr * weight_kg
-        ) / concentration_mg_per_ml
-        cri_high_ml_per_hr = (
-            profile.cri_rate_high_mg_per_kg_per_hr * weight_kg
-        ) / concentration_mg_per_ml
+        cri_low_ml_per_hr = (profile.cri_rate_low_mg_per_kg_per_hr * weight_kg) / concentration_mg_per_ml
+        cri_high_ml_per_hr = (profile.cri_rate_high_mg_per_kg_per_hr * weight_kg) / concentration_mg_per_ml
 
-    dose_within_range = (
-        profile.dose_low_g_per_kg <= inputs.dose_g_per_kg <= profile.dose_high_g_per_kg
-    )
+    dose_within_range = profile.dose_low_g_per_kg <= inputs.dose_g_per_kg <= profile.dose_high_g_per_kg
     cumulative_warning = inputs.dose_g_per_kg > CUMULATIVE_24H_CEILING_G_PER_KG
 
     interpretation: list[str] = []

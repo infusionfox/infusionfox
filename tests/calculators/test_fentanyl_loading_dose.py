@@ -86,9 +86,7 @@ class TestComputeLoadingDoses:
         """20 kg dog at 5 µg/kg/hr CRI:
         - Matched: 5 µg/kg × 20 kg = 100 µg = 2.0 mL of 50 µg/mL stock
         - Range:   2–10 µg/kg → 40–200 µg → 0.8–4.0 mL"""
-        results = compute_loading_doses(
-            FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=5.0
-        )
+        results = compute_loading_doses(FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=5.0)
         perioperative = results[0]
         assert perioperative.matched_per_kg == 5.0
         assert perioperative.matched_total == 100.0
@@ -103,9 +101,7 @@ class TestComputeLoadingDoses:
         """4 kg cat at 5 µg/kg/hr CRI on the cat perioperative scenario.
         Single-value (5, 5) → is_single_value=True so the template
         renders "Published dose" instead of "Range"."""
-        results = compute_loading_doses(
-            FENTANYL, weight_kg=4.0, species=Species.CAT, cri_dose_value=5.0
-        )
+        results = compute_loading_doses(FENTANYL, weight_kg=4.0, species=Species.CAT, cri_dose_value=5.0)
         perioperative = results[0]
         assert perioperative.is_single_value is True
         assert perioperative.min_total == 20.0
@@ -116,23 +112,17 @@ class TestComputeLoadingDoses:
     def test_dog_outside_range_flag(self):
         """20 kg dog at 15 µg/kg/hr CRI is outside the published 2–10
         µg/kg loading range for perioperative. Flag fires."""
-        results = compute_loading_doses(
-            FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=15.0
-        )
+        results = compute_loading_doses(FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=15.0)
         assert results[0].matched_outside_range is True
 
     def test_dog_inside_range_does_not_flag(self):
-        results = compute_loading_doses(
-            FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=5.0
-        )
+        results = compute_loading_doses(FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=5.0)
         assert results[0].matched_outside_range is False
 
     def test_emergent_has_no_matched_value(self):
         """Emergent scenario doesn't match CRI rate (titrated separately)
         so matched_* fields are None."""
-        results = compute_loading_doses(
-            FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=5.0
-        )
+        results = compute_loading_doses(FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=5.0)
         emergent = results[1]
         assert emergent.matched_per_kg is None
         assert emergent.matched_total is None
@@ -141,9 +131,7 @@ class TestComputeLoadingDoses:
     def test_emergent_range_for_20kg_dog(self):
         """20 kg dog, emergent severe pain: 10–50 µg/kg → 200–1000 µg →
         4.0–20.0 mL of 50 µg/mL stock."""
-        results = compute_loading_doses(
-            FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=5.0
-        )
+        results = compute_loading_doses(FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=5.0)
         emergent = results[1]
         assert emergent.min_total == 200.0
         assert emergent.max_total == 1000.0
@@ -161,18 +149,14 @@ class TestComputeLoadingDoses:
         assert results == ()
 
     def test_returns_empty_for_invalid_weight(self):
-        results = compute_loading_doses(
-            FENTANYL, weight_kg=0, species=Species.DOG, cri_dose_value=5.0
-        )
+        results = compute_loading_doses(FENTANYL, weight_kg=0, species=Species.DOG, cri_dose_value=5.0)
         assert results == ()
 
     def test_no_matched_value_when_cri_dose_missing(self):
         """If cri_dose_value isn't provided (e.g., TARGET_PUMP_RATE mode
         where dose is computed not input), the range still renders but
         no matched value appears."""
-        results = compute_loading_doses(
-            FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=None
-        )
+        results = compute_loading_doses(FENTANYL, weight_kg=20.0, species=Species.DOG, cri_dose_value=None)
         assert results[0].matched_per_kg is None
         # Range still computes
         assert results[0].min_per_kg == 2.0
@@ -272,6 +256,6 @@ class TestFentanylResultPanelRendering:
             assert r.status_code == 200
             # The eyebrow heading + perioperative label combo is unique
             # to the fentanyl loading-dose section.
-            assert "Perioperative analgesia" not in r.text, (
-                f"/{slug} should not render the loading-dose section"
-            )
+            assert (
+                "Perioperative analgesia" not in r.text
+            ), f"/{slug} should not render the loading-dose section"

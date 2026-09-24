@@ -124,12 +124,10 @@ _VASOPRESSOR_CRI_SURGERY = LearningModule(
         "anesthesia, versus fluid bolus or anesthetic depth adjustment.",
         "Differentiate norepinephrine, dopamine, and dobutamine by "
         "receptor profile and clinical indication.",
-        "Calculate the bag concentration and pump rate for a "
-        "weight-based CRI from a stock vial.",
+        "Calculate the bag concentration and pump rate for a " "weight-based CRI from a stock vial.",
         "Recognize the safety bounds for each drug: titration ranges, "
         "rate ceilings, and required monitoring.",
-        "Adjust an active CRI based on hemodynamic response, and "
-        "describe a weaning plan.",
+        "Adjust an active CRI based on hemodynamic response, and " "describe a weaning plan.",
     ),
     estimated_minutes=50,
     instructor_name="Timothy Curran, DVM",
@@ -154,10 +152,7 @@ _VASOPRESSOR_CRI_SURGERY = LearningModule(
         RelatedCalculator(
             href="/dopamine-cri",
             title="Dopamine CRI",
-            note=(
-                "Dose-dependent receptor profile. Useful when "
-                "bradycardia accompanies hypotension."
-            ),
+            note=("Dose-dependent receptor profile. Useful when " "bradycardia accompanies hypotension."),
         ),
         RelatedCalculator(
             href="/dobutamine",
@@ -249,10 +244,7 @@ _VASOPRESSOR_CRI_SURGERY = LearningModule(
             ),
         ),
         QuizQuestion(
-            prompt=(
-                "Which monitoring is required during a "
-                "norepinephrine CRI?"
-            ),
+            prompt=("Which monitoring is required during a " "norepinephrine CRI?"),
             choices=(
                 "Pulse oximetry only.",
                 "Pulse oximetry plus continuous ECG.",
@@ -282,10 +274,8 @@ _VASOPRESSOR_CRI_SURGERY = LearningModule(
             ),
             choices=(
                 "Stop the CRI when the dog is extubated.",
-                "Halve the rate, recheck MAP in 10 minutes; if "
-                "stable, halve again; continue until off.",
-                "Continue at full rate for 30 minutes post-extubation, "
-                "then stop.",
+                "Halve the rate, recheck MAP in 10 minutes; if " "stable, halve again; continue until off.",
+                "Continue at full rate for 30 minutes post-extubation, " "then stop.",
                 "Switch to oral pimobendan and stop dopamine immediately.",
             ),
             correct_index=1,
@@ -302,19 +292,14 @@ _VASOPRESSOR_CRI_SURGERY = LearningModule(
             ),
         ),
         QuizQuestion(
-            prompt=(
-                "Dobutamine is most appropriately chosen over "
-                "norepinephrine when:"
-            ),
+            prompt=("Dobutamine is most appropriately chosen over " "norepinephrine when:"),
             choices=(
                 "MAP is below 50 mmHg from any cause.",
                 "The patient has known dilated cardiomyopathy and "
                 "poor contractility, with hypotension driven by low "
                 "cardiac output rather than vasodilation.",
-                "The patient is tachycardic and hypotensive after "
-                "fluid resuscitation.",
-                "Vasodilation from isoflurane is the suspected "
-                "primary cause of hypotension.",
+                "The patient is tachycardic and hypotensive after " "fluid resuscitation.",
+                "Vasodilation from isoflurane is the suspected " "primary cause of hypotension.",
             ),
             correct_index=1,
             explanation=(
@@ -334,9 +319,7 @@ _VASOPRESSOR_CRI_SURGERY = LearningModule(
 
 
 # Top-level registry. Add new modules here.
-MODULES: tuple[LearningModule, ...] = (
-    _VASOPRESSOR_CRI_SURGERY,
-)
+MODULES: tuple[LearningModule, ...] = (_VASOPRESSOR_CRI_SURGERY,)
 
 
 _MODULE_BY_SLUG: dict[str, LearningModule] = {m.slug: m for m in MODULES}

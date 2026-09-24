@@ -211,11 +211,7 @@ def _validate(inputs: OxygenationInputs) -> list[str]:
         errors.append("Enter FiO₂.")
     else:
         # Normalize to decimal for validation
-        decimal = (
-            inputs.fio2_value
-            if inputs.fio2_unit == FiO2Unit.DECIMAL
-            else inputs.fio2_value / 100.0
-        )
+        decimal = inputs.fio2_value if inputs.fio2_unit == FiO2Unit.DECIMAL else inputs.fio2_value / 100.0
         if not (0.21 <= decimal <= 1.0):
             errors.append(
                 "FiO₂ must be between 0.21 (room air) and 1.0 (100%). "
@@ -259,9 +255,7 @@ def _classify_pf(pf: float) -> tuple[str, str]:
 def compute_oxygenation(inputs: OxygenationInputs) -> OxygenationResult:
     errors = _validate(inputs)
     if errors:
-        return OxygenationResult(
-            inputs=inputs, valid=False, errors=errors, sources=_SOURCES
-        )
+        return OxygenationResult(inputs=inputs, valid=False, errors=errors, sources=_SOURCES)
 
     # Normalize FiO2 to decimal
     if inputs.fio2_unit == FiO2Unit.PERCENT:
@@ -276,8 +270,7 @@ def compute_oxygenation(inputs: OxygenationInputs) -> OxygenationResult:
 
     # Alveolar gas equation: PAO2 = FiO2 × (Patm − PH2O) − PaCO2/R
     pa_o2_alveolar = (
-        fio2_decimal * (inputs.patm_mmhg - PH2O_MMHG_AT_37C)
-        - inputs.paco2_mmhg / inputs.respiratory_quotient
+        fio2_decimal * (inputs.patm_mmhg - PH2O_MMHG_AT_37C) - inputs.paco2_mmhg / inputs.respiratory_quotient
     )
     a_a_gradient = pa_o2_alveolar - inputs.pao2_mmhg
 

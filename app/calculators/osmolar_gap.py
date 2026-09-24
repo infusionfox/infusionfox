@@ -185,13 +185,8 @@ def _validate(inputs: OsmolarGapInputs) -> list[str]:
         errors.append("Enter serum glucose.")
     if inputs.bun_value <= 0:
         errors.append("Enter BUN or urea.")
-    if inputs.measured_osm_mosm_per_kg > 0 and not (
-        200.0 <= inputs.measured_osm_mosm_per_kg <= 500.0
-    ):
-        errors.append(
-            "Measured osmolality, if provided, must be between 200 and "
-            "500 mOsm/kg."
-        )
+    if inputs.measured_osm_mosm_per_kg > 0 and not (200.0 <= inputs.measured_osm_mosm_per_kg <= 500.0):
+        errors.append("Measured osmolality, if provided, must be between 200 and " "500 mOsm/kg.")
     return errors
 
 
@@ -207,9 +202,7 @@ def _classify_gap(gap: float) -> tuple[str, bool]:
 def compute_osmolar_gap(inputs: OsmolarGapInputs) -> OsmolarGapResult:
     errors = _validate(inputs)
     if errors:
-        return OsmolarGapResult(
-            inputs=inputs, valid=False, errors=errors, sources=_SOURCES
-        )
+        return OsmolarGapResult(inputs=inputs, valid=False, errors=errors, sources=_SOURCES)
 
     # Convert glucose to mmol/L
     if inputs.glucose_unit == GlucoseUnit.MG_DL:

@@ -63,9 +63,7 @@ def _ago(days: int) -> datetime:
     return _utcnow_naive() - timedelta(days=days)
 
 
-def _paginate(
-    page: int, per_page: int, total: int
-) -> tuple[int, int, int, int]:
+def _paginate(page: int, per_page: int, total: int) -> tuple[int, int, int, int]:
     """Return (page, per_page, offset, total_pages) clamped to legal range."""
     per_page = max(1, min(per_page, 200))
     total_pages = max(1, (total + per_page - 1) // per_page)
@@ -89,32 +87,36 @@ async def admin_dashboard(
     templates = request.app.state.templates
 
     # Disclaimer counts
-    da_total = db.execute(
-        select(func.count(DisclaimerAcceptance.id))
-    ).scalar() or 0
-    da_24h = db.execute(
-        select(func.count(DisclaimerAcceptance.id)).where(
-            DisclaimerAcceptance.accepted_at >= _ago(1)
-        )
-    ).scalar() or 0
-    da_7d = db.execute(
-        select(func.count(DisclaimerAcceptance.id)).where(
-            DisclaimerAcceptance.accepted_at >= _ago(7)
-        )
-    ).scalar() or 0
-    da_30d = db.execute(
-        select(func.count(DisclaimerAcceptance.id)).where(
-            DisclaimerAcceptance.accepted_at >= _ago(30)
-        )
-    ).scalar() or 0
+    da_total = db.execute(select(func.count(DisclaimerAcceptance.id))).scalar() or 0
+    da_24h = (
+        db.execute(
+            select(func.count(DisclaimerAcceptance.id)).where(DisclaimerAcceptance.accepted_at >= _ago(1))
+        ).scalar()
+        or 0
+    )
+    da_7d = (
+        db.execute(
+            select(func.count(DisclaimerAcceptance.id)).where(DisclaimerAcceptance.accepted_at >= _ago(7))
+        ).scalar()
+        or 0
+    )
+    da_30d = (
+        db.execute(
+            select(func.count(DisclaimerAcceptance.id)).where(DisclaimerAcceptance.accepted_at >= _ago(30))
+        ).scalar()
+        or 0
+    )
 
     # Unique IPs in last 30 days — proxy for distinct users
-    da_unique_ips_30d = db.execute(
-        select(func.count(func.distinct(DisclaimerAcceptance.ip_address))).where(
-            DisclaimerAcceptance.accepted_at >= _ago(30),
-            DisclaimerAcceptance.ip_address.is_not(None),
-        )
-    ).scalar() or 0
+    da_unique_ips_30d = (
+        db.execute(
+            select(func.count(func.distinct(DisclaimerAcceptance.ip_address))).where(
+                DisclaimerAcceptance.accepted_at >= _ago(30),
+                DisclaimerAcceptance.ip_address.is_not(None),
+            )
+        ).scalar()
+        or 0
+    )
 
     # Acceptances grouped by version
     da_by_version_rows = db.execute(
@@ -129,39 +131,33 @@ async def admin_dashboard(
 
     # Feedback counts
     fb_total = db.execute(select(func.count(Feedback.id))).scalar() or 0
-    fb_new = db.execute(
-        select(func.count(Feedback.id)).where(
-            Feedback.status == FeedbackStatus.NEW
-        )
-    ).scalar() or 0
-    fb_dose_concern_new = db.execute(
-        select(func.count(Feedback.id)).where(
-            Feedback.status == FeedbackStatus.NEW,
-            Feedback.kind == FeedbackKind.DOSE_CONCERN,
-        )
-    ).scalar() or 0
+    fb_new = (
+        db.execute(select(func.count(Feedback.id)).where(Feedback.status == FeedbackStatus.NEW)).scalar() or 0
+    )
+    fb_dose_concern_new = (
+        db.execute(
+            select(func.count(Feedback.id)).where(
+                Feedback.status == FeedbackStatus.NEW,
+                Feedback.kind == FeedbackKind.DOSE_CONCERN,
+            )
+        ).scalar()
+        or 0
+    )
 
     # Feedback by kind (lifetime)
-    fb_by_kind_rows = db.execute(
-        select(Feedback.kind, func.count(Feedback.id))
-        .group_by(Feedback.kind)
-    ).all()
+    fb_by_kind_rows = db.execute(select(Feedback.kind, func.count(Feedback.id)).group_by(Feedback.kind)).all()
     fb_by_kind = sorted(
         ({"kind": k.value, "count": c} for k, c in fb_by_kind_rows),
         key=lambda r: -r["count"],
     )
 
     # Recent activity previews (5 each)
-    recent_da = db.execute(
-        select(DisclaimerAcceptance)
-        .order_by(DisclaimerAcceptance.accepted_at.desc())
-        .limit(5)
-    ).scalars().all()
-    recent_fb = db.execute(
-        select(Feedback)
-        .order_by(Feedback.created_at.desc())
-        .limit(5)
-    ).scalars().all()
+    recent_da = (
+        db.execute(select(DisclaimerAcceptance).order_by(DisclaimerAcceptance.accepted_at.desc()).limit(5))
+        .scalars()
+        .all()
+    )
+    recent_fb = db.execute(select(Feedback).order_by(Feedback.created_at.desc()).limit(5)).scalars().all()
 
     return templates.TemplateResponse(
         "admin/dashboard.html",
@@ -189,9 +185,7 @@ async def admin_dashboard(
 # ---------------------------------------------------------------------------
 
 
-@router.get(
-    "/admin/disclaimer-acceptances", response_class=HTMLResponse
-)
+@router.get("/admin/disclaimer-acceptances", response_class=HTMLResponse)
 async def list_disclaimer_acceptances(
     request: Request,
     page: int = 1,
@@ -201,17 +195,19 @@ async def list_disclaimer_acceptances(
 ):
     templates = request.app.state.templates
 
-    total = db.execute(
-        select(func.count(DisclaimerAcceptance.id))
-    ).scalar() or 0
+    total = db.execute(select(func.count(DisclaimerAcceptance.id))).scalar() or 0
     page, per_page, offset, total_pages = _paginate(page, per_page, total)
 
-    rows = db.execute(
-        select(DisclaimerAcceptance)
-        .order_by(DisclaimerAcceptance.accepted_at.desc())
-        .offset(offset)
-        .limit(per_page)
-    ).scalars().all()
+    rows = (
+        db.execute(
+            select(DisclaimerAcceptance)
+            .order_by(DisclaimerAcceptance.accepted_at.desc())
+            .offset(offset)
+            .limit(per_page)
+        )
+        .scalars()
+        .all()
+    )
 
     return templates.TemplateResponse(
         "admin/disclaimer_acceptances.html",
@@ -236,14 +232,16 @@ def _stream_disclaimer_csv(
     """
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow([
-        "id",
-        "accepted_at_utc",
-        "disclaimer_version",
-        "ip_address",
-        "user_agent",
-        "session_token",
-    ])
+    writer.writerow(
+        [
+            "id",
+            "accepted_at_utc",
+            "disclaimer_version",
+            "ip_address",
+            "user_agent",
+            "session_token",
+        ]
+    )
     yield buf.getvalue()
     buf.seek(0)
     buf.truncate(0)
@@ -251,23 +249,29 @@ def _stream_disclaimer_csv(
     batch_size = 500
     offset = 0
     while True:
-        rows = db.execute(
-            select(DisclaimerAcceptance)
-            .order_by(DisclaimerAcceptance.id)
-            .offset(offset)
-            .limit(batch_size)
-        ).scalars().all()
+        rows = (
+            db.execute(
+                select(DisclaimerAcceptance)
+                .order_by(DisclaimerAcceptance.id)
+                .offset(offset)
+                .limit(batch_size)
+            )
+            .scalars()
+            .all()
+        )
         if not rows:
             break
         for r in rows:
-            writer.writerow([
-                r.id,
-                r.accepted_at.isoformat() if r.accepted_at else "",
-                r.disclaimer_version or "",
-                r.ip_address or "",
-                r.user_agent or "",
-                r.session_token or "",
-            ])
+            writer.writerow(
+                [
+                    r.id,
+                    r.accepted_at.isoformat() if r.accepted_at else "",
+                    r.disclaimer_version or "",
+                    r.ip_address or "",
+                    r.user_agent or "",
+                    r.session_token or "",
+                ]
+            )
         yield buf.getvalue()
         buf.seek(0)
         buf.truncate(0)
@@ -279,9 +283,7 @@ async def export_disclaimer_acceptances_csv(
     db: DBSession = Depends(get_db),
     _admin_email: str = Depends(require_admin),
 ):
-    filename = (
-        f"infusionfox-disclaimer-acceptances-{datetime.now(UTC).strftime('%Y%m%d')}.csv"
-    )
+    filename = f"infusionfox-disclaimer-acceptances-{datetime.now(UTC).strftime('%Y%m%d')}.csv"
     return StreamingResponse(
         _stream_disclaimer_csv(db),
         media_type="text/csv",
@@ -333,12 +335,9 @@ async def list_feedback(
     total = db.execute(count_q).scalar() or 0
     page, per_page, offset, total_pages = _paginate(page, per_page, total)
 
-    rows = db.execute(
-        base_q
-        .order_by(Feedback.created_at.desc())
-        .offset(offset)
-        .limit(per_page)
-    ).scalars().all()
+    rows = (
+        db.execute(base_q.order_by(Feedback.created_at.desc()).offset(offset).limit(per_page)).scalars().all()
+    )
 
     return templates.TemplateResponse(
         "admin/feedback_list.html",
@@ -361,19 +360,21 @@ async def list_feedback(
 def _stream_feedback_csv(db: DBSession) -> Generator[str, None, None]:
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow([
-        "id",
-        "created_at_utc",
-        "kind",
-        "status",
-        "page_url",
-        "message",
-        "contact_email",
-        "ip_address",
-        "user_agent",
-        "admin_note",
-        "resolved_at_utc",
-    ])
+    writer.writerow(
+        [
+            "id",
+            "created_at_utc",
+            "kind",
+            "status",
+            "page_url",
+            "message",
+            "contact_email",
+            "ip_address",
+            "user_agent",
+            "admin_note",
+            "resolved_at_utc",
+        ]
+    )
     yield buf.getvalue()
     buf.seek(0)
     buf.truncate(0)
@@ -381,28 +382,29 @@ def _stream_feedback_csv(db: DBSession) -> Generator[str, None, None]:
     batch_size = 500
     offset = 0
     while True:
-        rows = db.execute(
-            select(Feedback)
-            .order_by(Feedback.id)
-            .offset(offset)
-            .limit(batch_size)
-        ).scalars().all()
+        rows = (
+            db.execute(select(Feedback).order_by(Feedback.id).offset(offset).limit(batch_size))
+            .scalars()
+            .all()
+        )
         if not rows:
             break
         for r in rows:
-            writer.writerow([
-                r.id,
-                r.created_at.isoformat() if r.created_at else "",
-                r.kind.value if r.kind else "",
-                r.status.value if r.status else "",
-                r.page_url or "",
-                r.message or "",
-                r.contact_email or "",
-                r.ip_address or "",
-                r.user_agent or "",
-                r.admin_note or "",
-                r.resolved_at.isoformat() if r.resolved_at else "",
-            ])
+            writer.writerow(
+                [
+                    r.id,
+                    r.created_at.isoformat() if r.created_at else "",
+                    r.kind.value if r.kind else "",
+                    r.status.value if r.status else "",
+                    r.page_url or "",
+                    r.message or "",
+                    r.contact_email or "",
+                    r.ip_address or "",
+                    r.user_agent or "",
+                    r.admin_note or "",
+                    r.resolved_at.isoformat() if r.resolved_at else "",
+                ]
+            )
         yield buf.getvalue()
         buf.seek(0)
         buf.truncate(0)
@@ -418,9 +420,7 @@ async def export_feedback_csv(
     db: DBSession = Depends(get_db),
     _admin_email: str = Depends(require_admin),
 ):
-    filename = (
-        f"infusionfox-feedback-{datetime.now(UTC).strftime('%Y%m%d')}.csv"
-    )
+    filename = f"infusionfox-feedback-{datetime.now(UTC).strftime('%Y%m%d')}.csv"
     return StreamingResponse(
         _stream_feedback_csv(db),
         media_type="text/csv",
@@ -469,9 +469,7 @@ async def update_feedback_status(
     try:
         new_status = FeedbackStatus(status)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid status: {status}"
-        ) from exc
+        raise HTTPException(status_code=400, detail=f"Invalid status: {status}") from exc
 
     old_status = row.status
     row.status = new_status
@@ -481,14 +479,15 @@ async def update_feedback_status(
         # Append note rather than overwrite, with a timestamp + actor stamp
         ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
         stamp = f"[{ts} by {admin_email}] {admin_note.strip()}"
-        row.admin_note = (
-            f"{row.admin_note}\n{stamp}" if row.admin_note else stamp
-        )
+        row.admin_note = f"{row.admin_note}\n{stamp}" if row.admin_note else stamp
     db.commit()
 
     _log.info(
         "Admin %s changed feedback#%d status: %s -> %s",
-        admin_email, feedback_id, old_status.value, new_status.value,
+        admin_email,
+        feedback_id,
+        old_status.value,
+        new_status.value,
     )
 
     return RedirectResponse(

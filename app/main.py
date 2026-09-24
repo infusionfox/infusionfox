@@ -112,6 +112,7 @@ templates.env.globals["css_version"] = _compute_static_hash("css/app.css")
 # index (e.g. during dev when reordering categories) reflected immediately.
 templates.env.globals["drawer_nav_groups"] = _nav_index
 
+
 # Pre-compute the set of clinical-background article slugs at startup so
 # templates can conditionally render a "Clinical background" tab only
 # when the article actually exists. Without this guard, every drug

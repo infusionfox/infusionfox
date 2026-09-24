@@ -106,9 +106,7 @@ class TestNitroprussideSafetyLanguage:
         warning = NITROPRUSSIDE.dose_ranges[Species.CAT].persistent_warning.lower()
         # Same critical safety surface for both species.
         for term in ("light", "5% dextrose", "cyanide", "renal failure"):
-            assert term.lower() in warning, (
-                f"cat warning missing critical safety guard: {term}"
-            )
+            assert term.lower() in warning, f"cat warning missing critical safety guard: {term}"
 
     def test_dilution_note_specifies_d5w_only_and_light(self):
         note = NITROPRUSSIDE.dilution_note
@@ -200,7 +198,8 @@ class TestNitroprussideAutoRecommendation:
     def test_large_patient_recommended_500(self):
         # 25 kg → 500 µg/mL band (≥15 kg).
         recommended = next(
-            p for p in NITROPRUSSIDE.concentration_presets
+            p
+            for p in NITROPRUSSIDE.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 25)
             and (p.weight_max_kg is None or p.weight_max_kg > 25)
         )
@@ -209,7 +208,8 @@ class TestNitroprussideAutoRecommendation:
     def test_medium_patient_recommended_200(self):
         # 10 kg → 200 µg/mL textbook prep.
         recommended = next(
-            p for p in NITROPRUSSIDE.concentration_presets
+            p
+            for p in NITROPRUSSIDE.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 10)
             and (p.weight_max_kg is None or p.weight_max_kg > 10)
         )
@@ -218,7 +218,8 @@ class TestNitroprussideAutoRecommendation:
     def test_small_patient_recommended_100(self):
         # 2 kg cat → 100 µg/mL dilute prep.
         recommended = next(
-            p for p in NITROPRUSSIDE.concentration_presets
+            p
+            for p in NITROPRUSSIDE.concentration_presets
             if (p.weight_min_kg is None or p.weight_min_kg <= 2)
             and (p.weight_max_kg is None or p.weight_max_kg > 2)
         )
@@ -320,6 +321,7 @@ class TestNitroprussideNavSectionOrder:
 
     def test_cardiology_in_section_order(self):
         from app.nav import nav_index
+
         groups = nav_index()
         keys = list(groups.keys())
         # Cardiology is present.

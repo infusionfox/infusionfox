@@ -82,10 +82,7 @@ def _render_single_drug(drug, request: Request):
     default_preset = None
     alt_presets = []
     for preset in drug.concentration_presets:
-        if (
-            default_preset is None
-            and preset.concentration_ug_per_ml == drug.default_concentration_ug_per_ml
-        ):
+        if default_preset is None and preset.concentration_ug_per_ml == drug.default_concentration_ug_per_ml:
             default_preset = preset
         elif preset.pump_safe:
             alt_presets.append(preset)
@@ -234,12 +231,7 @@ async def _dispatch_compute(
         # stock-vial concentration as the source we draw from.
         target_rate = parse_positive_float(target_pump_rate_ml_per_hr)
         bag_vol = parse_positive_float(bag_volume_ml)
-        if (
-            weight is None
-            or dose_value is None
-            or target_rate is None
-            or bag_vol is None
-        ):
+        if weight is None or dose_value is None or target_rate is None or bag_vol is None:
             return templates.TemplateResponse(
                 "partials/_invalid_input_placeholder.html",
                 {"request": request},
@@ -326,15 +318,9 @@ async def _dispatch_compute(
             weight_kg=result.weight_kg,
             dose_ug_kg_min=inputs.dose,
         )
-        if (
-            recommended_preset.concentration_ug_per_ml
-            < result.concentration_ug_per_ml
-        ):
+        if recommended_preset.concentration_ug_per_ml < result.concentration_ug_per_ml:
             concentration_too_high = True
-        elif (
-            recommended_preset.concentration_ug_per_ml
-            > result.concentration_ug_per_ml
-        ):
+        elif recommended_preset.concentration_ug_per_ml > result.concentration_ug_per_ml:
             concentration_too_low = True
         # If even the recommended preset gives a sub-floor rate, surface
         # a stronger warning. Happens for very small patients at very
@@ -353,11 +339,7 @@ async def _dispatch_compute(
     # differs from norepi's, which is why this is a separate flag
     # rather than a reuse of `below_precision_floor`.
     dobutamine_volumetric_below_floor = False
-    if (
-        drug.slug == "dobutamine"
-        and inputs.cri_mode == CriMode.STANDARD_BAG
-        and result.valid
-    ):
+    if drug.slug == "dobutamine" and inputs.cri_mode == CriMode.STANDARD_BAG and result.valid:
         try:
             bag_size = int(combined_prep_bag_size_ml)
         except (TypeError, ValueError):
@@ -466,6 +448,7 @@ def _register_engine_drug_routes() -> None:
         )
 
         if drug.kind == CalculatorKind.SINGLE_DRUG_CRI:
+
             async def _compute(
                 request: Request,
                 weight_value: str = Form(""),
@@ -501,6 +484,7 @@ def _register_engine_drug_routes() -> None:
             )
 
         if drug.kind == CalculatorKind.SLIDING_SCALE:
+
             async def _lookup(
                 request: Request,
                 input_value: str = Form(""),

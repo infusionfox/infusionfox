@@ -407,7 +407,8 @@ async def apple_fast_compute(
             msg = f"Enter {missing_labels[0]} and {missing_labels[1]} to compute the APPLE-fast score."
         else:
             msg = (
-                "Enter " + ", ".join(missing_labels[:-1])
+                "Enter "
+                + ", ".join(missing_labels[:-1])
                 + f", and {missing_labels[-1]} to compute the APPLE-fast score."
             )
         return templates.TemplateResponse(

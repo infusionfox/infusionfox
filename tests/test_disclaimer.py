@@ -33,11 +33,9 @@ def _count_acceptances() -> int:
 
 def _latest_acceptance() -> DisclaimerAcceptance | None:
     with SessionLocal() as db:
-        rows = db.execute(
-            select(DisclaimerAcceptance).order_by(
-                DisclaimerAcceptance.id.desc()
-            )
-        ).scalars().all()
+        rows = (
+            db.execute(select(DisclaimerAcceptance).order_by(DisclaimerAcceptance.id.desc())).scalars().all()
+        )
         return rows[0] if rows else None
 
 
@@ -243,6 +241,7 @@ class TestModalRendering:
         body = resp.text
         # Find the button markup; ensure 'disabled' attribute is present
         import re
+
         m = re.search(
             r'<button[^>]*id="disclaimer-accept"[^>]*>',
             body,
@@ -278,9 +277,10 @@ class TestDisclaimerConstants:
         """Convention: YYYY-MM-DD. Tooling and future audit queries
         depend on this being lexicographically orderable."""
         import re
-        assert re.match(r"^\d{4}-\d{2}-\d{2}$", DISCLAIMER_VERSION), (
-            f"DISCLAIMER_VERSION should be ISO date: got {DISCLAIMER_VERSION}"
-        )
+
+        assert re.match(
+            r"^\d{4}-\d{2}-\d{2}$", DISCLAIMER_VERSION
+        ), f"DISCLAIMER_VERSION should be ISO date: got {DISCLAIMER_VERSION}"
 
     def test_text_covers_required_elements(self):
         """The disclaimer text must cover: free, professional audience,
@@ -288,15 +288,9 @@ class TestDisclaimerConstants:
         notice. These are the elements the audit trail substantiates."""
         text = DISCLAIMER_TEXT.lower()
         assert "free" in text
-        assert (
-            "licensed veterinary professional" in text
-            or "veterinary professional" in text
-        )
+        assert "licensed veterinary professional" in text or "veterinary professional" in text
         assert "without warranty" in text or "no warranty" in text.lower()
-        assert (
-            "no clinician-patient relationship" in text
-            or "not a substitute" in text
-        )
+        assert "no clinician-patient relationship" in text or "not a substitute" in text
         assert "ip address" in text
         assert "user-agent" in text or "user agent" in text
         assert "date and time" in text or "timestamp" in text

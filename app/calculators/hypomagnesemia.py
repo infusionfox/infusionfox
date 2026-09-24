@@ -209,7 +209,9 @@ def compute_hypomagnesemia(inputs: HypomagnesemiaInputs) -> HypomagnesemiaResult
     if errors:
         stock_meq = stock_meq_per_ml(inputs.stock_concentration)
         stock_label = (
-            "50% (4 mEq/mL)" if inputs.stock_concentration == MgStockConcentration.PCT_50 else "25% (2 mEq/mL)"
+            "50% (4 mEq/mL)"
+            if inputs.stock_concentration == MgStockConcentration.PCT_50
+            else "25% (2 mEq/mL)"
         )
         return HypomagnesemiaResult(
             weight_kg=weight_kg,
