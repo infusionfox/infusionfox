@@ -77,5 +77,8 @@
 
     {% if result.valid %}
     <template id="worked-example-source">$$\text{total volume} = {{ result.dose_ml_per_kg }}_{\text{mL/kg}} \times {{ "%.2f"|format(result.weight_kg) }}_{\text{kg}} = {{ "%.2f"|format(result.total_volume_ml) }}\,\text{mL} \quad \Rightarrow \quad {{ "%.3f"|format(result.infusion_rate_ml_per_min) }}\,\text{mL/min}$$</template>
+    {# Dilution templates: content only when 23% stock is selected. When 10%, these are emitted empty; JS copies empty innerHTML into the target divs, which the :empty CSS rule hides. #}
+    <template id="worked-example-source-dilution-general">{% if result.stock_concentration.value == '23' %}$$\text{volume of 23\%} = \text{total volume} \times \frac{10}{23} \quad \Rightarrow \quad \text{diluent} = \text{total volume} - \text{volume of 23\%}$${% endif %}</template>
+    <template id="worked-example-source-dilution">{% if result.stock_concentration.value == '23' %}$$\text{volume of 23\%} = {{ "%.2f"|format(result.total_volume_ml) }} \times \frac{10}{23} = {{ "%.2f"|format(result.stock_23pct_volume_ml) }}\,\text{mL} \quad \Rightarrow \quad \text{diluent} = {{ "%.2f"|format(result.diluent_volume_ml) }}\,\text{mL of 0.9\% NaCl}$${% endif %}</template>
     {% endif %}
 </div>

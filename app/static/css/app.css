@@ -2209,6 +2209,15 @@ input[type="number"]:focus, input[type="text"]:focus, select:focus {
     overflow-x: auto;
 }
 
+/* Hide empty formula-display boxes. Some pages use JS to populate a
+ * pre-existing div from a <template>. When no template matches (e.g.
+ * a conditional worked example that only applies in one mode), the
+ * div stays empty; without this rule it would render as a visible
+ * blank grey block. */
+.formula-display:empty {
+    display: none;
+}
+
 /* KaTeX overrides for our color scheme */
 .katex { color: var(--ink); }
 .formula-box .katex,
