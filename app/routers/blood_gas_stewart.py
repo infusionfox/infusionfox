@@ -127,4 +127,4 @@ async def blood_gas_stewart_compute(
 
 
 # Catalog entry exposed for content.py to register
-__all__ = ["router", "BLOOD_GAS_STEWART_CATALOG_ENTRY"]
+__all__ = ["BLOOD_GAS_STEWART_CATALOG_ENTRY", "router"]

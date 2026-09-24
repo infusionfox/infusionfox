@@ -155,3 +155,71 @@ class TestSourceAttribution:
         result = compute_ca_gluconate(_inputs())
         cite_text = " ".join(s.citation for s in result.sources)
         assert "Silverstein" in cite_text or "DiBartola" in cite_text or "Cooper" in cite_text
+
+
+class TestStockConcentration23Pct:
+    """Dilution recipe for 23% (equine) stock: draw 10/23 × target volume
+    of 23%, top up with saline to the same target volume, yielding a
+    10%-equivalent solution."""
+
+    def _make(self, weight_kg: float, dose_ml_per_kg: float, stock: str):
+        from app.calculators.ca_gluconate import (
+            CaGluconateInputs,
+            CaGluconateSpecies,
+            StockConcentration,
+            compute_ca_gluconate,
+        )
+        from app.calculators.engine import WeightUnit
+
+        return compute_ca_gluconate(
+            CaGluconateInputs(
+                weight_value=weight_kg,
+                weight_unit=WeightUnit.KG,
+                species=CaGluconateSpecies.CAT,
+                dose_ml_per_kg=dose_ml_per_kg,
+                duration_min=15,
+                stock_concentration=StockConcentration(stock),
+            )
+        )
+
+    def test_23pct_populates_dilution_recipe(self):
+        r = self._make(weight_kg=5.0, dose_ml_per_kg=1.0, stock="23")
+        assert r.stock_23pct_volume_ml is not None
+        assert r.diluent_volume_ml is not None
+        assert r.diluted_final_volume_ml == r.total_volume_ml
+
+    def test_23pct_recipe_math_5kg_cat(self):
+        # 5 kg × 1.0 mL/kg = 5 mL of 10% equivalent
+        # 23% stock: draw 5 × 10/23 = 2.174 mL, add 5 - 2.174 = 2.826 mL saline
+        r = self._make(weight_kg=5.0, dose_ml_per_kg=1.0, stock="23")
+        assert r.total_volume_ml == 5.0
+        assert abs(r.stock_23pct_volume_ml - 2.17) < 0.02
+        assert abs(r.diluent_volume_ml - 2.83) < 0.02
+
+    def test_10pct_leaves_dilution_recipe_none(self):
+        r = self._make(weight_kg=5.0, dose_ml_per_kg=1.0, stock="10")
+        assert r.stock_23pct_volume_ml is None
+        assert r.diluent_volume_ml is None
+        assert r.diluted_final_volume_ml is None
+
+    def test_23pct_delivers_same_elemental_ca_as_10pct(self):
+        # Whole point of the dilution: elemental Ca and mEq are identical.
+        r10 = self._make(weight_kg=5.0, dose_ml_per_kg=1.0, stock="10")
+        r23 = self._make(weight_kg=5.0, dose_ml_per_kg=1.0, stock="23")
+        assert r10.elemental_ca_mg == r23.elemental_ca_mg
+        assert r10.elemental_ca_meq == r23.elemental_ca_meq
+        assert r10.total_dose_mg == r23.total_dose_mg
+
+    def test_23pct_warning_present(self):
+        r = self._make(weight_kg=5.0, dose_ml_per_kg=1.0, stock="23")
+        assert any("23%" in w and "neat" in w.lower() for w in r.warnings)
+
+    def test_10pct_no_23pct_warning(self):
+        r = self._make(weight_kg=5.0, dose_ml_per_kg=1.0, stock="10")
+        assert not any("23%" in w for w in r.warnings)
+
+    def test_23pct_dilution_note_in_notes(self):
+        r = self._make(weight_kg=5.0, dose_ml_per_kg=1.0, stock="23")
+        joined = " ".join(r.notes)
+        assert "Dilution recipe" in joined
+        assert "0.9% NaCl" in joined

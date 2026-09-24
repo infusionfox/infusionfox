@@ -4,7 +4,13 @@
     {% else %}
 
     <div class="result__headline">
-        <div class="eyebrow">10% calcium gluconate dose</div>
+        <div class="eyebrow">
+            {% if result.stock_concentration.value == '23' %}
+            Dose (10% equivalent — from 23% stock)
+            {% else %}
+            10% calcium gluconate dose
+            {% endif %}
+        </div>
         <div class="result__primary">
             {{ "%g"|format(result.total_volume_ml) }}<span class="unit">mL</span>
         </div>
@@ -17,6 +23,27 @@
             = {{ "%g"|format(result.elemental_ca_meq) }} mEq Ca²⁺
         </div>
     </div>
+
+    {% if result.stock_concentration.value == '23' %}
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: #fff4e6; border-left: 3px solid #c96a1a; border-radius: var(--radius);">
+        <div class="eyebrow" style="margin: 0 0 0.4rem; color: #c96a1a;">Dilution recipe (23% → 10% equivalent)</div>
+        <div style="font-size: 1.05rem; line-height: 1.55;">
+            Draw <strong>{{ "%.2f"|format(result.stock_23pct_volume_ml) }} mL</strong>
+            of 23% calcium gluconate.
+            <br>
+            Add <strong>{{ "%.2f"|format(result.diluent_volume_ml) }} mL</strong>
+            of 0.9% NaCl (or D5W) to a final volume of
+            <strong>{{ "%.2f"|format(result.diluted_final_volume_ml) }} mL</strong>.
+            <br>
+            Infuse the entire diluted volume over
+            {{ "%g"|format(result.duration_min) }} min.
+        </div>
+        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--ink-soft);">
+            <strong>Do not administer 23% neat at the mL/kg dose.</strong>
+            That delivers 2.3× the intended calcium.
+        </div>
+    </div>
+    {% endif %}
 
     <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--paper-warm); border-left: 3px solid var(--signal); border-radius: var(--radius);">
         <div class="eyebrow" style="margin: 0 0 0.4rem;">Infusion rate</div>

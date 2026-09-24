@@ -16,12 +16,12 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
-
-from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
+from sqlalchemy import create_engine
+
+from alembic import command
 from app.db.models import Base
 
 REPO_ROOT = Path(__file__).resolve().parent.parent

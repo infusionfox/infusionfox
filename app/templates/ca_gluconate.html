@@ -100,6 +100,25 @@
                 </div>
 
                 <div class="field">
+                    <label>Stock concentration</label>
+                    <div class="segmented">
+                        <input type="radio" name="stock_concentration" value="10" id="stock-10"
+                               {% if inputs.stock_concentration.value == '10' %}checked{% endif %}>
+                        <label for="stock-10">10%</label>
+                        <input type="radio" name="stock_concentration" value="23" id="stock-23"
+                               {% if inputs.stock_concentration.value == '23' %}checked{% endif %}>
+                        <label for="stock-23">23%</label>
+                    </div>
+                    <div class="help">
+                        10% is small-animal standard (100 mg/mL). 23% is
+                        the equine formulation (230 mg/mL), sometimes the
+                        only vial on hand. Selecting 23% shows the
+                        dilution recipe to bring it to 10% equivalence.
+                        Never administer 23% neat at the mL/kg dose.
+                    </div>
+                </div>
+
+                <div class="field">
                     <label for="dose_ml_per_kg">Dose (mL/kg of 10% Ca gluconate)</label>
                     <input type="number" step="any" min="0.5" max="1.5"
                            id="dose_ml_per_kg" name="dose_ml_per_kg"

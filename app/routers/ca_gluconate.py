@@ -12,6 +12,7 @@ from app.calculators.ca_gluconate import (
     DURATION_DEFAULT_MIN,
     CaGluconateInputs,
     CaGluconateSpecies,
+    StockConcentration,
     compute_ca_gluconate,
 )
 from app.routers._form_parsing import parse_float_with_default, parse_positive_float
@@ -35,6 +36,7 @@ async def ca_gluconate_page(request: Request):
         species=CaGluconateSpecies.CAT,
         dose_ml_per_kg=DOSE_DEFAULT_ML_PER_KG,
         duration_min=DURATION_DEFAULT_MIN,
+        stock_concentration=StockConcentration.PCT_10,
     )
     return templates.TemplateResponse(
         "ca_gluconate.html",
@@ -56,6 +58,7 @@ async def ca_gluconate_compute(
     species: str = Form("cat"),
     dose_ml_per_kg: str = Form(str(DOSE_DEFAULT_ML_PER_KG)),
     duration_min: str = Form(str(DURATION_DEFAULT_MIN)),
+    stock_concentration: str = Form("10"),
 ):
     templates = request.app.state.templates
     weight = parse_positive_float(weight_value)
@@ -70,6 +73,10 @@ async def ca_gluconate_compute(
         wu = WeightUnit(weight_unit)
     except ValueError:
         wu = WeightUnit.LB
+    try:
+        stock = StockConcentration(stock_concentration)
+    except ValueError:
+        stock = StockConcentration.PCT_10
 
     inputs = CaGluconateInputs(
         weight_value=weight,
@@ -77,6 +84,7 @@ async def ca_gluconate_compute(
         species=_coerce_species(species),
         dose_ml_per_kg=dose,
         duration_min=duration,
+        stock_concentration=stock,
     )
     result = compute_ca_gluconate(inputs)
     return templates.TemplateResponse(

@@ -49,12 +49,30 @@ from enum import Enum
 
 from .engine import Source, WeightUnit, lb_to_kg
 
-# Stock concentration: 10% calcium gluconate
-CA_GLUCONATE_MG_PER_ML = 100.0  # of the gluconate salt
+# Stock concentrations available. 10% is the small-animal standard;
+# 23% is the equine formulation, cheaper by volume, sometimes the only
+# calcium gluconate stocked. NEVER administer 23% at the standard mL/kg
+# dose (which is calibrated to 10%): that delivers 2.3× the intended
+# calcium and can precipitate calcium arrhythmias. Dilute back to 10%
+# equivalence before administration.
+CA_GLUCONATE_10PCT_MG_PER_ML = 100.0
+CA_GLUCONATE_23PCT_MG_PER_ML = 230.0
+
+# Stock concentration: 10% calcium gluconate (default)
+CA_GLUCONATE_MG_PER_ML = CA_GLUCONATE_10PCT_MG_PER_ML  # of the gluconate salt
 CA_GLUCONATE_ELEMENTAL_CA_MG_PER_ML = 9.3
 CA_GLUCONATE_MEQ_PER_ML = 0.465  # elemental Ca (Ca²⁺)
 
+
+class StockConcentration(str, Enum):
+    PCT_10 = "10"
+    PCT_23 = "23"
+
+
 # Dose range per Silverstein Ch. 122 / DiBartola Ch. 5
+# (Dose is expressed as mL/kg of the 10% product. When 23% stock is
+# used, we dilute back to 10% equivalent first, so the dose stays
+# calibrated the same way.)
 DOSE_MIN_ML_PER_KG = 0.5
 DOSE_DEFAULT_ML_PER_KG = 1.0
 DOSE_MAX_ML_PER_KG = 1.5
@@ -83,6 +101,7 @@ class CaGluconateInputs:
     species: CaGluconateSpecies
     dose_ml_per_kg: float = DOSE_DEFAULT_ML_PER_KG
     duration_min: float = DURATION_DEFAULT_MIN
+    stock_concentration: StockConcentration = StockConcentration.PCT_10
 
 
 @dataclass
@@ -92,13 +111,20 @@ class CaGluconateResult:
 
     dose_ml_per_kg: float
     duration_min: float
+    stock_concentration: StockConcentration
 
-    # Math
+    # Math (expressed as 10% equivalent — what actually goes into the patient)
     total_volume_ml: float
     total_dose_mg: float  # of calcium gluconate salt
     elemental_ca_mg: float
     elemental_ca_meq: float
     infusion_rate_ml_per_min: float
+
+    # Dilution recipe (populated only when stock_concentration == 23%)
+    # None when stock is 10% (no dilution required).
+    stock_23pct_volume_ml: float | None = None
+    diluent_volume_ml: float | None = None
+    diluted_final_volume_ml: float | None = None
 
     warnings: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
@@ -128,6 +154,7 @@ def compute_ca_gluconate(inputs: CaGluconateInputs) -> CaGluconateResult:
             species=inputs.species,
             dose_ml_per_kg=inputs.dose_ml_per_kg,
             duration_min=inputs.duration_min,
+            stock_concentration=inputs.stock_concentration,
             total_volume_ml=0.0,
             total_dose_mg=0.0,
             elemental_ca_mg=0.0,
@@ -168,16 +195,37 @@ def compute_ca_gluconate(inputs: CaGluconateInputs) -> CaGluconateResult:
         )
         duration = DURATION_MAX_MIN
 
-    # Math
+    # Math (all expressed as 10% equivalent — this is what the patient
+    # receives after dilution when 23% stock is used).
     total_volume = dose * weight_kg
     total_dose_mg = total_volume * CA_GLUCONATE_MG_PER_ML
     elem_ca_mg = total_volume * CA_GLUCONATE_ELEMENTAL_CA_MG_PER_ML
     elem_ca_meq = total_volume * CA_GLUCONATE_MEQ_PER_ML
     rate_ml_min = total_volume / duration if duration > 0 else 0
 
+    # Dilution recipe for 23% stock. Draw 10/23 × target volume of the
+    # 23% product, top up with saline to the same target volume. Result
+    # is bioequivalent to the same total_volume of 10% Ca gluconate.
+    stock_23_ml: float | None = None
+    diluent_ml: float | None = None
+    diluted_final_ml: float | None = None
+    if inputs.stock_concentration == StockConcentration.PCT_23:
+        stock_23_ml = total_volume * (CA_GLUCONATE_10PCT_MG_PER_ML / CA_GLUCONATE_23PCT_MG_PER_ML)
+        diluent_ml = total_volume - stock_23_ml
+        diluted_final_ml = total_volume  # by construction
+
     # Persistent warnings (clinical safety)
+    if inputs.stock_concentration == StockConcentration.PCT_23:
+        warnings.append(
+            "23% calcium gluconate is the equine formulation. NEVER "
+            "administer neat at the small-animal mL/kg dose: that "
+            "delivers 2.3× the intended calcium and risks calcium-"
+            "induced arrhythmias and arrest. Follow the dilution "
+            "recipe below to bring it to 10% equivalence, then infuse "
+            "the diluted product over the standard 10–20 min window."
+        )
     warnings.append(
-        "Use 10% CALCIUM GLUCONATE, not calcium chloride. Calcium "
+        "Use CALCIUM GLUCONATE, not calcium chloride. Calcium "
         "chloride is ≈3× more potent per mL, more cardiotoxic, and "
         "more tissue-toxic on extravasation. The IV preparation for "
         "hyperkalemia is calcium GLUCONATE. Read the vial."
@@ -213,9 +261,18 @@ def compute_ca_gluconate(inputs: CaGluconateInputs) -> CaGluconateResult:
     )
 
     # Notes
+    if inputs.stock_concentration == StockConcentration.PCT_23:
+        notes.append(
+            f"Dilution recipe: draw {stock_23_ml:.2f} mL of 23% "
+            f"calcium gluconate, add {diluent_ml:.2f} mL of 0.9% NaCl "
+            f"(or D5W) to a final volume of {diluted_final_ml:.2f} mL. "
+            f"This yields the 10% equivalent of the calculated dose. "
+            f"Infuse the entire diluted volume over {duration:g} min "
+            f"({rate_ml_min:.2f} mL/min)."
+        )
     notes.append(
         f"Math: {dose:g} mL/kg × {weight_kg:.2f} kg = "
-        f"{total_volume:.2f} mL of 10% calcium gluconate "
+        f"{total_volume:.2f} mL of 10% calcium gluconate equivalent "
         f"(= {total_dose_mg:.0f} mg salt = {elem_ca_mg:.1f} mg "
         f"elemental Ca = {elem_ca_meq:.2f} mEq Ca²⁺). "
         f"Delivered over {duration:g} min = "
@@ -243,11 +300,15 @@ def compute_ca_gluconate(inputs: CaGluconateInputs) -> CaGluconateResult:
         species=inputs.species,
         dose_ml_per_kg=dose,
         duration_min=duration,
+        stock_concentration=inputs.stock_concentration,
         total_volume_ml=round(total_volume, 2),
         total_dose_mg=round(total_dose_mg, 0),
         elemental_ca_mg=round(elem_ca_mg, 1),
         elemental_ca_meq=round(elem_ca_meq, 2),
         infusion_rate_ml_per_min=round(rate_ml_min, 2),
+        stock_23pct_volume_ml=round(stock_23_ml, 2) if stock_23_ml is not None else None,
+        diluent_volume_ml=round(diluent_ml, 2) if diluent_ml is not None else None,
+        diluted_final_volume_ml=round(diluted_final_ml, 2) if diluted_final_ml is not None else None,
         warnings=warnings,
         notes=notes,
         sources=CA_GLUCONATE_SOURCES,
